@@ -27,10 +27,10 @@ export default function TwoDLayoutEditor() {
                             <Save size={18} />
                             Save
                         </button>
-                        <button className="flex items-center gap-3 px-6 py-2.5 bg-[#663F23] text-white font-semibold rounded-xl hover:bg-[#52321c] transition-colors shadow-sm">
+                        <Link href="/admin/3d-view" className="flex items-center gap-3 px-6 py-2.5 bg-[#663F23] text-white font-semibold rounded-xl hover:bg-[#52321c] transition-colors shadow-sm">
                             <Box size={18} />
                             3D view
-                        </button>
+                        </Link>
                     </div>
                 </header>
 
