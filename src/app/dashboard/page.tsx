@@ -41,7 +41,7 @@ export default function Dashboard() {
                             <span className="font-medium text-sm">Dashboard</span>
                         </Link>
 
-                        <Link href="/admin/3d-visualization" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                        <Link href="/admin/room-setup" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
                             <Monitor size={20} />
                             <span className="font-medium text-sm">Room Setup</span>
                         </Link>
@@ -174,7 +174,7 @@ export default function Dashboard() {
                     {/* Quick Actions */}
                     <h2 className="text-xl font-bold text-[#1C1C1C] mt-10 mb-4">Quick Actions</h2>
                     <div className="grid grid-cols-4 gap-6">
-                        <Link href="/admin/3d-visualization" className="bg-[#663F23] rounded-2xl p-6 text-white hover:bg-[#4A2D19] transition-colors flex flex-col justify-between h-40">
+                        <Link href="/admin/room-setup" className="bg-[#663F23] rounded-2xl p-6 text-white hover:bg-[#4A2D19] transition-colors flex flex-col justify-between h-40">
                             <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                                 <Plus size={20} className="text-white" />
                             </div>
