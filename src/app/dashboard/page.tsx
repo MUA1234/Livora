@@ -56,9 +56,9 @@ export default function Dashboard() {
                             <span className="font-medium text-sm">Compare Designs</span>
                         </Link>
 
-                        <Link href="#" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                        <Link href="/admin/cost-summary" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
                             <FileText size={20} />
-                            <span className="font-medium text-sm">Cost Reports</span>
+                            <span className="font-medium text-sm">Cost Summary</span>
                         </Link>
 
                         <Link href="/admin/consultations" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
