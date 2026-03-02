@@ -46,7 +46,7 @@ export default function Dashboard() {
                             <span className="font-medium text-sm">Room Setup</span>
                         </Link>
 
-                        <Link href="#" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                        <Link href="/admin/catalogue" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
                             <Sofa size={20} />
                             <span className="font-medium text-sm">Catalogue</span>
                         </Link>
