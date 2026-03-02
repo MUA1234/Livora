@@ -16,7 +16,8 @@ import {
     Plus,
     ArrowUpRight,
     Clock,
-    AlertCircle
+    AlertCircle,
+    ScrollText
 } from "lucide-react";
 import Image from "next/image";
 
@@ -64,6 +65,11 @@ export default function Dashboard() {
                         <Link href="/admin/consultations" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
                             <Users size={20} />
                             <span className="font-medium text-sm">Consultations</span>
+                        </Link>
+
+                        <Link href="/admin/design-history" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <ScrollText size={20} />
+                            <span className="font-medium text-sm">Design History</span>
                         </Link>
                     </nav>
                 </div>
