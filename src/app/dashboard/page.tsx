@@ -69,7 +69,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="p-4 border-t border-[#E5E5E5]/50">
-                    <Link href="#" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
+                    <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
                         <Settings size={20} />
                         <span className="font-medium text-sm">Settings</span>
                     </Link>
@@ -310,4 +310,3 @@ export default function Dashboard() {
         </div>
     );
 }
-
