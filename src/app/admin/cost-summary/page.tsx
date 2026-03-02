@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
     LayoutDashboard,
@@ -134,10 +136,10 @@ export default function CostSummary() {
 
                     {/* Actions */}
                     <div className="flex justify-center gap-6 mt-8">
-                        <button className="px-10 py-3 bg-[#66432A] text-white font-medium rounded-md hover:bg-[#533520] transition-colors shadow-sm">
+                        <button onClick={() => window.print()} className="px-10 py-3 bg-[#66432A] text-white font-medium rounded-md hover:bg-[#533520] transition-colors shadow-sm">
                             Save PDF
                         </button>
-                        <button className="px-10 py-3 bg-white text-[#2A2A2A] font-medium rounded-md border border-[#E0E0E0] hover:bg-gray-50 transition-colors shadow-sm">
+                        <button onClick={() => window.history.back()} className="px-10 py-3 bg-white text-[#2A2A2A] font-medium rounded-md border border-[#E0E0E0] hover:bg-gray-50 transition-colors shadow-sm">
                             Back to Editor
                         </button>
                     </div>
