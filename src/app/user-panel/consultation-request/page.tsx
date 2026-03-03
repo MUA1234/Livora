@@ -101,7 +101,7 @@ export default function ConsultationRequest() {
                             </span>
                         )}
                     </div>
-                    <Link href="#" className="hover:text-[#663F23] transition-colors">Review and Ratings</Link>
+                    <Link href="/user-panel/review-and-ratings" className="hover:text-[#663F23] transition-colors">Review and Ratings</Link>
                 </nav>
 
                 <div className="flex items-center gap-4">

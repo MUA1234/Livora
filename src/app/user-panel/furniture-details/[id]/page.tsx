@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -8,10 +10,26 @@ import {
     Calendar,
     PenSquare,
     ChevronRight,
-    Search
 } from "lucide-react";
+import { useWishlist } from "@/context/WishlistContext";
+
+const PRODUCT = {
+    id: "1",
+    name: "Lumina Premium Velvet Sofa",
+    price: 345899,
+    image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1200",
+    rating: 4,
+    reviews: 124,
+};
 
 export default function FurnitureDetails() {
+    const { items, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+    const isLiked = isInWishlist(PRODUCT.id);
+
+    const toggleWishlist = () => {
+        if (isLiked) removeFromWishlist(PRODUCT.id);
+        else addToWishlist(PRODUCT);
+    };
     return (
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
             {/* Top Navigation */}
@@ -25,14 +43,26 @@ export default function FurnitureDetails() {
 
                 <nav className="hidden md:flex items-center gap-8 font-medium text-[#1C1C1C]/80">
                     <Link href="/user-panel/furniture-catalogue" className="hover:text-[#663F23] transition-colors">Catalogue</Link>
-                    <Link href="#" className="hover:text-[#663F23] transition-colors">Wishlist</Link>
-                    <Link href="#" className="hover:text-[#663F23] transition-colors">Review and Ratings</Link>
+                    <div className="relative">
+                        <Link href="/user-panel/wishlist" className="hover:text-[#663F23] transition-colors">Wishlist</Link>
+                        {items.length > 0 && (
+                            <span className="absolute -top-2 -right-3 bg-[#663F23] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                {items.length}
+                            </span>
+                        )}
+                    </div>
+                    <Link href="/user-panel/review-and-ratings" className="hover:text-[#663F23] transition-colors">Review and Ratings</Link>
                 </nav>
 
                 <div className="flex items-center gap-4">
-                    <button className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#1C1C1C] border border-[#E5E5E5] hover:bg-[#E5E5E5] transition-colors">
-                        <Heart size={20} />
-                    </button>
+                    <Link href="/user-panel/wishlist" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#1C1C1C] border border-[#E5E5E5] hover:bg-[#E5E5E5] transition-colors relative">
+                        <Heart size={20} className={items.length > 0 ? "fill-[#663F23] text-[#663F23]" : ""} />
+                        {items.length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-[#663F23] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                {items.length}
+                            </span>
+                        )}
+                    </Link>
                     <Link href="/user-panel/my-account" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#1C1C1C] border border-[#E5E5E5] hover:bg-[#E5E5E5] transition-colors">
                         <User size={20} />
                     </Link>
@@ -167,8 +197,15 @@ export default function FurnitureDetails() {
                                 <button className="flex-1 py-4 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors flex items-center justify-center gap-2">
                                     <ShoppingCart size={18} /> Add to Cart
                                 </button>
-                                <button className="w-14 h-14 bg-[#D4AF37] text-white rounded-xl flex items-center justify-center hover:bg-[#C19B2E] transition-colors shrink-0">
-                                    <Heart size={20} />
+                                <button
+                                    onClick={toggleWishlist}
+                                    title={isLiked ? "Remove from Wishlist" : "Add to Wishlist"}
+                                    className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors shrink-0 ${isLiked
+                                            ? "bg-red-500 text-white hover:bg-red-600"
+                                            : "bg-[#D4AF37] text-white hover:bg-[#C19B2E]"
+                                        }`}
+                                >
+                                    <Heart size={20} className={isLiked ? "fill-white" : ""} />
                                 </button>
                             </div>
 
@@ -176,9 +213,12 @@ export default function FurnitureDetails() {
                                 <Calendar size={18} /> Request Design Consultation
                             </Link>
 
-                            <button className="w-full py-4 border border-[#C1A87D] bg-[#E8DCC4] text-[#1C1C1C] rounded-xl font-medium hover:bg-[#DED0B5] transition-colors flex items-center justify-center gap-2">
+                            <Link
+                                href="/user-panel/review-and-ratings"
+                                className="w-full py-4 border border-[#C1A87D] bg-[#E8DCC4] text-[#1C1C1C] rounded-xl font-medium hover:bg-[#DED0B5] transition-colors flex items-center justify-center gap-2"
+                            >
                                 <PenSquare size={18} /> Write a Review
-                            </button>
+                            </Link>
                         </div>
 
                     </div>

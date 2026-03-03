@@ -27,7 +27,7 @@ export default function MyAccountPage() {
                         <Heart size={20} className="text-[#1C1C1C]/60" />
                         Wishlist
                     </Link>
-                    <Link href="#" className="flex items-center gap-4 px-6 py-4 text-[#1C1C1C]/70 hover:bg-[#F5F2EC]/50 rounded-xl transition-colors">
+                    <Link href="/user-panel/review-and-ratings" className="flex items-center gap-4 px-6 py-4 text-[#1C1C1C]/70 hover:bg-[#F5F2EC]/50 rounded-xl transition-colors">
                         <Star size={20} className="text-[#1C1C1C]/60" />
                         Review and Ratings
                     </Link>
