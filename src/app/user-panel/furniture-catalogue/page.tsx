@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
     Search,
@@ -7,8 +9,82 @@ import {
     Star
 } from "lucide-react";
 import Image from "next/image";
+import { useWishlist, WishlistItem } from "@/context/WishlistContext";
+
+const PRODUCTS = [
+    {
+        id: "1",
+        name: "Verona Leather Sofa",
+        price: 245699,
+        image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=600",
+        rating: 4,
+        reviews: 42,
+        badge: "NEW",
+        originalPrice: undefined
+    },
+    {
+        id: "2",
+        name: "Oak Nordic Dining Chair",
+        price: 64000,
+        image: "https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80&w=600",
+        rating: 4,
+        reviews: 18,
+        badge: undefined,
+        originalPrice: undefined
+    },
+    {
+        id: "3",
+        name: "Bronx Coffee Table",
+        price: 79999,
+        image: "https://images.unsplash.com/photo-1532588213369-0eb66191cfa3?auto=format&fit=crop&q=80&w=600",
+        rating: 4,
+        reviews: 85,
+        badge: "SALE",
+        originalPrice: 89000
+    },
+    {
+        id: "4",
+        name: "Milo Lounge Chair",
+        price: 180000,
+        image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&q=80&w=600",
+        rating: 4,
+        reviews: 42,
+        badge: "NEW",
+        originalPrice: undefined
+    },
+    {
+        id: "5",
+        name: "Luna Upholstered Bed",
+        price: 349999,
+        image: "https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=600",
+        rating: 3,
+        reviews: 18,
+        badge: undefined,
+        originalPrice: undefined
+    },
+    {
+        id: "6",
+        name: "Nordic Oak Bookshelf",
+        price: 32599,
+        image: "https://images.unsplash.com/photo-1594620302200-9a762244a156?auto=format&fit=crop&q=80&w=600",
+        rating: 4,
+        reviews: 85,
+        badge: "SALE",
+        originalPrice: 37599
+    }
+];
 
 export default function FurnitureCatalogue() {
+    const { items, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+
+    const toggleWishlist = (product: WishlistItem) => {
+        if (isInWishlist(product.id)) {
+            removeFromWishlist(product.id);
+        } else {
+            addToWishlist(product);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
             {/* Top Navigation */}
@@ -21,15 +97,27 @@ export default function FurnitureCatalogue() {
                 </div>
 
                 <nav className="hidden md:flex items-center gap-8 font-medium text-[#1C1C1C]/80">
-                    <Link href="#" className="text-[#663F23] border-b-2 border-[#663F23] pb-1">Catalogue</Link>
-                    <Link href="#" className="hover:text-[#663F23] transition-colors">Wishlist</Link>
+                    <Link href="/user-panel/furniture-catalogue" className="text-[#663F23] border-b-2 border-[#663F23] pb-1">Catalogue</Link>
+                    <Link href="/user-panel/wishlist" className="hover:text-[#663F23] transition-colors relative">
+                        Wishlist
+                        {items.length > 0 && (
+                            <span className="absolute -top-2 -right-3 bg-[#663F23] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                {items.length}
+                            </span>
+                        )}
+                    </Link>
                     <Link href="#" className="hover:text-[#663F23] transition-colors">Review and Ratings</Link>
                 </nav>
 
                 <div className="flex items-center gap-4">
-                    <button className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center text-[#1C1C1C] hover:bg-[#E5E5E5] transition-colors">
-                        <Heart size={20} />
-                    </button>
+                    <Link href="/user-panel/wishlist" className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center text-[#1C1C1C] hover:bg-[#E5E5E5] transition-colors relative">
+                        <Heart size={20} className={items.length > 0 ? "fill-[#663F23] text-[#663F23]" : ""} />
+                        {items.length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-[#663F23] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                {items.length}
+                            </span>
+                        )}
+                    </Link>
                     <button className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center text-[#1C1C1C] hover:bg-[#E5E5E5] transition-colors">
                         <User size={20} />
                     </button>
@@ -109,80 +197,6 @@ export default function FurnitureCatalogue() {
                             </div>
                         </div>
 
-                        {/* Colours */}
-                        <div>
-                            <h3 className="font-bold text-lg mb-4">Colours</h3>
-                            <div className="flex gap-3">
-                                <button className="w-6 h-6 rounded-full bg-blue-600 ring-2 ring-offset-2 ring-blue-600"></button>
-                                <button className="w-6 h-6 rounded-full bg-[#663F23] hover:ring-2 ring-offset-2 ring-[#663F23] transition-all"></button>
-                                <button className="w-6 h-6 rounded-full bg-[#D4AF37] hover:ring-2 ring-offset-2 ring-[#D4AF37] transition-all"></button>
-                                <button className="w-6 h-6 rounded-full bg-gray-200 hover:ring-2 ring-offset-2 ring-gray-200 transition-all"></button>
-                                <button className="w-6 h-6 rounded-full bg-[#1C1C1C] hover:ring-2 ring-offset-2 ring-[#1C1C1C] transition-all"></button>
-                            </div>
-                        </div>
-
-                        {/* Material */}
-                        <div>
-                            <h3 className="font-bold text-lg mb-4">Material</h3>
-                            <div className="space-y-3">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <div className="w-5 h-5 rounded border border-[#663F23] bg-[#663F23] flex items-center justify-center">
-                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                    </div>
-                                    <span className="text-sm">Leather</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <div className="w-5 h-5 rounded border border-[#E5E5E5] bg-white"></div>
-                                    <span className="text-sm">Fabric</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <div className="w-5 h-5 rounded border border-[#663F23] bg-[#663F23] flex items-center justify-center">
-                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                    </div>
-                                    <span className="text-sm">Wood</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <div className="w-5 h-5 rounded border border-[#E5E5E5] bg-white"></div>
-                                    <span className="text-sm">Metal</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <div className="w-5 h-5 rounded border border-[#E5E5E5] bg-white"></div>
-                                    <span className="text-sm">Glass</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        {/* Rating */}
-                        <div>
-                            <h3 className="font-bold text-lg mb-4">Rating</h3>
-                            <div className="space-y-3">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <div className="w-5 h-5 rounded border border-[#663F23] bg-[#663F23] flex items-center justify-center">
-                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                    </div>
-                                    <div className="flex gap-1 text-[#D4AF37]">
-                                        <Star size={14} fill="currentColor" />
-                                        <Star size={14} fill="currentColor" />
-                                        <Star size={14} fill="currentColor" />
-                                        <Star size={14} fill="currentColor" />
-                                        <Star size={14} className="text-[#E5E5E5]" />
-                                    </div>
-                                    <span className="text-sm">& up</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <div className="w-5 h-5 rounded border border-[#E5E5E5] bg-white"></div>
-                                    <div className="flex gap-1 text-[#D4AF37]">
-                                        <Star size={14} fill="currentColor" />
-                                        <Star size={14} fill="currentColor" />
-                                        <Star size={14} fill="currentColor" />
-                                        <Star size={14} className="text-[#E5E5E5]" />
-                                        <Star size={14} className="text-[#E5E5E5]" />
-                                    </div>
-                                    <span className="text-sm">& up</span>
-                                </label>
-                            </div>
-                        </div>
-
                         <button className="w-full py-3 bg-white border border-[#E5E5E5] rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
                             Clear filters
                         </button>
@@ -194,7 +208,7 @@ export default function FurnitureCatalogue() {
                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
                         <div>
                             <h1 className="text-4xl font-bold text-[#1C1C1C] mb-2">Furniture Catalogue</h1>
-                            <p className="text-sm text-[#1C1C1C]/50">Showing 1 - 6 of 124 results</p>
+                            <p className="text-sm text-[#1C1C1C]/50">Showing 1 - {PRODUCTS.length} of 124 results</p>
                         </div>
                         <div className="flex items-center gap-2 mt-4 md:mt-0 text-sm">
                             <span className="text-[#1C1C1C]/50">Sort by:</span>
@@ -205,195 +219,53 @@ export default function FurnitureCatalogue() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Product 1 */}
-                        <div className="bg-white rounded-2xl p-4 border border-[#E5E5E5] shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                            <div className="relative h-64 bg-[#F5F5F5] rounded-xl overflow-hidden mb-4">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=600"
-                                    alt="Verona Leather Sofa"
-                                    fill
-                                    className="object-cover"
-                                />
-                                <div className="absolute top-3 left-3 px-3 py-1 bg-[#D4AF37] text-white text-xs font-bold rounded">NEW</div>
-                                <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#1C1C1C] hover:text-red-500 transition-colors">
-                                    <Heart size={16} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-1 mb-2">
-                                <div className="flex text-[#D4AF37]">
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} className="text-[#E5E5E5]" />
+                        {PRODUCTS.map((product) => {
+                            const isLiked = isInWishlist(product.id);
+                            return (
+                                <div key={product.id} className="bg-white rounded-2xl p-4 border border-[#E5E5E5] shadow-sm flex flex-col hover:shadow-md transition-shadow">
+                                    <div className="relative h-64 bg-[#F5F5F5] rounded-xl overflow-hidden mb-4 group cursor-pointer">
+                                        <Image
+                                            src={product.image}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                        {product.badge && (
+                                            <div className={`absolute top-3 left-3 px-3 py-1 ${product.badge === 'SALE' ? 'bg-rose-100 text-rose-500' : 'bg-[#D4AF37] text-white'} text-xs font-bold rounded`}>
+                                                {product.badge}
+                                            </div>
+                                        )}
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                toggleWishlist(product);
+                                            }}
+                                            className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm shadow-sm rounded-full flex items-center justify-center text-[#1C1C1C] hover:text-red-500 hover:bg-white transition-all transform hover:scale-110"
+                                        >
+                                            <Heart size={16} className={isLiked ? "fill-red-500 text-red-500" : ""} />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center gap-1 mb-2">
+                                        <div className="flex text-[#D4AF37]">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} size={12} className={i < product.rating ? "fill-currentColor" : "text-[#E5E5E5]"} />
+                                            ))}
+                                        </div>
+                                        <span className="text-xs text-[#1C1C1C]/40 ml-1">({product.reviews})</span>
+                                    </div>
+                                    <h3 className="font-bold text-lg mb-1">{product.name}</h3>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="font-bold text-lg">Rs.{product.price.toLocaleString("en-IN")}.00</div>
+                                        {product.originalPrice && (
+                                            <div className="text-sm text-[#1C1C1C]/40 line-through">Rs.{product.originalPrice.toLocaleString("en-IN")}.00</div>
+                                        )}
+                                    </div>
+                                    <Link href={`/user-panel/furniture-details/${product.id}`} className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block shadow hover:shadow-md">
+                                        View Details
+                                    </Link>
                                 </div>
-                                <span className="text-xs text-[#1C1C1C]/40 ml-1">(42)</span>
-                            </div>
-                            <h3 className="font-bold text-lg mb-1">Verona Leather Sofa</h3>
-                            <div className="font-bold text-lg mb-4">Rs.245,699.00</div>
-                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
-                                View Details
-                            </Link>
-                        </div>
-
-                        {/* Product 2 */}
-                        <div className="bg-white rounded-2xl p-4 border border-[#E5E5E5] shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                            <div className="relative h-64 bg-[#F5F5F5] rounded-xl overflow-hidden mb-4">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80&w=600"
-                                    alt="Oak Nordic Dining Chair"
-                                    fill
-                                    className="object-cover"
-                                />
-                                <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#1C1C1C] hover:text-red-500 transition-colors">
-                                    <Heart size={16} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-1 mb-2">
-                                <div className="flex text-[#D4AF37]">
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} className="text-[#E5E5E5]" />
-                                </div>
-                                <span className="text-xs text-[#1C1C1C]/40 ml-1">(18)</span>
-                            </div>
-                            <h3 className="font-bold text-lg mb-1">Oak Nordic Dining Chair</h3>
-                            <div className="font-bold text-lg mb-4">Rs.64,000.00</div>
-                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
-                                View Details
-                            </Link>
-                        </div>
-
-                        {/* Product 3 */}
-                        <div className="bg-white rounded-2xl p-4 border border-[#E5E5E5] shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                            <div className="relative h-64 bg-[#F5F5F5] rounded-xl overflow-hidden mb-4">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1532588213369-0eb66191cfa3?auto=format&fit=crop&q=80&w=600"
-                                    alt="Bronx Coffee Table"
-                                    fill
-                                    className="object-cover"
-                                />
-                                <div className="absolute top-3 left-3 px-3 py-1 bg-rose-100 text-rose-500 text-xs font-bold rounded">SALE</div>
-                                <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#1C1C1C] hover:text-red-500 transition-colors">
-                                    <Heart size={16} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-1 mb-2">
-                                <div className="flex text-[#D4AF37]">
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} className="text-[#E5E5E5]" />
-                                </div>
-                                <span className="text-xs text-[#1C1C1C]/40 ml-1">(85)</span>
-                            </div>
-                            <h3 className="font-bold text-lg mb-1">Bronx Coffee Table</h3>
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="font-bold text-lg">Rs.79,999.00</div>
-                                <div className="text-sm text-[#1C1C1C]/40 line-through">Rs.89,000.00</div>
-                            </div>
-                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
-                                View Details
-                            </Link>
-                        </div>
-
-                        {/* Product 4 */}
-                        <div className="bg-white rounded-2xl p-4 border border-[#E5E5E5] shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                            <div className="relative h-64 bg-[#F5F5F5] rounded-xl overflow-hidden mb-4">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&q=80&w=600"
-                                    alt="Milo Lounge Chair"
-                                    fill
-                                    className="object-cover"
-                                />
-                                <div className="absolute top-3 left-3 px-3 py-1 bg-[#D4AF37] text-white text-xs font-bold rounded">NEW</div>
-                                <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#1C1C1C] hover:text-red-500 transition-colors">
-                                    <Heart size={16} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-1 mb-2">
-                                <div className="flex text-[#D4AF37]">
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} className="text-[#E5E5E5]" />
-                                </div>
-                                <span className="text-xs text-[#1C1C1C]/40 ml-1">(42)</span>
-                            </div>
-                            <h3 className="font-bold text-lg mb-1">Milo Lounge Chair</h3>
-                            <div className="font-bold text-lg mb-4">Rs.180,000.00</div>
-                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
-                                View Details
-                            </Link>
-                        </div>
-
-                        {/* Product 5 */}
-                        <div className="bg-white rounded-2xl p-4 border border-[#E5E5E5] shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                            <div className="relative h-64 bg-[#F5F5F5] rounded-xl overflow-hidden mb-4">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=600"
-                                    alt="Luna Upholstered Bed"
-                                    fill
-                                    className="object-cover"
-                                />
-                                <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#1C1C1C] hover:text-red-500 transition-colors">
-                                    <Heart size={16} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-1 mb-2">
-                                <div className="flex text-[#D4AF37]">
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} className="text-[#E5E5E5]" />
-                                    <Star size={12} className="text-[#E5E5E5]" />
-                                </div>
-                                <span className="text-xs text-[#1C1C1C]/40 ml-1">(18)</span>
-                            </div>
-                            <h3 className="font-bold text-lg mb-1">Luna Upholstered Bed</h3>
-                            <div className="font-bold text-lg mb-4">Rs.349,999.00</div>
-                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
-                                View Details
-                            </Link>
-                        </div>
-
-                        {/* Product 6 */}
-                        <div className="bg-white rounded-2xl p-4 border border-[#E5E5E5] shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                            <div className="relative h-64 bg-[#F5F5F5] rounded-xl overflow-hidden mb-4">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1594620302200-9a762244a156?auto=format&fit=crop&q=80&w=600"
-                                    alt="Nordic Oak Bookshelf"
-                                    fill
-                                    className="object-cover"
-                                />
-                                <div className="absolute top-3 left-3 px-3 py-1 bg-rose-100 text-rose-500 text-xs font-bold rounded">SALE</div>
-                                <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#1C1C1C] hover:text-red-500 transition-colors">
-                                    <Heart size={16} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-1 mb-2">
-                                <div className="flex text-[#D4AF37]">
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} fill="currentColor" />
-                                    <Star size={12} className="text-[#E5E5E5]" />
-                                </div>
-                                <span className="text-xs text-[#1C1C1C]/40 ml-1">(85)</span>
-                            </div>
-                            <h3 className="font-bold text-lg mb-1">Nordic Oak Bookshelf</h3>
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="font-bold text-lg">Rs.32,599.00</div>
-                                <div className="text-sm text-[#1C1C1C]/40 line-through">Rs.37,599.00</div>
-                            </div>
-                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
-                                View Details
-                            </Link>
-                        </div>
+                            );
+                        })}
                     </div>
                 </div>
             </main>
