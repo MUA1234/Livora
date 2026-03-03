@@ -231,9 +231,9 @@ export default function FurnitureCatalogue() {
                             </div>
                             <h3 className="font-bold text-lg mb-1">Verona Leather Sofa</h3>
                             <div className="font-bold text-lg mb-4">Rs.245,699.00</div>
-                            <button className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors">
+                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
                                 View Details
-                            </button>
+                            </Link>
                         </div>
 
                         {/* Product 2 */}
@@ -261,9 +261,9 @@ export default function FurnitureCatalogue() {
                             </div>
                             <h3 className="font-bold text-lg mb-1">Oak Nordic Dining Chair</h3>
                             <div className="font-bold text-lg mb-4">Rs.64,000.00</div>
-                            <button className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors">
+                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
                                 View Details
-                            </button>
+                            </Link>
                         </div>
 
                         {/* Product 3 */}
@@ -295,9 +295,9 @@ export default function FurnitureCatalogue() {
                                 <div className="font-bold text-lg">Rs.79,999.00</div>
                                 <div className="text-sm text-[#1C1C1C]/40 line-through">Rs.89,000.00</div>
                             </div>
-                            <button className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors">
+                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
                                 View Details
-                            </button>
+                            </Link>
                         </div>
 
                         {/* Product 4 */}
@@ -326,9 +326,9 @@ export default function FurnitureCatalogue() {
                             </div>
                             <h3 className="font-bold text-lg mb-1">Milo Lounge Chair</h3>
                             <div className="font-bold text-lg mb-4">Rs.180,000.00</div>
-                            <button className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors">
+                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
                                 View Details
-                            </button>
+                            </Link>
                         </div>
 
                         {/* Product 5 */}
@@ -356,9 +356,9 @@ export default function FurnitureCatalogue() {
                             </div>
                             <h3 className="font-bold text-lg mb-1">Luna Upholstered Bed</h3>
                             <div className="font-bold text-lg mb-4">Rs.349,999.00</div>
-                            <button className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors">
+                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
                                 View Details
-                            </button>
+                            </Link>
                         </div>
 
                         {/* Product 6 */}
@@ -390,9 +390,9 @@ export default function FurnitureCatalogue() {
                                 <div className="font-bold text-lg">Rs.32,599.00</div>
                                 <div className="text-sm text-[#1C1C1C]/40 line-through">Rs.37,599.00</div>
                             </div>
-                            <button className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors">
+                            <Link href="/user-panel/furniture-details/1" className="mt-auto w-full py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors text-center block">
                                 View Details
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
