@@ -36,9 +36,9 @@ export default function FurnitureDetails() {
                     <button className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#1C1C1C] border border-[#E5E5E5] hover:bg-[#E5E5E5] transition-colors">
                         <User size={20} />
                     </button>
-                    <button className="px-6 py-2.5 bg-[#663F23] text-white rounded-lg font-medium hover:bg-[#52321A] transition-colors">
+                    <Link href="/user-panel/consultation-request" className="px-6 py-2.5 bg-[#663F23] text-white rounded-lg font-medium hover:bg-[#52321A] transition-colors">
                         Book Consultation
-                    </button>
+                    </Link>
                 </div>
             </header>
 
@@ -172,9 +172,9 @@ export default function FurnitureDetails() {
                                 </button>
                             </div>
 
-                            <button className="w-full py-4 bg-[#C1A87D] text-[#1C1C1C] rounded-xl font-medium hover:bg-[#B59C70] transition-colors flex items-center justify-center gap-2">
+                            <Link href="/user-panel/consultation-request" className="w-full py-4 bg-[#C1A87D] text-[#1C1C1C] rounded-xl font-medium hover:bg-[#B59C70] transition-colors flex items-center justify-center gap-2">
                                 <Calendar size={18} /> Request Design Consultation
-                            </button>
+                            </Link>
 
                             <button className="w-full py-4 border border-[#C1A87D] bg-[#E8DCC4] text-[#1C1C1C] rounded-xl font-medium hover:bg-[#DED0B5] transition-colors flex items-center justify-center gap-2">
                                 <PenSquare size={18} /> Write a Review
