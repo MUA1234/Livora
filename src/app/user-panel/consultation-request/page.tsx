@@ -113,9 +113,9 @@ export default function ConsultationRequest() {
                             </span>
                         )}
                     </Link>
-                    <button className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center text-[#1C1C1C] hover:bg-[#E5E5E5] transition-colors">
+                    <Link href="/user-panel/my-account" className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center text-[#1C1C1C] hover:bg-[#E5E5E5] transition-colors">
                         <User size={20} />
-                    </button>
+                    </Link>
 
                 </div>
             </header>
