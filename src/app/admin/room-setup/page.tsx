@@ -6,6 +6,14 @@ import { Save, ArrowLeft, ArrowRight, ArrowLeftRight, ArrowUpDown, MoveVertical 
 export default function RoomSetup() {
     return (
         <div className="min-h-screen bg-[#F5F1E8] flex flex-col font-sans text-[#1C1C1C] py-10 px-6 sm:px-12 md:px-20 lg:px-40 xl:px-60">
+            {/* Back Navigation */}
+            <div className="mb-6">
+                <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[#663F23] hover:text-[#4A2D19] transition-colors group">
+                    <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                    Back to Dashboard
+                </Link>
+            </div>
+
             {/* Header */}
             <header className="flex items-center justify-between mb-8">
                 <div>
@@ -215,11 +223,7 @@ export default function RoomSetup() {
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-white p-4 rounded-2xl shadow-sm border border-[#E5E5E5]/50">
-                <Link href="/dashboard" className="w-full sm:w-auto px-8 py-3.5 bg-[#F5F1E8] text-[#1C1C1C] font-semibold rounded-xl hover:bg-[#e4dfd4] transition-colors flex items-center justify-center gap-2">
-                    <ArrowLeft size={18} />
-                    Back to Dashboard
-                </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-8 bg-white p-4 rounded-2xl shadow-sm border border-[#E5E5E5]/50">
                 <Link href="/admin/2d-layout" className="w-full sm:w-auto px-8 py-3.5 bg-[#663F23] text-white font-semibold rounded-xl hover:bg-[#52321c] transition-colors flex items-center justify-center gap-2">
                     Continue to 2D Layout
                     <ArrowRight size={18} />
