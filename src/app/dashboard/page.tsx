@@ -58,6 +58,11 @@ export default function Dashboard() {
                             <span className="font-medium text-sm">Catalogue</span>
                         </Link>
 
+                        <Link href="/admin/catalogue-management" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors pl-10">
+                            <Settings size={16} />
+                            <span className="font-medium text-xs">Catalogue Management</span>
+                        </Link>
+
                         <Link href="/admin/compare-designs" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
                             <LayoutTemplate size={20} />
                             <span className="font-medium text-sm">Compare Designs</span>
@@ -196,7 +201,7 @@ export default function Dashboard() {
                             </div>
                         </Link>
 
-                        <Link href="#" className="bg-white border border-[#E5E5E5]/50 rounded-2xl p-6 hover:border-[#C6A75E]/50 transition-colors shadow-sm flex flex-col justify-between h-40 group">
+                        <Link href="/admin/catalogue" className="bg-white border border-[#E5E5E5]/50 rounded-2xl p-6 hover:border-[#C6A75E]/50 transition-colors shadow-sm flex flex-col justify-between h-40 group">
                             <div className="w-10 h-10 rounded-lg bg-[#F5F1E8] flex items-center justify-center group-hover:bg-[#663F23]/10 transition-colors">
                                 <Sofa size={20} className="text-[#663F23]" />
                             </div>
@@ -216,7 +221,7 @@ export default function Dashboard() {
                             </div>
                         </Link>
 
-                        <Link href="#" className="bg-white border border-[#E5E5E5]/50 rounded-2xl p-6 hover:border-[#C6A75E]/50 transition-colors shadow-sm flex flex-col justify-between h-40 group">
+                        <Link href="/admin/cost-summary" className="bg-white border border-[#E5E5E5]/50 rounded-2xl p-6 hover:border-[#C6A75E]/50 transition-colors shadow-sm flex flex-col justify-between h-40 group">
                             <div className="w-10 h-10 rounded-lg bg-[#F5F1E8] flex items-center justify-center group-hover:bg-[#663F23]/10 transition-colors">
                                 <FileText size={20} className="text-[#663F23]" />
                             </div>
