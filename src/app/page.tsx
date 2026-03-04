@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function Login() {
   const router = useRouter();
@@ -46,8 +47,14 @@ export default function Login() {
         <div className="w-full max-w-md space-y-8">
           {/* Logo Section */}
           <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-            <div className="mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-[#f8f6f0] border border-neutral-200">
-              <span className="text-xl font-serif tracking-widest text-[#5c4033]">LIVORA</span>
+            <div className="mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-[#f8f6f0] border border-neutral-200 overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="LIVORA Logo"
+                width={128}
+                height={128}
+                className="object-cover"
+              />
             </div>
             <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
               Welcome

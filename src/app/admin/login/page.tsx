@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function AdminLogin() {
     const router = useRouter();
@@ -47,13 +48,14 @@ export default function AdminLogin() {
                     {/* Logo Section */}
                     <div className="flex justify-center mb-8">
                         {/* Approximating the logo image with a styled container */}
-                        <div className="flex h-40 w-40 flex-col items-center justify-center bg-[#f7f5ed]">
-                            <div className="relative flex h-32 w-32 flex-col items-center justify-center rounded-full border border-[#4a4a4a]">
-                                {/* Minimal visual representation of the chair/flower */}
-                                <div className="mb-1 h-10 w-10 border border-[#4a4a4a] rounded-b-xl rounded-t-sm border-b-2" />
-                                <span className="font-serif text-[18px] tracking-[0.15em] text-[#333333]">LIVORA</span>
-                                <span className="text-[7px] font-sans tracking-[0.3em] text-[#555555]">FURNITURE</span>
-                            </div>
+                        <div className="flex h-40 w-40 items-center justify-center bg-[#f7f5ed] border-4 border-[#674630]/10 rounded-full overflow-hidden shadow-inner">
+                            <Image
+                                src="/logo.png"
+                                alt="LIVORA Logo"
+                                width={160}
+                                height={160}
+                                className="object-cover"
+                            />
                         </div>
                     </div>
 
