@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function ForgotPassword() {
@@ -50,8 +51,14 @@ export default function ForgotPassword() {
                             Back to login
                         </Link>
 
-                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#f8f6f0] border border-neutral-100 shadow-sm">
-                            <span className="text-sm font-serif tracking-widest text-[#5c4033] font-bold">LIVORA</span>
+                        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-[#f8f6f0] border border-neutral-100 shadow-sm overflow-hidden">
+                            <Image
+                                src="/logo.png"
+                                alt="LIVORA Logo"
+                                width={96}
+                                height={96}
+                                className="object-cover"
+                            />
                         </div>
 
                         {!isSubmitted ? (

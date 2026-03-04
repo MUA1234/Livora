@@ -29,8 +29,14 @@ export default function Dashboard() {
                 <div>
                     <div className="h-20 flex items-center px-8 border-b border-[#E5E5E5]/50">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full border border-[#663F23] flex items-center justify-center relative overflow-hidden">
-                                <span className="text-[#663F23] text-xs font-bold">LV</span>
+                            <div className="w-10 h-10 rounded-full border border-[#663F23] flex items-center justify-center relative overflow-hidden bg-white">
+                                <Image
+                                    src="/logo.png"
+                                    alt="LIVORA"
+                                    width={40}
+                                    height={40}
+                                    className="object-cover"
+                                />
                             </div>
                             <span className="text-2xl font-bold text-[#663F23] tracking-tight">Livora</span>
                         </div>

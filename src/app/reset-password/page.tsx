@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function ResetPassword() {
     const router = useRouter();
@@ -58,8 +59,14 @@ export default function ResetPassword() {
                 <div className="w-full max-w-md space-y-8">
                     {/* Logo Section */}
                     <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#f8f6f0] border border-neutral-100 shadow-sm">
-                            <span className="text-sm font-serif tracking-widest text-[#5c4033] font-bold">LIVORA</span>
+                        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-[#f8f6f0] border border-neutral-100 shadow-sm overflow-hidden">
+                            <Image
+                                src="/logo.png"
+                                alt="LIVORA Logo"
+                                width={96}
+                                height={96}
+                                className="object-cover"
+                            />
                         </div>
 
                         {!isSuccess ? (

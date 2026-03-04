@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Leaf
 } from "lucide-react";
+import Image from "next/image";
 
 type Status = "pending" | "confirmed" | "completed" | "rejected";
 
@@ -141,10 +142,13 @@ export default function ConsultationManagementPage() {
         <div className="flex items-center justify-between px-10 py-6 border-b border-[#E5E5E5]/60 block w-full">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full border border-[#D4C3A3] flex items-center justify-center relative overflow-hidden bg-white shrink-0">
-              <span className="text-[#663F23] font-serif italic font-bold tracking-tighter text-sm flex items-center justify-center">
-                <Leaf size={20} className="absolute text-[#C8A27B] opacity-20 -rotate-45" />
-                LIVORA
-              </span>
+              <Image
+                src="/logo.png"
+                alt="LIVORA"
+                width={48}
+                height={48}
+                className="object-cover"
+              />
             </div>
             <div>
               <h1 className="text-[22px] font-bold text-[#1C1C1C] leading-snug">Consultation Management</h1>
