@@ -10,61 +10,56 @@ import {
     Users,
     Settings,
     Sofa,
+    ScrollText,
     Search,
-    Download,
-    Plus,
-    X,
-    Pencil,
     ChevronDown,
-    Upload
+    ArrowLeft,
+    Check,
+    Plus
 } from "lucide-react";
 import Image from "next/image";
 
-// Product type
 interface Product {
     id: number;
     name: string;
     sku: string;
     category: string;
     price: number;
-    colors: string[];
+    colors: { name: string; hex: string }[];
     materials: string[];
     image: string;
-    description: string;
-    width: number;
-    height: number;
-    depth: number;
+    addedToDesign: boolean;
 }
 
-// Sample data
 const initialProducts: Product[] = [
     {
         id: 1,
         name: "Hampton 3-Seater Sofa",
         sku: "SOF-0912",
         category: "Sofas",
-        price: 257999.0,
-        colors: ["#C6A75E", "#1C1C1C", "#663F23"],
+        price: 379599.0,
+        colors: [
+            { name: "Gold", hex: "#C6A75E" },
+            { name: "Black", hex: "#1C1C1C" },
+            { name: "Brown", hex: "#663F23" },
+        ],
         materials: ["Fabric", "Wood"],
-        image: "",
-        description: "Elegant 3-seater sofa with premium fabric upholstery and solid wood legs.",
-        width: 210,
-        height: 85,
-        depth: 90,
+        image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=800",
+        addedToDesign: true,
     },
     {
         id: 2,
         name: "Oskar Dining Chair",
         sku: "CHR-4431",
         category: "Chairs",
-        price: 12999.0,
-        colors: ["#1C1C1C", "#E5E5E5"],
+        price: 15499.0,
+        colors: [
+            { name: "Black", hex: "#1C1C1C" },
+            { name: "White", hex: "#E5E5E5" },
+        ],
         materials: ["Wood"],
-        image: "",
-        description: "Minimalist wooden dining chair featuring an ergonomic curved backrest and a comfortable upholstered seat.",
-        width: 45,
-        height: 85,
-        depth: 50,
+        image: "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&q=80&w=800",
+        addedToDesign: false,
     },
     {
         id: 3,
@@ -72,108 +67,111 @@ const initialProducts: Product[] = [
         sku: "TBL-1029",
         category: "Tables",
         price: 22599.0,
-        colors: ["#E5E5E5", "#1C1C1C"],
+        colors: [
+            { name: "White", hex: "#E5E5E5" },
+            { name: "Black", hex: "#1C1C1C" },
+        ],
         materials: ["Marble", "Metal"],
-        image: "",
-        description: "Stunning marble top coffee table with sleek metal base.",
-        width: 120,
-        height: 45,
-        depth: 60,
+        image: "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?auto=format&fit=crop&q=80&w=800",
+        addedToDesign: false,
     },
     {
         id: 4,
+        name: "Lumina Floor Lamp",
+        sku: "LGT-2201",
+        category: "Lighting",
+        price: 35500.0,
+        colors: [
+            { name: "Black", hex: "#1C1C1C" },
+            { name: "Gold", hex: "#C6A75E" },
+        ],
+        materials: ["Metal"],
+        image: "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&q=80&w=800",
+        addedToDesign: false,
+    },
+    {
+        id: 5,
         name: "Luna Upholstered Bed",
         sku: "BED-7762",
         category: "Beds",
         price: 349999.0,
-        colors: ["#E5E5E5", "#663F23"],
+        colors: [
+            { name: "Gray", hex: "#9CA3AF" },
+            { name: "Brown", hex: "#663F23" },
+        ],
         materials: ["Fabric", "Wood"],
-        image: "",
-        description: "Luxurious upholstered bed frame with padded headboard.",
-        width: 180,
-        height: 120,
-        depth: 210,
+        image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=800",
+        addedToDesign: true,
+    },
+    {
+        id: 6,
+        name: "Nordic Oak Bookshelf",
+        sku: "STR-3310",
+        category: "Storage",
+        price: 37599.0,
+        colors: [{ name: "Brown", hex: "#C6A75E" }],
+        materials: ["Wood"],
+        image: "https://images.unsplash.com/photo-1594620302200-9a762244a156?auto=format&fit=crop&q=80&w=800",
+        addedToDesign: false,
+    },
+    {
+        id: 7,
+        name: "Celeste Round Dining Table",
+        sku: "TBL-4455",
+        category: "Tables",
+        price: 32469.0,
+        colors: [
+            { name: "Gold", hex: "#C6A75E" },
+            { name: "Black", hex: "#1C1C1C" },
+        ],
+        materials: ["Wood"],
+        image: "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?auto=format&fit=crop&q=80&w=800",
+        addedToDesign: false,
+    },
+    {
+        id: 8,
+        name: "Milo Lounge Chair",
+        sku: "CHR-8890",
+        category: "Chairs",
+        price: 180000.0,
+        colors: [
+            { name: "Gray", hex: "#9CA3AF" },
+            { name: "Blue", hex: "#4A5568" },
+            { name: "Red", hex: "#C53030" },
+            { name: "Black", hex: "#1C1C1C" },
+        ],
+        materials: ["Fabric", "Wood"],
+        image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&q=80&w=800",
+        addedToDesign: false,
     },
 ];
 
-const allMaterials = ["Wood", "Fabric", "Metal", "Leather", "Velvet", "Marble"];
-const allCategories = ["Sofas", "Chairs", "Tables", "Beds", "Lighting", "Storage", "Rugs"];
-const allColorOptions = [
-    { name: "Black", hex: "#1C1C1C" },
-    { name: "White", hex: "#E5E5E5" },
-    { name: "Brown", hex: "#663F23" },
-    { name: "Gold", hex: "#C6A75E" },
-    { name: "Gray", hex: "#9CA3AF" },
-    { name: "Beige", hex: "#D2B48C" },
-];
+const categories = ["All Items", "Sofas", "Chairs", "Tables", "Beds", "Storage", "Lighting", "Decor", "Rugs"];
 
-export default function CatalogueManagement() {
+export default function CatalogueBrowse() {
     const [products, setProducts] = useState<Product[]>(initialProducts);
+    const [selectedCategory, setSelectedCategory] = useState("All Items");
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("All categories");
-    const [selectedMaterial, setSelectedMaterial] = useState("All materials");
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-    const [editForm, setEditForm] = useState<Product | null>(null);
 
-    // Filter products
     const filteredProducts = products.filter((p) => {
+        const matchesCategory = selectedCategory === "All Items" || p.category === selectedCategory;
         const matchesSearch =
             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.sku.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory =
-            selectedCategory === "All categories" || p.category === selectedCategory;
-        const matchesMaterial =
-            selectedMaterial === "All materials" ||
-            p.materials.some((m) => m === selectedMaterial);
-        return matchesSearch && matchesCategory && matchesMaterial;
+        return matchesCategory && matchesSearch;
     });
 
-    const handleEdit = (product: Product) => {
-        setEditingProduct(product);
-        setEditForm({ ...product });
-    };
-
-    const handleCloseEdit = () => {
-        setEditingProduct(null);
-        setEditForm(null);
-    };
-
-    const handleSaveChanges = () => {
-        if (!editForm) return;
-        setProducts(products.map((p) => (p.id === editForm.id ? editForm : p)));
-        handleCloseEdit();
-    };
-
-    const handleDeleteProduct = () => {
-        if (!editForm) return;
-        setProducts(products.filter((p) => p.id !== editForm.id));
-        handleCloseEdit();
-    };
-
-    const toggleMaterial = (material: string) => {
-        if (!editForm) return;
-        const newMaterials = editForm.materials.includes(material)
-            ? editForm.materials.filter((m) => m !== material)
-            : [...editForm.materials, material];
-        setEditForm({ ...editForm, materials: newMaterials });
-    };
-
-    const toggleColor = (hex: string) => {
-        if (!editForm) return;
-        const newColors = editForm.colors.includes(hex)
-            ? editForm.colors.filter((c) => c !== hex)
-            : [...editForm.colors, hex];
-        setEditForm({ ...editForm, colors: newColors });
+    const toggleAddToDesign = (productId: number) => {
+        setProducts(
+            products.map((p) =>
+                p.id === productId ? { ...p, addedToDesign: !p.addedToDesign } : p
+            )
+        );
     };
 
     const formatPrice = (price: number) => {
         return `Rs.${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
-
-    // Stats
-    const totalProducts = products.length;
-    const totalCategories = [...new Set(products.map((p) => p.category))].length;
-    const totalMaterials = [...new Set(products.flatMap((p) => p.materials))].length;
 
     return (
         <div className="min-h-screen bg-white flex overflow-hidden font-sans text-[#1C1C1C]">
@@ -205,6 +203,11 @@ export default function CatalogueManagement() {
                             <span className="font-medium text-sm">Catalogue</span>
                         </Link>
 
+                        <Link href="/admin/catalogue-management" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors pl-8">
+                            <Settings size={16} />
+                            <span className="font-medium text-sm">Catalogue Management</span>
+                        </Link>
+
                         <Link href="/admin/compare-designs" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
                             <LayoutTemplate size={20} />
                             <span className="font-medium text-sm">Compare Designs</span>
@@ -212,12 +215,17 @@ export default function CatalogueManagement() {
 
                         <Link href="/admin/cost-summary" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
                             <FileText size={20} />
-                            <span className="font-medium text-sm">Cost Summary</span>
+                            <span className="font-medium text-sm">Cost Reports</span>
                         </Link>
 
                         <Link href="/admin/consultations" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
                             <Users size={20} />
                             <span className="font-medium text-sm">Consultations</span>
+                        </Link>
+
+                        <Link href="/admin/design-history" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <ScrollText size={20} />
+                            <span className="font-medium text-sm">Design History</span>
                         </Link>
                     </nav>
                 </div>
@@ -247,361 +255,139 @@ export default function CatalogueManagement() {
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto bg-[#F5F1E8]">
-                <div className="flex h-screen">
-                    {/* Product List Section */}
-                    <div className={`${editingProduct ? "flex-1" : "flex-1"} p-8 overflow-y-auto`}>
-                        {/* Header */}
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h1 className="text-2xl font-bold text-[#1C1C1C] mb-1">Furniture Catalogue Management</h1>
-                                <p className="text-sm text-[#1C1C1C]/50">Add, edit and organise products for every design project.</p>
-                            </div>
-                            <div className="flex gap-3">
-                                <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm font-medium text-[#1C1C1C] hover:bg-gray-50 transition-colors">
-                                    <Download size={16} />
-                                    Export CSV
-                                </button>
-                                <button className="flex items-center gap-2 px-4 py-2.5 bg-[#663F23] text-white rounded-lg text-sm font-medium hover:bg-[#4A2D19] transition-colors">
-                                    <Plus size={16} />
-                                    Add Product
-                                </button>
-                            </div>
+                {/* Top Header */}
+                <div className="sticky top-0 z-10 bg-[#F5F1E8] px-8 py-4 flex items-center justify-between border-b border-[#E5E5E5]/30">
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => window.history.back()} className="w-9 h-9 flex items-center justify-center rounded-full border border-[#E5E5E5] bg-white hover:bg-gray-50 transition-colors">
+                            <ArrowLeft size={18} className="text-[#1C1C1C]" />
+                        </button>
+                        <h1 className="text-xl font-bold text-[#1C1C1C]">Browse Furniture</h1>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="text-right">
+                            <p className="text-xs text-[#1C1C1C]/50">Adding to Design</p>
+                            <p className="text-sm font-bold text-[#1C1C1C]">Modern Living Room</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-8">
+                    {/* Category Tabs */}
+                    <div className="flex gap-2 mb-6 flex-wrap">
+                        {categories.map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setSelectedCategory(cat)}
+                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === cat
+                                    ? "bg-[#663F23] text-white"
+                                    : "bg-white border border-[#E5E5E5] text-[#1C1C1C]/70 hover:border-[#663F23] hover:text-[#663F23]"
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Search & Filters */}
+                    <div className="flex gap-3 mb-8">
+                        <div className="relative w-80">
+                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40" />
+                            <input
+                                type="text"
+                                placeholder="Search furniture by name or SKU..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                autoComplete="off"
+                                className="w-full pl-10 pr-4 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors"
+                            />
                         </div>
 
-                        {/* Stats */}
-                        <div className="flex gap-4 mb-6">
-                            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-[#E5E5E5]/50 text-sm">
-                                <Sofa size={14} className="text-[#1C1C1C]/50" />
-                                <span className="font-medium">{totalProducts} products</span>
-                            </div>
-                            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-[#E5E5E5]/50 text-sm">
-                                <span className="text-[#1C1C1C]/50">⊞</span>
-                                <span className="font-medium">{totalCategories} categories</span>
-                            </div>
-                            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-[#E5E5E5]/50 text-sm">
-                                <Pencil size={14} className="text-[#1C1C1C]/50" />
-                                <span className="font-medium">{totalMaterials} materials / textures</span>
-                            </div>
-                        </div>
-
-                        {/* Search & Filters */}
-                        <div className="flex gap-3 mb-6">
-                            <div className="flex-1 relative">
-                                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40" />
-                                <input
-                                    type="text"
-                                    placeholder="Search products by name or SKU..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    autoComplete="off"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors"
-                                />
-                            </div>
+                        <div className="flex gap-3 ml-auto">
                             <div className="relative">
-                                <select
-                                    value={selectedCategory}
-                                    onChange={(e) => setSelectedCategory(e.target.value)}
-                                    className="appearance-none px-4 py-2.5 pr-10 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]"
-                                >
-                                    <option>All categories</option>
-                                    {allCategories.map((cat) => (
-                                        <option key={cat}>{cat}</option>
-                                    ))}
+                                <select className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
+                                    <option>Price: Any</option>
+                                    <option>Under Rs.50,000</option>
+                                    <option>Rs.50,000 - Rs.200,000</option>
+                                    <option>Over Rs.200,000</option>
                                 </select>
                                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
                             </div>
                             <div className="relative">
-                                <select
-                                    value={selectedMaterial}
-                                    onChange={(e) => setSelectedMaterial(e.target.value)}
-                                    className="appearance-none px-4 py-2.5 pr-10 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]"
-                                >
-                                    <option>All materials</option>
-                                    {allMaterials.map((mat) => (
-                                        <option key={mat}>{mat}</option>
-                                    ))}
+                                <select className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
+                                    <option>Material: Any</option>
+                                    <option>Wood</option>
+                                    <option>Fabric</option>
+                                    <option>Metal</option>
+                                    <option>Leather</option>
+                                    <option>Marble</option>
                                 </select>
                                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
                             </div>
                             <div className="relative">
-                                <select className="appearance-none px-4 py-2.5 pr-10 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
+                                <select className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
+                                    <option>Color: Any</option>
+                                    <option>Black</option>
+                                    <option>White</option>
+                                    <option>Brown</option>
+                                    <option>Gold</option>
+                                </select>
+                                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
+                            </div>
+                            <div className="relative">
+                                <select className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
+                                    <option>Sort by: Most Popular</option>
                                     <option>Sort by: Newest</option>
                                     <option>Sort by: Price Low</option>
                                     <option>Sort by: Price High</option>
-                                    <option>Sort by: Name A-Z</option>
                                 </select>
                                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
                             </div>
                         </div>
+                    </div>
 
-                        {/* Product Table */}
-                        <div className="bg-white rounded-xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm">
-                            {/* Table Header */}
-                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-6 py-3 border-b border-[#E5E5E5]/50 text-xs font-medium text-[#1C1C1C]/50 uppercase tracking-wider">
-                                <span>Product details</span>
-                                <span>Category</span>
-                                <span>Price</span>
-                                <span>Available colours</span>
-                                <span>Materials / textures</span>
-                                <span>Actions</span>
-                            </div>
+                    {/* Product Grid */}
+                    <div className="grid grid-cols-3 gap-6">
+                        {filteredProducts.map((product) => (
+                            <div key={product.id} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
+                                {/* Product Image */}
+                                <div className="relative h-56 w-full bg-gray-100 overflow-hidden">
+                                    <img
+                                        src={product.image}
+                                        alt={product.name}
+                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                </div>
 
-                            {/* Product Rows */}
-                            {filteredProducts.map((product) => (
-                                <div
-                                    key={product.id}
-                                    className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-6 py-4 border-b border-[#E5E5E5]/30 items-center hover:bg-[#F5F1E8]/30 transition-colors ${editingProduct?.id === product.id ? "bg-[#F5F1E8]/50" : ""}`}
-                                >
-                                    {/* Product Details */}
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-14 h-14 rounded-lg bg-[#F5F1E8] border border-[#E5E5E5]/50 flex items-center justify-center shrink-0 overflow-hidden">
-                                            <Sofa size={20} className="text-[#1C1C1C]/30" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-sm text-[#1C1C1C] leading-tight">{product.name}</p>
-                                            <p className="text-xs text-[#1C1C1C]/40 mt-0.5">SKU: {product.sku}</p>
-                                        </div>
+                                {/* Product Info */}
+                                <div className="p-5">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <span className="text-[10px] font-bold text-[#663F23] uppercase tracking-wider">{product.category}</span>
+                                        <span className="text-sm font-bold text-[#1C1C1C]">{formatPrice(product.price)}</span>
                                     </div>
 
-                                    {/* Category */}
-                                    <div>
-                                        <span className="px-3 py-1 bg-[#F5F1E8] text-[#663F23] text-xs font-medium rounded-full">
-                                            {product.category}
-                                        </span>
-                                    </div>
-
-                                    {/* Price */}
-                                    <div>
-                                        <span className="text-sm font-semibold text-[#1C1C1C]">{formatPrice(product.price)}</span>
-                                    </div>
+                                    <h3 className="font-bold text-[#1C1C1C] text-base mb-2">{product.name}</h3>
 
                                     {/* Colors */}
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 mb-4">
                                         {product.colors.slice(0, 3).map((color, i) => (
                                             <div
                                                 key={i}
-                                                className="w-6 h-6 rounded-full border border-[#E5E5E5]"
-                                                style={{ backgroundColor: color }}
+                                                className="w-5 h-5 rounded-full border border-[#E5E5E5]"
+                                                style={{ backgroundColor: color.hex }}
                                             />
                                         ))}
                                         {product.colors.length > 3 && (
-                                            <span className="text-xs text-[#1C1C1C]/50 ml-1">+{product.colors.length - 3}</span>
+                                            <span className="text-xs text-[#1C1C1C]/40 ml-1">+{product.colors.length - 3} colors</span>
                                         )}
                                     </div>
-
-                                    {/* Materials */}
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {product.materials.map((mat) => (
-                                            <span key={mat} className="px-2 py-0.5 bg-[#F5F1E8] text-[#1C1C1C]/70 text-[11px] font-medium rounded">
-                                                {mat}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div>
-                                        <button
-                                            onClick={() => handleEdit(product)}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F5F1E8] text-[#1C1C1C]/40 hover:text-[#663F23] transition-colors"
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                    </div>
                                 </div>
-                            ))}
-
-                            {filteredProducts.length === 0 && (
-                                <div className="px-6 py-12 text-center text-sm text-[#1C1C1C]/40">
-                                    No products found matching your search.
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Edit Panel */}
-                    {editingProduct && editForm && (
-                        <div className="w-[380px] bg-white border-l border-[#E5E5E5] h-screen overflow-y-auto p-6 shrink-0">
-                            {/* Edit Header */}
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <h2 className="text-lg font-bold text-[#1C1C1C]">Edit product</h2>
-                                    <p className="text-xs text-[#1C1C1C]/50 mt-0.5">Update details, pricing, colours and textures.</p>
-                                </div>
-                                <button
-                                    onClick={handleCloseEdit}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F5F1E8] text-[#1C1C1C]/40 hover:text-[#1C1C1C] transition-colors"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-
-                            {/* Product Image Upload */}
-                            <div className="mb-6">
-                                <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Product Image</p>
-                                <div className="border-2 border-dashed border-[#E5E5E5] rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#663F23]/50 transition-colors bg-[#FAFAF8]">
-                                    <Upload size={24} className="text-[#1C1C1C]/30 mb-2" />
-                                    <p className="text-sm font-medium text-[#1C1C1C]/60">Click to upload product image</p>
-                                    <p className="text-xs text-[#1C1C1C]/30 mt-1">PNG or JPG · Up to 5MB</p>
-                                </div>
-                            </div>
-
-                            {/* Basic Details */}
-                            <div className="mb-6">
-                                <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Basic Details</p>
-
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Product name</label>
-                                        <input
-                                            type="text"
-                                            value={editForm.name}
-                                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                            autoComplete="off"
-                                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Category</label>
-                                            <div className="relative">
-                                                <select
-                                                    value={editForm.category}
-                                                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                                                    className="appearance-none w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm cursor-pointer focus:outline-none focus:border-[#663F23]"
-                                                >
-                                                    {allCategories.map((cat) => (
-                                                        <option key={cat}>{cat}</option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Price</label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#1C1C1C]/40">Rs.</span>
-                                                <input
-                                                    type="text"
-                                                    value={editForm.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                                                    onChange={(e) => {
-                                                        const val = parseFloat(e.target.value.replace(/,/g, ""));
-                                                        if (!isNaN(val)) setEditForm({ ...editForm, price: val });
-                                                    }}
-                                                    autoComplete="off"
-                                                    className="w-full pl-9 pr-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors"
-                                                />
-                                            </div>
-                                            <p className="text-[10px] text-[#1C1C1C]/40 mt-1">Set the retail price for this product.</p>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Description</label>
-                                        <textarea
-                                            value={editForm.description}
-                                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                                            rows={3}
-                                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors resize-none"
-                                        />
-                                        <p className="text-[10px] text-[#1C1C1C]/40 mt-1">Short marketing description shown in the public catalogue.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Dimensions */}
-                            <div className="mb-6">
-                                <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Dimensions (CM)</p>
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-medium text-[#1C1C1C]/60 mb-1.5">Width</label>
-                                        <input
-                                            type="number"
-                                            value={editForm.width}
-                                            onChange={(e) => setEditForm({ ...editForm, width: parseInt(e.target.value) || 0 })}
-                                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-[#1C1C1C]/60 mb-1.5">Height</label>
-                                        <input
-                                            type="number"
-                                            value={editForm.height}
-                                            onChange={(e) => setEditForm({ ...editForm, height: parseInt(e.target.value) || 0 })}
-                                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-[#1C1C1C]/60 mb-1.5">Depth</label>
-                                        <input
-                                            type="number"
-                                            value={editForm.depth}
-                                            onChange={(e) => setEditForm({ ...editForm, depth: parseInt(e.target.value) || 0 })}
-                                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Available Colours */}
-                            <div className="mb-6">
-                                <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Available Colours</p>
-                                <div className="flex gap-3 flex-wrap">
-                                    {allColorOptions.map((color) => (
-                                        <button
-                                            key={color.hex}
-                                            onClick={() => toggleColor(color.hex)}
-                                            className={`w-10 h-10 rounded-full border-2 transition-all ${editForm.colors.includes(color.hex) ? "border-[#663F23] scale-110 shadow-md" : "border-[#E5E5E5]"}`}
-                                            style={{ backgroundColor: color.hex }}
-                                        />
-                                    ))}
-                                    <button className="w-10 h-10 rounded-full border-2 border-dashed border-[#E5E5E5] flex items-center justify-center text-[#1C1C1C]/30 hover:border-[#663F23] hover:text-[#663F23] transition-colors">
-                                        <Plus size={16} />
-                                    </button>
-                                </div>
-                                <p className="text-[10px] text-[#1C1C1C]/40 mt-2">Select existing swatches or add a new colour option.</p>
-                            </div>
-
-                            {/* Materials */}
-                            <div className="mb-8">
-                                <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Manage Textures / Materials</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {allMaterials.map((mat) => (
-                                        <button
-                                            key={mat}
-                                            onClick={() => toggleMaterial(mat)}
-                                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${editForm.materials.includes(mat) ? "bg-[#663F23] text-white" : "bg-white border border-[#E5E5E5] text-[#1C1C1C]/70 hover:border-[#663F23]"}`}
-                                        >
-                                            {mat}
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-[10px] text-[#1C1C1C]/40 mt-2">Toggle which materials are available for this product.</p>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center justify-between pt-4 border-t border-[#E5E5E5]/50">
-                                <button
-                                    onClick={handleDeleteProduct}
-                                    className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
-                                >
-                                    Delete product
-                                </button>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={handleCloseEdit}
-                                        className="px-4 py-2 bg-white border border-[#E5E5E5] rounded-lg text-sm font-medium text-[#1C1C1C] hover:bg-gray-50 transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleSaveChanges}
-                                        className="px-4 py-2 bg-[#1C1C1C] text-white rounded-lg text-sm font-medium hover:bg-[#333] transition-colors"
-                                    >
-                                        Save changes
-                                    </button>
-                                </div>
-                            </div>
+                    {filteredProducts.length === 0 && (
+                        <div className="text-center py-16 text-sm text-[#1C1C1C]/40">
+                            No products found matching your search.
                         </div>
                     )}
                 </div>
