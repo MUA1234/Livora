@@ -126,7 +126,7 @@ export default function AdminLogin() {
                             </div>
 
                             <div className="text-[13px]">
-                                <Link href="#" className="font-medium text-[#c49a6c] hover:text-[#a88257]">
+                                <Link href="/forgot-password" className="font-medium text-[#c49a6c] hover:text-[#a88257]">
                                     Forgot password?
                                 </Link>
                             </div>
