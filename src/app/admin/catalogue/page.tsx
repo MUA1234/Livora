@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
     LayoutDashboard,
     Monitor,
@@ -15,7 +17,8 @@ import {
     ChevronDown,
     ArrowLeft,
     Check,
-    Plus
+    Plus,
+    LogOut
 } from "lucide-react";
 import Image from "next/image";
 
@@ -149,9 +152,17 @@ const initialProducts: Product[] = [
 const categories = ["All Items", "Sofas", "Chairs", "Tables", "Beds", "Storage", "Lighting", "Decor", "Rugs"];
 
 export default function CatalogueBrowse() {
+    const router = useRouter();
     const [products, setProducts] = useState<Product[]>(initialProducts);
     const [selectedCategory, setSelectedCategory] = useState("All Items");
     const [searchQuery, setSearchQuery] = useState("");
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/admin/login");
+    };
 
     const filteredProducts = products.filter((p) => {
         const matchesCategory = selectedCategory === "All Items" || p.category === selectedCategory;
@@ -230,11 +241,19 @@ export default function CatalogueBrowse() {
                     </nav>
                 </div>
 
-                <div className="p-4 border-t border-[#E5E5E5]/50">
+                <div className="p-4 border-t border-[#E5E5E5]/50 shrink-0">
                     <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
                         <Settings size={20} />
                         <span className="font-medium text-sm">Settings</span>
                     </Link>
+
+                    <button
+                        onClick={() => setIsLogoutModalOpen(true)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors mb-4 focus:outline-none cursor-pointer"
+                    >
+                        <LogOut size={20} />
+                        <span className="font-medium text-sm">Logout</span>
+                    </button>
 
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
                         <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
@@ -392,6 +411,15 @@ export default function CatalogueBrowse() {
                     )}
                 </div>
             </main>
+
+            {isLogoutModalOpen && (
+                <ConfirmModal
+                    title="Confirm Logout"
+                    message="Are you sure you want to logout from Livora admin panel?"
+                    onConfirm={handleLogout}
+                    onCancel={() => setIsLogoutModalOpen(false)}
+                />
+            )}
         </div>
     );
 }

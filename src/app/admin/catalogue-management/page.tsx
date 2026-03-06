@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Toast } from "@/components/ui/Toast";
 import {
     LayoutDashboard,
     Monitor,
@@ -16,7 +19,8 @@ import {
     X,
     Pencil,
     ChevronDown,
-    Upload
+    Upload,
+    LogOut
 } from "lucide-react";
 import Image from "next/image";
 
@@ -108,12 +112,31 @@ const allColorOptions = [
 ];
 
 export default function CatalogueManagement() {
+    const router = useRouter();
     const [products, setProducts] = useState<Product[]>(initialProducts);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All categories");
     const [selectedMaterial, setSelectedMaterial] = useState("All materials");
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [editForm, setEditForm] = useState<Product | null>(null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [addForm, setAddForm] = useState({
+        name: "",
+        sku: "",
+        category: "Sofa",
+        price: 0,
+        description: "",
+        image: "",
+    });
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/admin/login");
+    };
 
     // Filter products
     const filteredProducts = products.filter((p) => {
@@ -145,9 +168,43 @@ export default function CatalogueManagement() {
     };
 
     const handleDeleteProduct = () => {
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = () => {
         if (!editForm) return;
         setProducts(products.filter((p) => p.id !== editForm.id));
+        setToastMessage("Product deleted successfully");
+        setIsDeleteModalOpen(false);
         handleCloseEdit();
+    };
+
+    const handleAddProductSubmit = () => {
+        const newProduct: Product = {
+            id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
+            name: addForm.name,
+            sku: addForm.sku,
+            category: addForm.category,
+            price: addForm.price,
+            description: addForm.description,
+            image: addForm.image || "",
+            colors: [],
+            materials: [],
+            width: 0,
+            height: 0,
+            depth: 0,
+        };
+        setProducts([...products, newProduct]);
+        setIsAddModalOpen(false);
+        setToastMessage("Product added successfully");
+        setAddForm({
+            name: "",
+            sku: "",
+            category: "Sofa",
+            price: 0,
+            description: "",
+            image: "",
+        });
     };
 
     const toggleMaterial = (material: string) => {
@@ -222,11 +279,19 @@ export default function CatalogueManagement() {
                     </nav>
                 </div>
 
-                <div className="p-4 border-t border-[#E5E5E5]/50">
+                <div className="p-4 border-t border-[#E5E5E5]/50 shrink-0">
                     <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
                         <Settings size={20} />
                         <span className="font-medium text-sm">Settings</span>
                     </Link>
+
+                    <button
+                        onClick={() => setIsLogoutModalOpen(true)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors mb-4 focus:outline-none cursor-pointer"
+                    >
+                        <LogOut size={20} />
+                        <span className="font-medium text-sm">Logout</span>
+                    </button>
 
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
                         <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
@@ -261,7 +326,7 @@ export default function CatalogueManagement() {
                                     <Download size={16} />
                                     Export CSV
                                 </button>
-                                <button className="flex items-center gap-2 px-4 py-2.5 bg-[#663F23] text-white rounded-lg text-sm font-medium hover:bg-[#4A2D19] transition-colors">
+                                <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[#663F23] text-white rounded-lg text-sm font-medium hover:bg-[#4A2D19] transition-colors">
                                     <Plus size={16} />
                                     Add Product
                                 </button>
@@ -606,6 +671,103 @@ export default function CatalogueManagement() {
                     )}
                 </div>
             </main>
+
+            {/* Add Product Modal */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-[#1C1C1C]/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
+                    <div className="relative bg-[#F5F1E8] rounded-xl shadow-2xl max-w-lg w-full p-6 overflow-hidden max-h-[90vh] overflow-y-auto space-y-6">
+                        <div className="flex justify-between items-start">
+                            <h3 className="text-xl font-semibold text-[#1C1C1C]">Add New Product</h3>
+                            <button onClick={() => setIsAddModalOpen(false)} className="text-[#1C1C1C]/40 hover:text-[#1C1C1C]">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Product Name</label>
+                                <input type="text" value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })} className="w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23]" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">SKU</label>
+                                <input type="text" value={addForm.sku} onChange={e => setAddForm({ ...addForm, sku: e.target.value })} className="w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23]" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Category</label>
+                                <div className="relative">
+                                    <select value={addForm.category} onChange={e => setAddForm({ ...addForm, category: e.target.value })} className="appearance-none w-full px-3 py-2.5 pr-10 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23]">
+                                        <option value="Sofa">Sofa</option>
+                                        <option value="Chair">Chair</option>
+                                        <option value="Table">Table</option>
+                                        <option value="Bed">Bed</option>
+                                        <option value="Storage">Storage</option>
+                                        <option value="Lighting">Lighting</option>
+                                        <option value="Decor">Decor</option>
+                                    </select>
+                                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Price</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#1C1C1C]/40">Rs.</span>
+                                    <input type="number" value={addForm.price} onChange={e => setAddForm({ ...addForm, price: Number(e.target.value) })} className="w-full pl-9 pr-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23]" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Description</label>
+                                <textarea value={addForm.description} onChange={e => setAddForm({ ...addForm, description: e.target.value })} rows={3} className="w-full px-3 py-2.5 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] resize-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Image Upload</label>
+                                <div className="border-2 border-dashed border-[#E5E5E5] rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-[#663F23]/50 transition-colors bg-[#FAFAF8] relative">
+                                    {addForm.image ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <p className="text-sm text-[#663F23] truncate max-w-[250px]">Image selected</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Upload size={20} className="text-[#1C1C1C]/30" />
+                                            <p className="text-sm font-medium text-[#1C1C1C]/60">Click to upload</p>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/*" onChange={e => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            setAddForm({ ...addForm, image: URL.createObjectURL(e.target.files[0]) });
+                                        }
+                                    }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E5E5]/50">
+                            <button onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 text-sm font-medium text-[#1C1C1C] bg-white border border-[#E5E5E5] rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                            <button onClick={handleAddProductSubmit} className="px-4 py-2 text-sm font-medium text-[#F5F1E8] bg-[#663F23] rounded-lg hover:bg-[#4A2D19] transition-colors shadow-sm">Add Product</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {toastMessage && (
+                <Toast message={toastMessage} type="success" onClose={() => setToastMessage(null)} />
+            )}
+
+            {isDeleteModalOpen && editForm && (
+                <ConfirmModal
+                    title="Delete Product"
+                    message={`Are you sure you want to delete ${editForm.name}? This action cannot be undone.`}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setIsDeleteModalOpen(false)}
+                />
+            )}
+
+            {isLogoutModalOpen && (
+                <ConfirmModal
+                    title="Confirm Logout"
+                    message="Are you sure you want to logout from Livora admin panel?"
+                    onConfirm={handleLogout}
+                    onCancel={() => setIsLogoutModalOpen(false)}
+                />
+            )}
         </div>
     );
 }

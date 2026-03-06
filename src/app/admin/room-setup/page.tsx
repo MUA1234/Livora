@@ -1,9 +1,22 @@
-import React from "react";
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Save, ArrowLeft, ArrowRight, ArrowLeftRight, ArrowUpDown, MoveVertical } from "lucide-react";
+import { Save, ArrowLeft, ArrowRight, ArrowLeftRight, ArrowUpDown, MoveVertical, Settings, LogOut } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export default function RoomSetup() {
+    const router = useRouter();
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/admin/login");
+    };
+
     return (
         <div className="min-h-screen bg-[#F5F1E8] flex flex-col font-sans text-[#1C1C1C] py-10 px-6 sm:px-12 md:px-20 lg:px-40 xl:px-60">
             {/* Back Navigation */}
@@ -222,13 +235,29 @@ export default function RoomSetup() {
                 </section>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-8 bg-white p-4 rounded-2xl shadow-sm border border-[#E5E5E5]/50">
+            {/* Logout Sidebar Substitute (Since it doesn't have a sidebar, we attach it bottom) */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-white p-4 rounded-2xl shadow-sm border border-[#E5E5E5]/50">
+                <button
+                    onClick={() => setIsLogoutModalOpen(true)}
+                    className="flex items-center gap-3 px-6 py-3.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-colors font-medium border border-red-100 w-full sm:w-auto focus:outline-none cursor-pointer"
+                >
+                    <LogOut size={18} />
+                    Logout
+                </button>
                 <Link href="/admin/2d-layout" className="w-full sm:w-auto px-8 py-3.5 bg-[#663F23] text-white font-semibold rounded-xl hover:bg-[#52321c] transition-colors flex items-center justify-center gap-2">
                     Continue to 2D Layout
                     <ArrowRight size={18} />
                 </Link>
             </div>
+
+            {isLogoutModalOpen && (
+                <ConfirmModal
+                    title="Confirm Logout"
+                    message="Are you sure you want to logout from Livora admin panel?"
+                    onConfirm={handleLogout}
+                    onCancel={() => setIsLogoutModalOpen(false)}
+                />
+            )}
         </div>
     );
 }

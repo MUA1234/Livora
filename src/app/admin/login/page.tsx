@@ -5,25 +5,62 @@ import Link from 'next/link';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import api from '@/lib/api';
+import { Toast } from '@/components/ui/Toast';
 
 export default function AdminLogin() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [email, setEmail] = useState('admin@livora.com');
+    const [password, setPassword] = useState('');
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulate an API call and login delay
-        setTimeout(() => {
+        try {
+            const response = await api.post('/api/auth/login', { email, password });
+            const { token, user } = response.data;
+
+            if (user.role !== 'admin') {
+                setToast({ message: 'Admin access only. Please use the user login.', type: 'error' });
+                setIsLoading(false);
+                return;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            // Save to cookie for middleware
+            document.cookie = `livora-token=${token}; path=/; max-age=604800`;
+
+            setToast({ message: 'Welcome back!', type: 'success' });
+
+            setTimeout(() => {
+                router.push('/dashboard');
+            }, 500);
+
+        } catch (err: any) {
+            const message = err?.response?.data?.error || 'Invalid email or password';
+            setToast({ message, type: 'error' });
+        } finally {
             setIsLoading(false);
-            // Redirect to an admin page after successful "login"
-            router.push('/admin/consultations');
-        }, 1000);
+        }
     };
 
     return (
         <div className="flex min-h-screen bg-white">
+            {/* Toast */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+
             {/* Left Side - Image & Quote */}
             <div className="relative hidden w-1/2 bg-neutral-900 lg:block">
                 <div className="absolute inset-0 bg-black/40 z-10" />
@@ -45,9 +82,8 @@ export default function AdminLogin() {
             {/* Right Side - Login Form */}
             <div className="flex w-full flex-col items-center justify-center px-4 sm:px-6 lg:w-1/2 lg:px-8">
                 <div className="w-full max-w-sm xl:max-w-md space-y-6">
-                    {/* Logo Section */}
+                    {/* Logo */}
                     <div className="flex justify-center mb-8">
-                        {/* Approximating the logo image with a styled container */}
                         <div className="flex h-40 w-40 items-center justify-center bg-[#f7f5ed] border-4 border-[#674630]/10 rounded-full overflow-hidden shadow-inner">
                             <Image
                                 src="/logo.png"
@@ -73,15 +109,15 @@ export default function AdminLogin() {
                                 </label>
                                 <div className="relative mt-2">
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <Mail className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+                                        <Mail className="h-4 w-4 text-neutral-400" />
                                     </div>
                                     <input
                                         id="email"
                                         name="email"
                                         type="email"
-                                        autoComplete="email"
                                         required
-                                        defaultValue="admin@livora.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
                                         className="block w-full rounded border border-neutral-200 py-2.5 pl-10 text-neutral-800 focus:border-[#674630] focus:ring-[#674630] sm:text-sm shadow-sm"
                                         placeholder="admin@livora.com"
                                     />
@@ -94,15 +130,15 @@ export default function AdminLogin() {
                                 </label>
                                 <div className="relative mt-2">
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <Lock className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+                                        <Lock className="h-4 w-4 text-neutral-400" />
                                     </div>
                                     <input
                                         id="password"
                                         name="password"
                                         type="password"
-                                        autoComplete="current-password"
                                         required
-                                        defaultValue="admin12345"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                         className="block w-full rounded border border-neutral-200 py-2.5 pl-10 text-neutral-800 focus:border-[#674630] focus:ring-[#674630] sm:text-sm shadow-sm"
                                         placeholder="••••••••••"
                                     />
@@ -126,7 +162,6 @@ export default function AdminLogin() {
                                     Remember this device
                                 </label>
                             </div>
-
                             <div className="text-[13px]">
                                 <Link href="/forgot-password" className="font-medium text-[#c49a6c] hover:text-[#a88257]">
                                     Forgot password?
