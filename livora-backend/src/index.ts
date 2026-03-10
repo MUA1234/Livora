@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 import authRoutes from "./routes/auth.routes";
 import productRoutes from "./routes/product.routes";
+import roomRoutes from "./routes/room.routes";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/rooms", roomRoutes);
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
