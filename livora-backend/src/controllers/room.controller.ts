@@ -6,9 +6,19 @@ export const createRoom = async (req: Request, res: Response): Promise<void> => 
   try {
     const newRoom: IRoom = new Room(req.body);
     const savedRoom = await newRoom.save();
-    res.status(201).json(savedRoom);
+    res.status(201).json({ success: true, data: savedRoom });
   } catch (error: any) {
-    res.status(500).json({ message: "Error creating room", error: error.message });
+    res.status(500).json({ success: false, message: "Error creating room", error: error.message });
+  }
+};
+
+// Fetch all rooms (drafts)
+export const getRooms = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rooms = await Room.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: rooms });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: "Error fetching rooms", error: error.message });
   }
 };
 
@@ -17,12 +27,12 @@ export const getRoomById = async (req: Request, res: Response): Promise<void> =>
   try {
     const room = await Room.findById(req.params.id);
     if (!room) {
-      res.status(404).json({ message: "Room not found" });
+      res.status(404).json({ success: false, message: "Room not found" });
       return;
     }
-    res.status(200).json(room);
+    res.status(200).json({ success: true, data: room });
   } catch (error: any) {
-    res.status(500).json({ message: "Error fetching room", error: error.message });
+    res.status(500).json({ success: false, message: "Error fetching room", error: error.message });
   }
 };
 
@@ -36,12 +46,12 @@ export const updateRoom = async (req: Request, res: Response): Promise<void> => 
     );
     
     if (!updatedRoom) {
-      res.status(404).json({ message: "Room not found" });
+      res.status(404).json({ success: false, message: "Room not found" });
       return;
     }
     
-    res.status(200).json(updatedRoom);
+    res.status(200).json({ success: true, data: updatedRoom });
   } catch (error: any) {
-    res.status(500).json({ message: "Error updating room", error: error.message });
+    res.status(500).json({ success: false, message: "Error updating room", error: error.message });
   }
 };

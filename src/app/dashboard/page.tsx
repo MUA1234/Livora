@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "@/lib/api";
+import { getUser } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
@@ -30,6 +32,44 @@ import Image from "next/image";
 export default function Dashboard() {
     const router = useRouter();
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [stats, setStats] = useState({
+        totalDesigns: 0,
+        totalProducts: 0,
+        pendingConsultations: 0,
+        totalClients: 0
+    });
+    const [recentDesigns, setRecentDesigns] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [adminUser, setAdminUser] = useState<any>(null);
+
+    useEffect(() => {
+        const user = getUser();
+        setAdminUser(user);
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+            const response = await api.get("/api/admin/dashboard");
+            const { totalDesigns, totalProducts, pendingConsultations, totalClients, recentDesigns: designs } = response.data;
+            
+            setStats({
+                totalDesigns,
+                totalProducts,
+                pendingConsultations,
+                totalClients
+            });
+            setRecentDesigns(designs);
+            setError(null);
+        } catch (err: any) {
+            console.error("Error fetching dashboard data:", err);
+            setError("Failed to load dashboard data. Please try again later.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -117,15 +157,15 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
                         <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
                             <Image
-                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
+                                src={adminUser?.avatarUrl || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"}
                                 alt="Profile"
                                 fill
                                 className="object-cover"
                             />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+                            <span className="text-sm font-semibold text-[#1C1C1C] truncate max-w-[120px]">{adminUser?.name || "Admin"}</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50 uppercase tracking-wider">{adminUser?.role || "Lead Designer"}</span>
                         </div>
                     </div>
                 </div>
@@ -148,6 +188,19 @@ export default function Dashboard() {
                 </header>
 
                 <div className="px-10 pb-10">
+                    {/* Error State */}
+                    {error && (
+                        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 flex items-center gap-3">
+                            <AlertCircle size={20} />
+                            <p className="text-sm font-medium">{error}</p>
+                            <button 
+                                onClick={fetchDashboardData}
+                                className="ml-auto text-xs font-bold uppercase tracking-wider hover:underline"
+                            >
+                                Retry
+                            </button>
+                        </div>
+                    )}
                     {/* Stats Grid */}
                     <div className="grid grid-cols-4 gap-6 mt-4">
                         {/* Stat Card 1 */}
@@ -157,10 +210,14 @@ export default function Dashboard() {
                                 <PenTool size={18} className="text-[#1C1C1C]/40" />
                             </div>
                             <div>
-                                <h3 className="text-3xl font-bold text-[#1C1C1C] mb-1">1,248</h3>
+                                {loading ? (
+                                    <div className="h-8 w-24 bg-gray-200 animate-pulse rounded"></div>
+                                ) : (
+                                    <h3 className="text-3xl font-bold text-[#1C1C1C] mb-1">{stats.totalDesigns.toLocaleString()}</h3>
+                                )}
                                 <div className="flex items-center text-[#C6A75E] text-xs font-medium">
                                     <ArrowUpRight size={14} className="mr-1" />
-                                    +12% this month
+                                    Live data
                                 </div>
                             </div>
                         </div>
@@ -172,10 +229,14 @@ export default function Dashboard() {
                                 <Sofa size={18} className="text-[#1C1C1C]/40" />
                             </div>
                             <div>
-                                <h3 className="text-3xl font-bold text-[#1C1C1C] mb-1">843</h3>
+                                {loading ? (
+                                    <div className="h-8 w-24 bg-gray-200 animate-pulse rounded"></div>
+                                ) : (
+                                    <h3 className="text-3xl font-bold text-[#1C1C1C] mb-1">{stats.totalProducts.toLocaleString()}</h3>
+                                )}
                                 <div className="flex items-center text-[#1C1C1C]/40 text-xs font-medium">
                                     <Clock size={14} className="mr-1" />
-                                    Updated 2 days ago
+                                    Active inventory
                                 </div>
                             </div>
                         </div>
@@ -187,10 +248,14 @@ export default function Dashboard() {
                                 <Calendar size={18} className="text-[#1C1C1C]/40" />
                             </div>
                             <div>
-                                <h3 className="text-3xl font-bold text-[#1C1C1C] mb-1">12</h3>
-                                <div className="flex items-center text-red-500 text-xs font-medium">
+                                {loading ? (
+                                    <div className="h-8 w-24 bg-gray-200 animate-pulse rounded"></div>
+                                ) : (
+                                    <h3 className="text-3xl font-bold text-[#1C1C1C] mb-1">{stats.pendingConsultations.toLocaleString()}</h3>
+                                )}
+                                <div className={`flex items-center text-xs font-medium ${stats.pendingConsultations > 0 ? "text-red-500" : "text-[#1C1C1C]/40"}`}>
                                     <AlertCircle size={14} className="mr-1" />
-                                    4 require attention
+                                    {stats.pendingConsultations > 0 ? `${stats.pendingConsultations} require attention` : "No urgent items"}
                                 </div>
                             </div>
                         </div>
@@ -202,10 +267,14 @@ export default function Dashboard() {
                                 <Users2 size={18} className="text-[#1C1C1C]/40" />
                             </div>
                             <div>
-                                <h3 className="text-3xl font-bold text-[#1C1C1C] mb-1">342</h3>
+                                {loading ? (
+                                    <div className="h-8 w-24 bg-gray-200 animate-pulse rounded"></div>
+                                ) : (
+                                    <h3 className="text-3xl font-bold text-[#1C1C1C] mb-1">{stats.totalClients.toLocaleString()}</h3>
+                                )}
                                 <div className="flex items-center text-[#C6A75E] text-xs font-medium">
                                     <ArrowUpRight size={14} className="mr-1" />
-                                    +5 new this week
+                                    Registered users
                                 </div>
                             </div>
                         </div>
@@ -261,89 +330,56 @@ export default function Dashboard() {
                         <Link href="#" className="text-sm font-medium text-[#663F23] hover:underline">View all</Link>
                     </div>
                     <div className="grid grid-cols-3 gap-6">
-                        {/* Design Card 1 */}
-                        <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
-                            <div className="relative h-48 w-full bg-gray-200">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800"
-                                    alt="Living Room"
-                                    fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                />
-                            </div>
-                            <div className="p-5">
-                                <div className="flex justify-between items-start mb-3">
-                                    <h3 className="font-bold text-[#1C1C1C] text-lg leading-tight">Smith Residence<br />Living Room</h3>
-                                    <span className="px-2 py-1 bg-green-50 text-green-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Completed</span>
-                                </div>
-                                <div className="flex items-center gap-4 text-xs font-medium text-[#1C1C1C]/40">
-                                    <div className="flex items-center gap-1.5 cursor-default">
-                                        <Calendar size={12} />
-                                        <span>Oct 24, 2025</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 cursor-default">
-                                        <Users2 size={12} />
-                                        <span>Sara Samarasinghe</span>
+                        {loading ? (
+                            Array(3).fill(0).map((_, i) => (
+                                <div key={i} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm animate-pulse">
+                                    <div className="h-48 w-full bg-gray-200"></div>
+                                    <div className="p-5 space-y-3">
+                                        <div className="h-6 w-3/4 bg-gray-200 rounded"></div>
+                                        <div className="h-4 w-1/2 bg-gray-100 rounded"></div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Design Card 2 */}
-                        <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
-                            <div className="relative h-48 w-full bg-gray-200">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1617806118233-18e1de247200?auto=format&fit=crop&q=80&w=800"
-                                    alt="Dining Room"
-                                    fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                />
-                            </div>
-                            <div className="p-5">
-                                <div className="flex justify-between items-start mb-3">
-                                    <h3 className="font-bold text-[#1C1C1C] text-lg leading-tight">Oakwood Villa<br />Dining Area</h3>
-                                    <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[10px] font-bold uppercase tracking-wider">In Progress</span>
-                                </div>
-                                <div className="flex items-center gap-4 text-xs font-medium text-[#1C1C1C]/40">
-                                    <div className="flex items-center gap-1.5 cursor-default">
-                                        <Calendar size={12} />
-                                        <span>Oct 22, 2025</span>
+                            ))
+                        ) : recentDesigns.length > 0 ? (
+                            recentDesigns.map((design: any) => (
+                                <div key={design.id} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
+                                    <div className="relative h-48 w-full bg-gray-200">
+                                        <Image
+                                            src={design.thumbnail !== "placeholder_thumbnail_url" ? design.thumbnail : "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800"}
+                                            alt={design.name}
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
                                     </div>
-                                    <div className="flex items-center gap-1.5 cursor-default">
-                                        <Users2 size={12} />
-                                        <span>Anjali Hettiarachchi</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Design Card 3 */}
-                        <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
-                            <div className="relative h-48 w-full bg-gray-200">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&q=80&w=800"
-                                    alt="Master Bedroom"
-                                    fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                />
-                            </div>
-                            <div className="p-5">
-                                <div className="flex justify-between items-start mb-3">
-                                    <h3 className="font-bold text-[#1C1C1C] text-lg leading-tight">Penthouse Suite<br />Master Bedroom</h3>
-                                    <span className="px-2 py-1 bg-yellow-50 text-yellow-600 rounded-md text-[10px] font-bold uppercase tracking-wider">Under Review</span>
-                                </div>
-                                <div className="flex items-center gap-4 text-xs font-medium text-[#1C1C1C]/40">
-                                    <div className="flex items-center gap-1.5 cursor-default">
-                                        <Calendar size={12} />
-                                        <span>Oct 20, 2025</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 cursor-default">
-                                        <Users2 size={12} />
-                                        <span>Thilina Kulasekara</span>
+                                    <div className="p-5">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <h3 className="font-bold text-[#1C1C1C] text-lg leading-tight truncate">{design.name}</h3>
+                                            <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                                design.status === 'published' ? 'bg-green-50 text-green-600' : 
+                                                design.status === 'draft' ? 'bg-blue-50 text-blue-600' : 'bg-yellow-50 text-yellow-600'
+                                            }`}>
+                                                {design.status}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs font-medium text-[#1C1C1C]/40">
+                                            <div className="flex items-center gap-1.5 cursor-default">
+                                                <Calendar size={12} />
+                                                <span>{new Date(design.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 cursor-default">
+                                                <Users2 size={12} />
+                                                <span>{adminUser?.name || "Admin"}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div className="col-span-3 text-center py-10 bg-white rounded-2xl border border-dashed border-[#E5E5E5]">
+                                <p className="text-[#1C1C1C]/40">No recent designs found.</p>
+                                <Link href="/admin/room-setup" className="text-[#663F23] font-semibold mt-2 inline-block">Create your first design</Link>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </main>

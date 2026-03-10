@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import mongoose, { Request, Response } from "express";
 import Design from "../models/design.model";
 import DesignVersion, { IDesignVersion } from "../models/designVersion.model";
 
@@ -6,7 +6,7 @@ import DesignVersion, { IDesignVersion } from "../models/designVersion.model";
 export const getDesignVersions = async (req: Request, res: Response): Promise<void> => {
   try {
     const versions = await DesignVersion.find({ designId: req.params.id })
-      .select("id label createdAt layoutData")
+      .select("_id id label createdAt layoutData")
       .sort({ createdAt: -1 });
       
     res.status(200).json(versions);
@@ -43,9 +43,16 @@ export const createDesignVersion = async (req: Request, res: Response): Promise<
 export const restoreDesignVersion = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id, versionId } = req.params;
+    console.log(`Attempting to restore design ${id} to version ${versionId}`);
 
-    const version = await DesignVersion.findOne({ _id: versionId, designId: id });
+    // Ensure we are comparing ObjectIds correctly if needed
+    const version = await DesignVersion.findOne({ 
+      _id: versionId, 
+      designId: id 
+    });
+
     if (!version) {
+      console.log(`Version ${versionId} not found for design ${id}`);
       res.status(404).json({ message: "Version not found for this design" });
       return;
     }
@@ -57,12 +64,15 @@ export const restoreDesignVersion = async (req: Request, res: Response): Promise
     );
 
     if (!updatedDesign) {
+      console.log(`Design ${id} not found or is deleted`);
       res.status(404).json({ message: "Design not found" });
       return;
     }
 
+    console.log(`Successfully restored design ${id} to version ${versionId}`);
     res.status(200).json({ message: "Design restored successfully", design: updatedDesign });
   } catch (error: any) {
+    console.error("Restore error:", error);
     res.status(500).json({ message: "Error restoring design version", error: error.message });
   }
 };
