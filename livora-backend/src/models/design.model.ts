@@ -6,6 +6,8 @@ export interface IDesign extends Document {
   layoutData: any; // Can be a structured JSON object
   status: "draft" | "published" | "archived";
   deletedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const DesignSchema: Schema = new Schema(
