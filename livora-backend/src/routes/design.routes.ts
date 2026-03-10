@@ -10,6 +10,7 @@ import {
   validateCreateDesign, 
   validateDesignInput 
 } from "../middleware/design.validation";
+import designVersionRoutes from "./designVersion.routes";
 
 const router = Router();
 
@@ -28,5 +29,8 @@ router.put("/:id", validateDesignInput, updateDesign);
 // DELETE /api/designs/:id
 // E.g., DELETE /api/designs/123 or DELETE /api/designs/123?hard=true
 router.delete("/:id", deleteDesign);
+
+// Mount version routes
+router.use("/:id/versions", designVersionRoutes);
 
 export default router;
