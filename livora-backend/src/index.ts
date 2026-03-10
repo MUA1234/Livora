@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes";
 import productRoutes from "./routes/product.routes";
 import roomRoutes from "./routes/room.routes";
 import designRoutes from "./routes/design.routes";
+import adminConsultationRoutes from "./routes/admin.consultation.routes";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/designs", designRoutes);
+app.use("/api/admin/consultations", adminConsultationRoutes);
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
