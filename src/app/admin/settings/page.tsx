@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Toast, ToastType } from "@/components/ui/Toast";
+import api from "@/lib/api";
 import {
     LayoutDashboard,
     Monitor,
@@ -15,45 +17,45 @@ import {
     Eye,
     EyeOff,
     Camera,
-    Palette,
-    LogOut
+    LogOut,
+    Loader2
 } from "lucide-react";
 import Image from "next/image";
 
 export default function SettingsPage() {
     const router = useRouter();
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [toastConfig, setToastConfig] = useState<{ message: string; type: ToastType } | null>(null);
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        router.push("/admin/login");
-    };
-
-    // Profile state
+    // ---------- Profile ----------
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
+    const [isProfileLoading, setIsProfileLoading] = useState(true);
+    const [isProfileSaving, setIsProfileSaving] = useState(false);
 
-    // Password state
+    // ---------- Password ----------
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [isPasswordSaving, setIsPasswordSaving] = useState(false);
 
-    // Accessibility state
+    // ---------- Accessibility ----------
     const [increaseFontSize, setIncreaseFontSize] = useState(false);
     const [highContrast, setHighContrast] = useState(false);
     const [darkMode, setDarkMode] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState(0);
 
-    // Notification state
+    // ---------- Notifications ----------
     const [emailNotifications, setEmailNotifications] = useState(true);
     const [consultationAlerts, setConsultationAlerts] = useState(true);
     const [designUpdates, setDesignUpdates] = useState(false);
     const [systemAlerts, setSystemAlerts] = useState(true);
+    const [isPrefsSaving, setIsPrefsSaving] = useState(false);
 
     const themeColors = [
         { bg: "#663F23", border: "#663F23" },
@@ -61,21 +63,107 @@ export default function SettingsPage() {
         { bg: "#C6A75E", border: "#C6A75E" },
         { bg: "#D1D5DB", border: "#D1D5DB" },
     ];
+    const themeNames = ["default", "cream", "gold", "silver"];
 
-    const handleUpdateProfile = () => {
-        alert("Profile updated!");
+    // ---------- Fetch Profile on Mount ----------
+    useEffect(() => {
+        (async () => {
+            try {
+                setIsProfileLoading(true);
+                const res = await api.get("/api/admin/profile");
+                const p = res.data;
+                setFullName(p.name || "");
+                setEmail(p.email || "");
+                setPhone(p.phone || "");
+
+                // Populate preferences if available
+                if (p.preferences) {
+                    setEmailNotifications(p.preferences.emailAlerts ?? true);
+                    setConsultationAlerts(p.preferences.pushAlerts ?? true);
+                    const themeIdx = themeNames.indexOf(p.preferences.theme || "default");
+                    setSelectedTheme(themeIdx >= 0 ? themeIdx : 0);
+                    setIncreaseFontSize(p.preferences.fontSize === "large");
+                }
+            } catch {
+                setToastConfig({ message: "Failed to load profile.", type: "error" });
+            } finally {
+                setIsProfileLoading(false);
+            }
+        })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ---------- Handlers ----------
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/admin/login");
     };
 
-    const handleChangePassword = () => {
-        if (newPassword !== confirmPassword) {
-            alert("Passwords do not match!");
+    const handleUpdateProfile = async () => {
+        try {
+            setIsProfileSaving(true);
+            await api.put("/api/admin/profile", { name: fullName, email });
+            setToastConfig({ message: "Profile updated successfully!", type: "success" });
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || "Failed to update profile.";
+            setToastConfig({ message: msg, type: "error" });
+        } finally {
+            setIsProfileSaving(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        setPasswordError(null);
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            setPasswordError("All password fields are required.");
             return;
         }
-        alert("Password changed!");
+        if (newPassword !== confirmPassword) {
+            setPasswordError("New passwords do not match.");
+            return;
+        }
+        if (newPassword.length < 6) {
+            setPasswordError("New password must be at least 6 characters.");
+            return;
+        }
+
+        try {
+            setIsPasswordSaving(true);
+            await api.put("/api/admin/profile/change-password", { currentPassword, newPassword });
+            setToastConfig({ message: "Password changed successfully!", type: "success" });
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || "Failed to change password.";
+            if (err?.response?.status === 400) {
+                setPasswordError(msg);
+            } else {
+                setToastConfig({ message: msg, type: "error" });
+            }
+        } finally {
+            setIsPasswordSaving(false);
+        }
     };
 
-    const handleSavePreferences = () => {
-        alert("Preferences saved!");
+    const handleSavePreferences = async () => {
+        try {
+            setIsPrefsSaving(true);
+            await api.put("/api/admin/profile/preferences", {
+                emailAlerts: emailNotifications,
+                pushAlerts: consultationAlerts,
+                theme: themeNames[selectedTheme] || "default",
+                fontSize: increaseFontSize ? "large" : "default",
+            });
+            setToastConfig({ message: "Preferences saved!", type: "success" });
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || "Failed to save preferences.";
+            setToastConfig({ message: msg, type: "error" });
+        } finally {
+            setIsPrefsSaving(false);
+        }
     };
 
     return (
@@ -149,8 +237,8 @@ export default function SettingsPage() {
                             />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+                            <span className="text-sm font-semibold text-[#1C1C1C]">{fullName || "Admin"}</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50">Administrator</span>
                         </div>
                     </div>
                 </div>
@@ -161,68 +249,80 @@ export default function SettingsPage() {
                 <div className="max-w-3xl">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-2xl font-bold text-[#663F23] mb-1">Profile & Settings</h1>
+                        <h1 className="text-2xl font-bold text-[#663F23] mb-1">Profile &amp; Settings</h1>
                         <p className="text-sm text-[#663F23]/60">Manage your account and preferences</p>
                     </div>
 
+                    {/* Loading skeleton for profile */}
+                    {isProfileLoading && (
+                        <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 p-8 mb-6 shadow-sm flex items-center justify-center py-20">
+                            <Loader2 className="w-8 h-8 text-[#663F23] animate-spin" />
+                            <span className="ml-3 text-[#8C8C8C] font-medium">Loading profile...</span>
+                        </div>
+                    )}
+
                     {/* Update Profile Section */}
-                    <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 p-8 mb-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-[#1C1C1C] mb-6">Update Profile</h2>
+                    {!isProfileLoading && (
+                        <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 p-8 mb-6 shadow-sm">
+                            <h2 className="text-lg font-bold text-[#1C1C1C] mb-6">Update Profile</h2>
 
-                        <div className="flex gap-8">
-                            {/* Profile Picture */}
-                            <div className="flex flex-col items-center gap-2">
-                                <div className="w-24 h-24 rounded-full bg-[#F5F1E8] border-2 border-[#E5E5E5] flex items-center justify-center relative overflow-hidden cursor-pointer group">
-                                    <Camera size={24} className="text-[#1C1C1C]/30 group-hover:text-[#663F23] transition-colors" />
-                                </div>
-                                <span className="text-xs text-[#663F23] font-medium cursor-pointer hover:underline">Click to change</span>
-                            </div>
-
-                            {/* Form Fields */}
-                            <div className="flex-1 space-y-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-[#1C1C1C] mb-2">Full Name</label>
-                                    <input
-                                        type="text"
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        autoComplete="off"
-                                        className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors"
-                                        placeholder="Enter your full name"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-[#1C1C1C] mb-2">Email</label>
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        autoComplete="off"
-                                        className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors"
-                                        placeholder="Enter your email"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-[#1C1C1C] mb-2">Phone no</label>
-                                    <input
-                                        type="tel"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        autoComplete="off"
-                                        className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors"
-                                        placeholder="Enter your phone number"
-                                    />
+                            <div className="flex gap-8">
+                                {/* Profile Picture */}
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="w-24 h-24 rounded-full bg-[#F5F1E8] border-2 border-[#E5E5E5] flex items-center justify-center relative overflow-hidden cursor-pointer group">
+                                        <Camera size={24} className="text-[#1C1C1C]/30 group-hover:text-[#663F23] transition-colors" />
+                                    </div>
+                                    <span className="text-xs text-[#663F23] font-medium cursor-pointer hover:underline">Click to change</span>
                                 </div>
 
-                                <button
-                                    onClick={handleUpdateProfile}
-                                    className="px-6 py-2.5 bg-[#663F23] text-white text-sm font-medium rounded-lg hover:bg-[#4A2D19] transition-colors mt-2"
-                                >
-                                    Update Profile
-                                </button>
+                                {/* Form Fields */}
+                                <div className="flex-1 space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-[#1C1C1C] mb-2">Full Name</label>
+                                        <input
+                                            type="text"
+                                            value={fullName}
+                                            onChange={(e) => setFullName(e.target.value)}
+                                            autoComplete="off"
+                                            className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors"
+                                            placeholder="Enter your full name"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-[#1C1C1C] mb-2">Email</label>
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            autoComplete="off"
+                                            className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors"
+                                            placeholder="Enter your email"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-[#1C1C1C] mb-2">Phone no</label>
+                                        <input
+                                            type="tel"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            autoComplete="off"
+                                            className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors"
+                                            placeholder="Enter your phone number"
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={handleUpdateProfile}
+                                        disabled={isProfileSaving}
+                                        className="flex items-center gap-2 px-6 py-2.5 bg-[#663F23] text-white text-sm font-medium rounded-lg hover:bg-[#4A2D19] transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isProfileSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        {isProfileSaving ? "Saving..." : "Update Profile"}
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Change Password Section */}
                     <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 p-8 mb-6 shadow-sm">
@@ -235,9 +335,11 @@ export default function SettingsPage() {
                                     <input
                                         type={showCurrentPassword ? "text" : "password"}
                                         value={currentPassword}
-                                        onChange={(e) => setCurrentPassword(e.target.value)}
+                                        onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(null); }}
                                         autoComplete="off"
-                                        className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors pr-12"
+                                        className={`w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border text-sm text-[#1C1C1C] focus:outline-none transition-colors pr-12 ${
+                                            passwordError?.toLowerCase().includes("current") ? "border-red-400 focus:border-red-500" : "border-[#E5E5E5]/50 focus:border-[#663F23]"
+                                        }`}
                                     />
                                     <button
                                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
@@ -254,7 +356,7 @@ export default function SettingsPage() {
                                     <input
                                         type={showNewPassword ? "text" : "password"}
                                         value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        onChange={(e) => { setNewPassword(e.target.value); setPasswordError(null); }}
                                         autoComplete="off"
                                         className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors pr-12"
                                     />
@@ -273,7 +375,7 @@ export default function SettingsPage() {
                                     <input
                                         type={showConfirmPassword ? "text" : "password"}
                                         value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(null); }}
                                         autoComplete="off"
                                         className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors pr-12"
                                     />
@@ -286,11 +388,20 @@ export default function SettingsPage() {
                                 </div>
                             </div>
 
+                            {/* Inline validation error */}
+                            {passwordError && (
+                                <p className="text-sm text-red-500 font-medium bg-red-50 px-4 py-2 rounded-lg border border-red-200">
+                                    {passwordError}
+                                </p>
+                            )}
+
                             <button
                                 onClick={handleChangePassword}
-                                className="px-6 py-2.5 bg-[#663F23] text-white text-sm font-medium rounded-lg hover:bg-[#4A2D19] transition-colors mt-2"
+                                disabled={isPasswordSaving}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-[#663F23] text-white text-sm font-medium rounded-lg hover:bg-[#4A2D19] transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Change password
+                                {isPasswordSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {isPasswordSaving ? "Changing..." : "Change password"}
                             </button>
                         </div>
                     </div>
@@ -401,14 +512,18 @@ export default function SettingsPage() {
 
                             <button
                                 onClick={handleSavePreferences}
-                                className="px-6 py-2.5 bg-[#F5F1E8] text-[#663F23] text-sm font-medium rounded-lg border border-[#E5E5E5] hover:bg-[#E5E5E5]/50 transition-colors mt-4"
+                                disabled={isPrefsSaving}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-[#F5F1E8] text-[#663F23] text-sm font-medium rounded-lg border border-[#E5E5E5] hover:bg-[#E5E5E5]/50 transition-colors mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Save Preferences
+                                {isPrefsSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {isPrefsSaving ? "Saving..." : "Save Preferences"}
                             </button>
                         </div>
                     </div>
                 </div>
             </main>
+
+            {toastConfig && <Toast message={toastConfig.message} type={toastConfig.type} onClose={() => setToastConfig(null)} />}
 
             {isLogoutModalOpen && (
                 <ConfirmModal
