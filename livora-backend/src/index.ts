@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import dns from "node:dns";
 
 import authRoutes from "./routes/auth.routes";
 import productRoutes from "./routes/product.routes";
@@ -12,6 +13,9 @@ import adminDashboardRoutes from "./routes/admin.dashboard.routes";
 import adminProfileRoutes from "./routes/admin.profile.routes";
 
 dotenv.config();
+
+dns.setDefaultResultOrder("ipv4first");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const app = express();
 
