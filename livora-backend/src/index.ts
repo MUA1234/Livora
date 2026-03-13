@@ -13,6 +13,9 @@ import adminDashboardRoutes from "./routes/admin.dashboard.routes";
 import adminProfileRoutes from "./routes/admin.profile.routes";
 import consultationRequestRoutes from "./routes/consultationRequest.routes";
 import userRoutes from "./routes/user.routes";
+import reviewRoutes from "./routes/review.routes";
+import wishlistRoutes from "./routes/wishlist.routes";
+import { getPublicPreview } from "./controllers/designShare.controller";
 
 dotenv.config();
 
@@ -36,6 +39,9 @@ app.use("/api/admin/dashboard", adminDashboardRoutes);
 app.use("/api/admin/profile", adminProfileRoutes);
 app.use("/api/consultation-requests", consultationRequestRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.get("/api/public/preview/:token", getPublicPreview);
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;

@@ -155,17 +155,12 @@ export default function Dashboard() {
                     </button>
 
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
-                            <Image
-                                src={adminUser?.avatarUrl || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"}
-                                alt="Profile"
-                                fill
-                                className="object-cover"
-                            />
+                        <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center">
+                            <span className="text-xs font-bold text-white">{adminUser?.name?.charAt(0) || "A"}</span>
                         </div>
                         <div className="flex flex-col">
                             <span className="text-sm font-semibold text-[#1C1C1C] truncate max-w-[120px]">{adminUser?.name || "Admin"}</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50 uppercase tracking-wider">{adminUser?.role || "Lead Designer"}</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50 uppercase tracking-wider">{adminUser?.role || "admin"}</span>
                         </div>
                     </div>
                 </div>
@@ -345,7 +340,7 @@ export default function Dashboard() {
                                 <div key={design.id} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
                                     <div className="relative h-48 w-full bg-gray-200">
                                         <Image
-                                            src={design.thumbnail !== "placeholder_thumbnail_url" ? design.thumbnail : "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800"}
+                                            src={design.thumbnail && design.thumbnail !== "placeholder_thumbnail_url" ? design.thumbnail : "/logo.png"}
                                             alt={design.name}
                                             fill
                                             className="object-cover group-hover:scale-105 transition-transform duration-500"

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import api from "@/lib/api";
+import { getUser } from "@/lib/auth";
 import {
     LayoutDashboard,
     Monitor,
@@ -15,148 +17,79 @@ import {
     ScrollText,
     Search,
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     ArrowLeft,
     Check,
     Plus,
-    LogOut
+    LogOut,
+    Loader2
 } from "lucide-react";
 import Image from "next/image";
 
+interface ProductImage {
+    imageUrl: string;
+    sortOrder: number;
+}
+
 interface Product {
-    id: number;
+    _id: string;
     name: string;
     sku: string;
     category: string;
     price: number;
+    description: string;
+    width: number;
+    height: number;
+    depth: number;
     colors: { name: string; hex: string }[];
     materials: string[];
-    image: string;
-    addedToDesign: boolean;
+    images: ProductImage[];
 }
-
-const initialProducts: Product[] = [
-    {
-        id: 1,
-        name: "Hampton 3-Seater Sofa",
-        sku: "SOF-0912",
-        category: "Sofas",
-        price: 379599.0,
-        colors: [
-            { name: "Gold", hex: "#C6A75E" },
-            { name: "Black", hex: "#1C1C1C" },
-            { name: "Brown", hex: "#663F23" },
-        ],
-        materials: ["Fabric", "Wood"],
-        image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=800",
-        addedToDesign: true,
-    },
-    {
-        id: 2,
-        name: "Oskar Dining Chair",
-        sku: "CHR-4431",
-        category: "Chairs",
-        price: 15499.0,
-        colors: [
-            { name: "Black", hex: "#1C1C1C" },
-            { name: "White", hex: "#E5E5E5" },
-        ],
-        materials: ["Wood"],
-        image: "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&q=80&w=800",
-        addedToDesign: false,
-    },
-    {
-        id: 3,
-        name: "Aura Marble Coffee Table",
-        sku: "TBL-1029",
-        category: "Tables",
-        price: 22599.0,
-        colors: [
-            { name: "White", hex: "#E5E5E5" },
-            { name: "Black", hex: "#1C1C1C" },
-        ],
-        materials: ["Marble", "Metal"],
-        image: "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?auto=format&fit=crop&q=80&w=800",
-        addedToDesign: false,
-    },
-    {
-        id: 4,
-        name: "Lumina Floor Lamp",
-        sku: "LGT-2201",
-        category: "Lighting",
-        price: 35500.0,
-        colors: [
-            { name: "Black", hex: "#1C1C1C" },
-            { name: "Gold", hex: "#C6A75E" },
-        ],
-        materials: ["Metal"],
-        image: "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&q=80&w=800",
-        addedToDesign: false,
-    },
-    {
-        id: 5,
-        name: "Luna Upholstered Bed",
-        sku: "BED-7762",
-        category: "Beds",
-        price: 349999.0,
-        colors: [
-            { name: "Gray", hex: "#9CA3AF" },
-            { name: "Brown", hex: "#663F23" },
-        ],
-        materials: ["Fabric", "Wood"],
-        image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=800",
-        addedToDesign: true,
-    },
-    {
-        id: 6,
-        name: "Nordic Oak Bookshelf",
-        sku: "STR-3310",
-        category: "Storage",
-        price: 37599.0,
-        colors: [{ name: "Brown", hex: "#C6A75E" }],
-        materials: ["Wood"],
-        image: "https://images.unsplash.com/photo-1594620302200-9a762244a156?auto=format&fit=crop&q=80&w=800",
-        addedToDesign: false,
-    },
-    {
-        id: 7,
-        name: "Celeste Round Dining Table",
-        sku: "TBL-4455",
-        category: "Tables",
-        price: 32469.0,
-        colors: [
-            { name: "Gold", hex: "#C6A75E" },
-            { name: "Black", hex: "#1C1C1C" },
-        ],
-        materials: ["Wood"],
-        image: "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?auto=format&fit=crop&q=80&w=800",
-        addedToDesign: false,
-    },
-    {
-        id: 8,
-        name: "Milo Lounge Chair",
-        sku: "CHR-8890",
-        category: "Chairs",
-        price: 180000.0,
-        colors: [
-            { name: "Gray", hex: "#9CA3AF" },
-            { name: "Blue", hex: "#4A5568" },
-            { name: "Red", hex: "#C53030" },
-            { name: "Black", hex: "#1C1C1C" },
-        ],
-        materials: ["Fabric", "Wood"],
-        image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&q=80&w=800",
-        addedToDesign: false,
-    },
-];
 
 const categories = ["All Items", "Sofas", "Chairs", "Tables", "Beds", "Storage", "Lighting", "Decor", "Rugs"];
 
 export default function CatalogueBrowse() {
     const router = useRouter();
-    const [products, setProducts] = useState<Product[]>(initialProducts);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [addedToDesign, setAddedToDesign] = useState<Set<string>>(new Set());
     const [selectedCategory, setSelectedCategory] = useState("All Items");
     const [searchQuery, setSearchQuery] = useState("");
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
+    const user = getUser();
+
+    const fetchProducts = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params: Record<string, string | number> = { page, limit: 9 };
+            if (searchQuery.trim()) {
+                params.search = searchQuery.trim();
+            }
+            if (selectedCategory !== "All Items") {
+                params.category = selectedCategory;
+            }
+            const res = await api.get("/api/products", { params });
+            setProducts(res.data.products);
+            setTotalPages(res.data.pages);
+            setTotal(res.data.total);
+        } catch {
+            setProducts([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [page, searchQuery, selectedCategory]);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, selectedCategory]);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -164,20 +97,16 @@ export default function CatalogueBrowse() {
         router.push("/admin/login");
     };
 
-    const filteredProducts = products.filter((p) => {
-        const matchesCategory = selectedCategory === "All Items" || p.category === selectedCategory;
-        const matchesSearch =
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.sku.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
-
-    const toggleAddToDesign = (productId: number) => {
-        setProducts(
-            products.map((p) =>
-                p.id === productId ? { ...p, addedToDesign: !p.addedToDesign } : p
-            )
-        );
+    const toggleAddToDesign = (productId: string) => {
+        setAddedToDesign((prev) => {
+            const next = new Set(prev);
+            if (next.has(productId)) {
+                next.delete(productId);
+            } else {
+                next.add(productId);
+            }
+            return next;
+        });
     };
 
     const formatPrice = (price: number) => {
@@ -186,7 +115,6 @@ export default function CatalogueBrowse() {
 
     return (
         <div className="min-h-screen bg-white flex overflow-hidden font-sans text-[#1C1C1C]">
-            {/* Sidebar */}
             <aside className="w-64 bg-[#F5F1E8] border-r border-[#E5E5E5] flex flex-col justify-between shrink-0 h-screen sticky top-0">
                 <div>
                     <div className="h-20 flex items-center px-8 border-b border-[#E5E5E5]/50">
@@ -256,25 +184,18 @@ export default function CatalogueBrowse() {
                     </button>
 
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
-                            <Image
-                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
-                                alt="Profile"
-                                fill
-                                className="object-cover"
-                            />
+                        <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center text-white text-xs font-bold">
+                            {user?.name?.charAt(0)?.toUpperCase() || "U"}
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+                            <span className="text-sm font-semibold text-[#1C1C1C]">{user?.name || "Admin User"}</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50">{user?.role === "admin" ? "Lead Designer" : "User"}</span>
                         </div>
                     </div>
                 </div>
             </aside>
 
-            {/* Main Content */}
             <main className="flex-1 overflow-y-auto bg-[#F5F1E8]">
-                {/* Top Header */}
                 <div className="sticky top-0 z-10 bg-[#F5F1E8] px-8 py-4 flex items-center justify-between border-b border-[#E5E5E5]/30">
                     <div className="flex items-center gap-3">
                         <button onClick={() => window.history.back()} className="w-9 h-9 flex items-center justify-center rounded-full border border-[#E5E5E5] bg-white hover:bg-gray-50 transition-colors">
@@ -291,7 +212,6 @@ export default function CatalogueBrowse() {
                 </div>
 
                 <div className="p-8">
-                    {/* Category Tabs */}
                     <div className="flex gap-2 mb-6 flex-wrap">
                         {categories.map((cat) => (
                             <button
@@ -307,7 +227,6 @@ export default function CatalogueBrowse() {
                         ))}
                     </div>
 
-                    {/* Search & Filters */}
                     <div className="flex gap-3 mb-8">
                         <div className="relative w-80">
                             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40" />
@@ -364,50 +283,110 @@ export default function CatalogueBrowse() {
                         </div>
                     </div>
 
-                    {/* Product Grid */}
-                    <div className="grid grid-cols-3 gap-6">
-                        {filteredProducts.map((product) => (
-                            <div key={product.id} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
-                                {/* Product Image */}
-                                <div className="relative h-56 w-full bg-gray-100 overflow-hidden">
-                                    <img
-                                        src={product.image}
-                                        alt={product.name}
-                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                    />
-                                </div>
-
-                                {/* Product Info */}
-                                <div className="p-5">
-                                    <div className="flex justify-between items-start mb-1">
-                                        <span className="text-[10px] font-bold text-[#663F23] uppercase tracking-wider">{product.category}</span>
-                                        <span className="text-sm font-bold text-[#1C1C1C]">{formatPrice(product.price)}</span>
-                                    </div>
-
-                                    <h3 className="font-bold text-[#1C1C1C] text-base mb-2">{product.name}</h3>
-
-                                    {/* Colors */}
-                                    <div className="flex items-center gap-1.5 mb-4">
-                                        {product.colors.slice(0, 3).map((color, i) => (
-                                            <div
-                                                key={i}
-                                                className="w-5 h-5 rounded-full border border-[#E5E5E5]"
-                                                style={{ backgroundColor: color.hex }}
-                                            />
-                                        ))}
-                                        {product.colors.length > 3 && (
-                                            <span className="text-xs text-[#1C1C1C]/40 ml-1">+{product.colors.length - 3} colors</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {filteredProducts.length === 0 && (
-                        <div className="text-center py-16 text-sm text-[#1C1C1C]/40">
-                            No products found matching your search.
+                    {loading ? (
+                        <div className="flex items-center justify-center py-24">
+                            <Loader2 size={32} className="animate-spin text-[#663F23]" />
                         </div>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-3 gap-6">
+                                {products.map((product) => (
+                                    <div key={product._id} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
+                                        <div className="relative h-56 w-full bg-gray-100 overflow-hidden">
+                                            {product.images[0]?.imageUrl ? (
+                                                <img
+                                                    src={product.images[0].imageUrl}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-[#1C1C1C]/20 text-sm">
+                                                    No Image
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={() => toggleAddToDesign(product._id)}
+                                                className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                                                    addedToDesign.has(product._id)
+                                                        ? "bg-[#663F23] text-white"
+                                                        : "bg-white/80 text-[#1C1C1C]/50 hover:bg-white hover:text-[#663F23]"
+                                                }`}
+                                            >
+                                                {addedToDesign.has(product._id) ? <Check size={16} /> : <Plus size={16} />}
+                                            </button>
+                                        </div>
+
+                                        <div className="p-5">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-[10px] font-bold text-[#663F23] uppercase tracking-wider">{product.category}</span>
+                                                <span className="text-sm font-bold text-[#1C1C1C]">{formatPrice(product.price)}</span>
+                                            </div>
+
+                                            <h3 className="font-bold text-[#1C1C1C] text-base mb-2">{product.name}</h3>
+
+                                            <div className="flex items-center gap-1.5 mb-4">
+                                                {product.colors.slice(0, 3).map((color, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className="w-5 h-5 rounded-full border border-[#E5E5E5]"
+                                                        style={{ backgroundColor: color.hex }}
+                                                    />
+                                                ))}
+                                                {product.colors.length > 3 && (
+                                                    <span className="text-xs text-[#1C1C1C]/40 ml-1">+{product.colors.length - 3} colors</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {products.length === 0 && (
+                                <div className="text-center py-16 text-sm text-[#1C1C1C]/40">
+                                    No products found matching your search.
+                                </div>
+                            )}
+
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-2 mt-10">
+                                    <button
+                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                        disabled={page === 1}
+                                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#E5E5E5] bg-white hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setPage(p)}
+                                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
+                                                p === page
+                                                    ? "bg-[#663F23] text-white"
+                                                    : "border border-[#E5E5E5] bg-white text-[#1C1C1C]/70 hover:border-[#663F23] hover:text-[#663F23]"
+                                            }`}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+
+                                    <button
+                                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                        disabled={page === totalPages}
+                                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#E5E5E5] bg-white hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </div>
+                            )}
+
+                            {total > 0 && (
+                                <p className="text-center text-xs text-[#1C1C1C]/40 mt-3">
+                                    Showing {(page - 1) * 9 + 1}–{Math.min(page * 9, total)} of {total} products
+                                </p>
+                            )}
+                        </>
                     )}
                 </div>
             </main>

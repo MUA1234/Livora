@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Star,
     Heart,
@@ -10,134 +10,57 @@ import {
     MessageCircle,
     ShieldCheck,
     Send,
+    Loader2,
 } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
+import api from "@/lib/api";
+import { getToken } from "@/lib/auth";
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
+interface ReviewUser {
+    name: string;
+    email: string;
+}
 
-const REVIEWS = [
-    {
-        id: 1,
-        initials: "RD",
-        name: "Roshan De Mel",
-        verified: false,
-        badge: null,
-        product: "Round Coffee Table",
-        price: "Rs. 126,999",
-        rating: 3,
-        ratingLabel: "Good",
-        date: "2026-02-19",
-        title: "Decent table but expected more",
-        body: "The Round Coffee Table is nice to look at but feels slightly wobbly on uneven floors. The wood quality is good but the legs could use better steel action. For the price, I expec...",
-        helpful: 4,
-        topReview: false,
-    },
-    {
-        id: 2,
-        initials: "PM",
-        name: "Priya Mendis",
-        verified: true,
-        badge: "TOP REVIEW",
-        product: "Sheepskin Rug",
-        price: "Rs. 51,899",
-        rating: 5,
-        ratingLabel: "Excellent",
-        date: "2026-02-06",
-        title: "The sheepskin rug is heavenly!",
-        body: "I cannot say enough good things about this rug. It's unbelievably soft, the perfect size for our Scandinavian-styled living room, and adds so much warmth. Our kids love sitting on...",
-        helpful: 12,
-        topReview: true,
-    },
-    {
-        id: 3,
-        initials: "KP",
-        name: "Kamal Perera",
-        verified: true,
-        badge: null,
-        product: "Birch Bookshelf",
-        price: "Rs. 229,999",
-        rating: 4,
-        ratingLabel: "Very Good",
-        date: "2026-01-14",
-        title: "Great bookshelf, minor assembly issue",
-        body: "The Birch Bookshelf looks fantastic in our study. Build quality is solid and the finish is beautiful. Only issue was a small misalignment in one shelf bracket which I had to fix my...",
-        helpful: 7,
-        topReview: false,
-    },
-    {
-        id: 4,
-        initials: "TB",
-        name: "Tharinda Bandara",
-        verified: true,
-        badge: null,
-        product: "TV Console Unit",
-        price: "Rs. 274,300",
-        rating: 4,
-        ratingLabel: "Very Good",
-        date: "2026-02-03",
-        title: "Solid TV console, great storage",
-        body: "Very happy with this console unit. Fits our 55-inch TV perfectly and has ample storage for all our devices. The cable management system built in is a nice touch. Only wish it came...",
-        helpful: 9,
-        topReview: false,
-    },
-    {
-        id: 5,
-        initials: "AS",
-        name: "Amara Silva",
-        verified: true,
-        badge: "TOP REVIEW",
-        product: "Walnut Sectional Sofa",
-        price: "Rs. 719,900",
-        rating: 5,
-        ratingLabel: "Excellent",
-        date: "2026-02-11",
-        title: "Absolutely love the furniture quality!",
-        body: "We purchased the Walnut Sectional Sofa and it completely transformed our living room. The fabric quality is outstanding and it's incredibly comfortable. Delivery was prompt and the...",
-        helpful: 22,
-        topReview: true,
-    },
-    {
-        id: 6,
-        initials: "NF",
-        name: "Nisha Fernando",
-        verified: true,
-        badge: "TOP REVIEW",
-        product: "Pendant Light Set",
-        price: "Rs. 64,883",
-        rating: 5,
-        ratingLabel: "Excellent",
-        date: "2026-02-27",
-        title: "Perfect pendant lights for our dining area",
-        body: "These pendant lights are exactly what we needed. The warm glow creates such a cozy atmosphere during dinner. Installation was straightforward and they look even better in person th...",
-        helpful: 15,
-        topReview: true,
-    },
-];
+interface ReviewProduct {
+    name: string;
+    price: number;
+    sku: string;
+    images: string[];
+}
 
-const RATING_DISTRIBUTION = [
-    { star: 5, count: 5, pct: 42 },
-    { star: 4, count: 3, pct: 25 },
-    { star: 3, count: 2, pct: 17 },
-    { star: 2, count: 1, pct: 8 },
-    { star: 1, count: 1, pct: 8 },
-];
+interface Review {
+    _id: string;
+    userId: ReviewUser;
+    productId: ReviewProduct;
+    rating: number;
+    title: string;
+    body: string;
+    helpfulCount: number;
+    verified: boolean;
+    createdAt: string;
+}
 
-const PRODUCTS = [
-    "Verona Leather Sofa",
-    "Oak Nordic Dining Chair",
-    "Bronx Coffee Table",
-    "Milo Lounge Chair",
-    "Luna Upholstered Bed",
-    "Nordic Oak Bookshelf",
-    "Walnut Sectional Sofa",
-    "Birch Bookshelf",
-    "TV Console Unit",
-    "Sheepskin Rug",
-    "Round Coffee Table",
-    "Pendant Light Set",
-];
+interface RatingDistribution {
+    stars: number;
+    count: number;
+}
 
-// ─── Star Renderer ────────────────────────────────────────────────────────────
+interface ReviewStats {
+    averageRating: number;
+    totalReviews: number;
+    distribution: RatingDistribution[];
+}
+
+interface Pagination {
+    page: number;
+    pages: number;
+    total: number;
+}
+
+interface Product {
+    _id: string;
+    name: string;
+}
 
 function StarRow({
     rating,
@@ -177,16 +100,41 @@ const RATING_LABELS: Record<number, string> = {
     5: "Excellent",
 };
 
-// ─── Page Component ───────────────────────────────────────────────────────────
+function getInitials(name: string): string {
+    return name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+}
+
+function formatPrice(price: number): string {
+    return `Rs. ${price.toLocaleString()}`;
+}
+
+function getRatingLabel(avg: number): string {
+    if (avg >= 4.5) return "Excellent";
+    if (avg >= 3.5) return "Very Good";
+    if (avg >= 2.5) return "Good";
+    if (avg >= 1.5) return "Fair";
+    return "Poor";
+}
 
 export default function ReviewAndRatingsPage() {
     const { items } = useWishlist();
 
-    // Filter / Sort state
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [stats, setStats] = useState<ReviewStats | null>(null);
+    const [pagination, setPagination] = useState<Pagination>({ page: 1, pages: 1, total: 0 });
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [helpfulLoading, setHelpfulLoading] = useState<string | null>(null);
+
     const [activeFilter, setActiveFilter] = useState<number | null>(null);
     const [sort, setSort] = useState<"recent" | "highest" | "lowest">("recent");
+    const [currentPage, setCurrentPage] = useState(1);
 
-    // Write-a-review form state
     const [form, setForm] = useState({
         rating: 4,
         title: "",
@@ -196,18 +144,73 @@ export default function ReviewAndRatingsPage() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [submitError, setSubmitError] = useState("");
 
-    // ── Derived reviews list ─────────────────────────────────────
+    const fetchReviews = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params: Record<string, string | number> = {
+                page: currentPage,
+                limit: 10,
+                sort,
+            };
+            if (activeFilter !== null) {
+                params.rating = activeFilter;
+            }
+            const res = await api.get("/api/reviews", { params });
+            const data = res.data.data;
+            setReviews(data.reviews);
+            setStats(data.stats);
+            setPagination(data.pagination);
+        } catch {
+            setReviews([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentPage, sort, activeFilter]);
 
-    let displayed = [...REVIEWS];
-    if (activeFilter !== null) {
-        displayed = displayed.filter((r) => r.rating === activeFilter);
-    }
-    if (sort === "highest") displayed.sort((a, b) => b.rating - a.rating);
-    else if (sort === "lowest") displayed.sort((a, b) => a.rating - b.rating);
-    else displayed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const fetchProducts = useCallback(async () => {
+        try {
+            const res = await api.get("/api/products", { params: { limit: 100 } });
+            const data = res.data.data || res.data.products || res.data;
+            if (Array.isArray(data)) {
+                setProducts(data);
+            } else if (data.products && Array.isArray(data.products)) {
+                setProducts(data.products);
+            }
+        } catch {
+            setProducts([]);
+        }
+    }, []);
 
-    // ── Validation ───────────────────────────────────────────────
+    useEffect(() => {
+        fetchReviews();
+    }, [fetchReviews]);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeFilter, sort]);
+
+    const handleHelpful = async (reviewId: string) => {
+        if (helpfulLoading) return;
+        setHelpfulLoading(reviewId);
+        try {
+            await api.put(`/api/reviews/${reviewId}/helpful`);
+            setReviews((prev) =>
+                prev.map((r) =>
+                    r._id === reviewId ? { ...r, helpfulCount: r.helpfulCount + 1 } : r
+                )
+            );
+        } catch {
+            // silent
+        } finally {
+            setHelpfulLoading(null);
+        }
+    };
 
     const validate = () => {
         const e: Record<string, string> = {};
@@ -219,16 +222,36 @@ export default function ReviewAndRatingsPage() {
         return Object.keys(e).length === 0;
     };
 
-    const handleSubmit = (ev: React.FormEvent) => {
+    const handleSubmit = async (ev: React.FormEvent) => {
         ev.preventDefault();
+        setSubmitError("");
         if (!validate()) return;
+
+        const token = getToken();
+        if (!token) {
+            setSubmitError("Please log in to submit a review.");
+            return;
+        }
+
         setIsSubmitting(true);
-        setTimeout(() => {
+        try {
+            await api.post("/api/reviews", {
+                productId: form.product || undefined,
+                rating: form.rating,
+                title: form.title,
+                body: form.body,
+            });
             setIsSubmitting(false);
             setSubmitted(true);
             setForm({ rating: 4, title: "", product: "", body: "" });
+            fetchReviews();
             setTimeout(() => setSubmitted(false), 6000);
-        }, 1500);
+        } catch (err: any) {
+            setIsSubmitting(false);
+            setSubmitError(
+                err?.response?.data?.message || "Failed to submit review. Please try again."
+            );
+        }
     };
 
     const handleChange = (
@@ -239,12 +262,22 @@ export default function ReviewAndRatingsPage() {
         if (errors[name]) setErrors((p) => ({ ...p, [name]: "" }));
     };
 
-    // ── Breakdown counts for filter chips ───────────────────────
-    const countByStar = (s: number) => REVIEWS.filter((r) => r.rating === s).length;
+    const distribution = stats?.distribution || [];
+    const totalReviews = stats?.totalReviews || 0;
+
+    const countByStar = (s: number) => {
+        const entry = distribution.find((d) => d.stars === s);
+        return entry?.count || 0;
+    };
+
+    const distributionWithPct = [5, 4, 3, 2, 1].map((star) => {
+        const count = countByStar(star);
+        const pct = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
+        return { star, count, pct };
+    });
 
     return (
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
-            {/* ── Navbar ── */}
             <header className="bg-white px-8 md:px-16 h-20 flex items-center justify-between shadow-sm sticky top-0 z-50">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full border border-[#663F23] flex items-center justify-center">
@@ -302,10 +335,8 @@ export default function ReviewAndRatingsPage() {
                 </div>
             </header>
 
-            {/* ── Main content ── */}
             <main className="max-w-[1100px] mx-auto px-6 md:px-10 py-12">
 
-                {/* Page header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-[#1C1C1C]">Reviews &amp; Ratings</h1>
                     <p className="text-[#1C1C1C]/60 mt-1 text-sm">
@@ -313,25 +344,28 @@ export default function ReviewAndRatingsPage() {
                     </p>
                 </div>
 
-                {/* ── Rating Summary Card ── */}
                 <div className="bg-white rounded-2xl shadow-sm border border-[#EDE8E3] flex flex-col md:flex-row overflow-hidden mb-6">
-                    {/* Left – big score */}
                     <div className="flex flex-col items-center justify-center px-12 py-10 border-r border-[#EDE8E3] min-w-[220px]">
-                        <div className="text-7xl font-bold text-[#1C1C1C] tracking-tight leading-none mb-3">3.8</div>
-                        <StarRow rating={4} size={24} />
-                        <p className="text-xs text-[#1C1C1C]/50 mt-2">Based on 12 reviews</p>
-                        <span className="mt-4 px-4 py-1 bg-[#EDF7EF] text-[#4CAF50] text-xs font-semibold rounded-full border border-[#4CAF50]/20">
-                            Very Good
-                        </span>
+                        <div className="text-7xl font-bold text-[#1C1C1C] tracking-tight leading-none mb-3">
+                            {stats ? stats.averageRating.toFixed(1) : "—"}
+                        </div>
+                        <StarRow rating={Math.round(stats?.averageRating || 0)} size={24} />
+                        <p className="text-xs text-[#1C1C1C]/50 mt-2">
+                            Based on {totalReviews} review{totalReviews !== 1 ? "s" : ""}
+                        </p>
+                        {stats && (
+                            <span className="mt-4 px-4 py-1 bg-[#EDF7EF] text-[#4CAF50] text-xs font-semibold rounded-full border border-[#4CAF50]/20">
+                                {getRatingLabel(stats.averageRating)}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Right – distribution bars */}
                     <div className="flex-1 px-8 py-8">
                         <p className="text-[10px] font-bold text-[#1C1C1C]/40 uppercase tracking-widest mb-5">
                             Rating Distribution
                         </p>
                         <div className="space-y-3">
-                            {RATING_DISTRIBUTION.map(({ star, count, pct }) => (
+                            {distributionWithPct.map(({ star, count, pct }) => (
                                 <div key={star} className="flex items-center gap-3 text-sm">
                                     <span className="w-3 text-[#1C1C1C]/60 font-medium text-right shrink-0">{star}</span>
                                     <Star size={13} className="fill-[#C8973A] text-[#C8973A] shrink-0" />
@@ -349,10 +383,9 @@ export default function ReviewAndRatingsPage() {
                     </div>
                 </div>
 
-                {/* ── Filter + Sort Bar ── */}
                 <div className="mb-5">
                     <div className="flex flex-wrap items-center gap-2 text-sm mb-3">
-                        <span className="text-[#1C1C1C]/50 font-medium">{REVIEWS.length} reviews &nbsp; Filter:</span>
+                        <span className="text-[#1C1C1C]/50 font-medium">{totalReviews} reviews &nbsp; Filter:</span>
                         {[5, 4, 3, 2, 1].map((s) => (
                             <button
                                 key={s}
@@ -385,94 +418,134 @@ export default function ReviewAndRatingsPage() {
                     </div>
                 </div>
 
-                {/* ── Review Cards Grid ── */}
-                {displayed.length === 0 ? (
+                {loading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <Loader2 size={32} className="animate-spin text-[#663F23]" />
+                    </div>
+                ) : reviews.length === 0 ? (
                     <div className="text-center py-16 bg-white rounded-2xl border border-[#EDE8E3]">
                         <Star size={40} className="mx-auto text-[#1C1C1C]/20 mb-4" />
                         <p className="text-[#1C1C1C]/50">No reviews match this filter.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                        {displayed.map((r) => (
-                            <div
-                                key={r.id}
-                                className="bg-white rounded-2xl border border-[#EDE8E3] p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3"
-                            >
-                                {/* Card header */}
-                                <div className="flex items-start justify-between gap-2">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="w-9 h-9 rounded-full bg-[#663F23] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                                            {r.initials}
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
-                                                {r.name}
-                                                {r.verified && (
-                                                    <ShieldCheck size={13} className="text-[#4CAF50]" />
-                                                )}
-                                                {r.verified && (
-                                                    <span className="text-[10px] text-[#4CAF50] font-medium">Verified</span>
-                                                )}
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            {reviews.map((r) => (
+                                <div
+                                    key={r._id}
+                                    className="bg-white rounded-2xl border border-[#EDE8E3] p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3"
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-9 h-9 rounded-full bg-[#663F23] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                                                {getInitials(r.userId?.name || "U")}
                                             </div>
-                                            <div className="text-[10px] text-[#1C1C1C]/40">{r.date}</div>
+                                            <div>
+                                                <div className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
+                                                    {r.userId?.name || "Anonymous"}
+                                                    {r.verified && (
+                                                        <ShieldCheck size={13} className="text-[#4CAF50]" />
+                                                    )}
+                                                    {r.verified && (
+                                                        <span className="text-[10px] text-[#4CAF50] font-medium">Verified</span>
+                                                    )}
+                                                </div>
+                                                <div className="text-[10px] text-[#1C1C1C]/40">
+                                                    {new Date(r.createdAt).toLocaleDateString("en-CA")}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1 shrink-0">
+                                            {r.helpfulCount >= 10 && (
+                                                <span className="px-2 py-0.5 bg-[#FFF8EC] text-[#C8973A] text-[10px] font-bold rounded border border-[#C8973A]/20 uppercase tracking-wide">
+                                                    ★ TOP REVIEW
+                                                </span>
+                                            )}
+                                            <span className="text-[10px] text-[#1C1C1C]/40 text-right leading-tight">
+                                                {r.productId?.name || "General"}<br />
+                                                <span className="text-[#663F23] font-medium">
+                                                    {r.productId?.price ? formatPrice(r.productId.price) : ""}
+                                                </span>
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-end gap-1 shrink-0">
-                                        {r.badge && (
-                                            <span className="px-2 py-0.5 bg-[#FFF8EC] text-[#C8973A] text-[10px] font-bold rounded border border-[#C8973A]/20 uppercase tracking-wide">
-                                                ★ {r.badge}
-                                            </span>
-                                        )}
-                                        <span className="text-[10px] text-[#1C1C1C]/40 text-right leading-tight">
-                                            {r.product}<br />
-                                            <span className="text-[#663F23] font-medium">{r.price}</span>
+
+                                    <div className="flex items-center gap-2">
+                                        <StarRow rating={r.rating} size={14} />
+                                        <span
+                                            className={`text-[10px] font-semibold px-2 py-0.5 rounded ${r.rating >= 5
+                                                    ? "bg-green-50 text-green-600"
+                                                    : r.rating >= 4
+                                                        ? "bg-blue-50 text-blue-600"
+                                                        : r.rating >= 3
+                                                            ? "bg-amber-50 text-amber-600"
+                                                            : "bg-red-50 text-red-500"
+                                                }`}
+                                        >
+                                            {RATING_LABELS[r.rating] || ""}
                                         </span>
                                     </div>
-                                </div>
 
-                                {/* Stars + label */}
-                                <div className="flex items-center gap-2">
-                                    <StarRow rating={r.rating} size={14} />
-                                    <span
-                                        className={`text-[10px] font-semibold px-2 py-0.5 rounded ${r.rating >= 5
-                                                ? "bg-green-50 text-green-600"
-                                                : r.rating >= 4
-                                                    ? "bg-blue-50 text-blue-600"
-                                                    : r.rating >= 3
-                                                        ? "bg-amber-50 text-amber-600"
-                                                        : "bg-red-50 text-red-500"
+                                    <div>
+                                        <div className="font-bold text-[#1C1C1C] text-sm mb-1">{r.title}</div>
+                                        <p className="text-xs text-[#1C1C1C]/60 leading-relaxed">
+                                            {r.body.length > 180 ? r.body.slice(0, 180) + "..." : r.body}
+                                            {r.body.length > 180 && (
+                                                <>&nbsp;<button className="text-[#663F23] font-medium hover:underline">Read more</button></>
+                                            )}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 pt-1 border-t border-[#F3EDE7] mt-auto">
+                                        <button
+                                            onClick={() => handleHelpful(r._id)}
+                                            disabled={helpfulLoading === r._id}
+                                            className="flex items-center gap-1.5 text-[#1C1C1C]/50 hover:text-[#663F23] transition-colors text-xs font-medium disabled:opacity-50"
+                                        >
+                                            <ThumbsUp size={13} /> Helpful ({r.helpfulCount})
+                                        </button>
+                                        <button className="flex items-center gap-1.5 text-[#1C1C1C]/50 hover:text-[#663F23] transition-colors text-xs font-medium">
+                                            <MessageCircle size={13} /> Reply
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {pagination.pages > 1 && (
+                            <div className="flex items-center justify-center gap-2 mb-10">
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-4 py-2 rounded-lg border border-[#DDD5CC] text-sm font-medium hover:border-[#663F23] hover:text-[#663F23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    Previous
+                                </button>
+                                {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((p) => (
+                                    <button
+                                        key={p}
+                                        onClick={() => setCurrentPage(p)}
+                                        className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${p === currentPage
+                                                ? "bg-[#663F23] text-white"
+                                                : "border border-[#DDD5CC] text-[#1C1C1C]/70 hover:border-[#663F23] hover:text-[#663F23]"
                                             }`}
                                     >
-                                        {r.ratingLabel}
-                                    </span>
-                                </div>
-
-                                {/* Review text */}
-                                <div>
-                                    <div className="font-bold text-[#1C1C1C] text-sm mb-1">{r.title}</div>
-                                    <p className="text-xs text-[#1C1C1C]/60 leading-relaxed">
-                                        {r.body}&nbsp;
-                                        <button className="text-[#663F23] font-medium hover:underline">Read more</button>
-                                    </p>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-4 pt-1 border-t border-[#F3EDE7] mt-auto">
-                                    <button className="flex items-center gap-1.5 text-[#1C1C1C]/50 hover:text-[#663F23] transition-colors text-xs font-medium">
-                                        <ThumbsUp size={13} /> Helpful ({r.helpful})
+                                        {p}
                                     </button>
-                                    <button className="flex items-center gap-1.5 text-[#1C1C1C]/50 hover:text-[#663F23] transition-colors text-xs font-medium">
-                                        <MessageCircle size={13} /> Reply
-                                    </button>
-                                </div>
+                                ))}
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.min(pagination.pages, p + 1))}
+                                    disabled={currentPage === pagination.pages}
+                                    className="px-4 py-2 rounded-lg border border-[#DDD5CC] text-sm font-medium hover:border-[#663F23] hover:text-[#663F23] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                </button>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                    </>
                 )}
 
-                {/* ── Write a Review Form ── */}
                 <div className="bg-white rounded-3xl border border-[#EDE8E3] shadow-sm p-8 md:p-10">
-                    {/* Form header */}
                     <div className="flex items-center gap-4 mb-2">
                         <div className="w-12 h-12 rounded-2xl bg-[#F5EBE1] flex items-center justify-center">
                             <Star size={22} className="fill-[#663F23] text-[#663F23]" />
@@ -493,9 +566,13 @@ export default function ReviewAndRatingsPage() {
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} noValidate className="mt-6">
+                            {submitError && (
+                                <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+                                    {submitError}
+                                </div>
+                            )}
                             <div className="flex flex-col md:flex-row gap-8">
 
-                                {/* Left – star picker */}
                                 <div className="md:w-52 shrink-0 flex flex-col items-center justify-start pt-2">
                                     <label className="text-xs font-bold text-[#1C1C1C]/50 uppercase tracking-widest mb-4">
                                         Your Rating <span className="text-red-400">*</span>
@@ -517,10 +594,8 @@ export default function ReviewAndRatingsPage() {
                                     )}
                                 </div>
 
-                                {/* Right – text fields */}
                                 <div className="flex-1 space-y-5">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        {/* Review title */}
                                         <div>
                                             <label className="block text-xs font-bold text-[#1C1C1C]/50 uppercase tracking-widest mb-2">
                                                 Review Title <span className="text-red-400">*</span>
@@ -539,7 +614,6 @@ export default function ReviewAndRatingsPage() {
                                             )}
                                         </div>
 
-                                        {/* Product (optional) */}
                                         <div>
                                             <label className="block text-xs font-bold text-[#1C1C1C]/50 uppercase tracking-widest mb-2">
                                                 Product (Optional)
@@ -551,14 +625,13 @@ export default function ReviewAndRatingsPage() {
                                                 className="w-full px-4 py-3 rounded-xl bg-[#F5F2EC] border border-transparent focus:outline-none focus:ring-2 focus:ring-[#663F23] transition-all text-sm appearance-none text-[#1C1C1C]/70"
                                             >
                                                 <option value="">e.g., Linen 3-Seater Sofa</option>
-                                                {PRODUCTS.map((p) => (
-                                                    <option key={p} value={p}>{p}</option>
+                                                {products.map((p) => (
+                                                    <option key={p._id} value={p._id}>{p.name}</option>
                                                 ))}
                                             </select>
                                         </div>
                                     </div>
 
-                                    {/* Review body */}
                                     <div>
                                         <label className="block text-xs font-bold text-[#1C1C1C]/50 uppercase tracking-widest mb-2">
                                             Your Review <span className="text-red-400">*</span>
@@ -585,7 +658,6 @@ export default function ReviewAndRatingsPage() {
                                         </div>
                                     </div>
 
-                                    {/* Submit */}
                                     <div className="flex justify-end">
                                         <button
                                             type="submit"

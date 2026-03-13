@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Toast } from "@/components/ui/Toast";
+import api from "@/lib/api";
+import { getUser, logout } from "@/lib/auth";
 import {
     LayoutDashboard,
     Monitor,
@@ -20,85 +22,25 @@ import {
     Pencil,
     ChevronDown,
     Upload,
-    LogOut
+    LogOut,
+    Loader2
 } from "lucide-react";
 import Image from "next/image";
 
-// Product type
 interface Product {
-    id: number;
+    _id: string;
     name: string;
     sku: string;
     category: string;
     price: number;
     colors: string[];
     materials: string[];
-    image: string;
+    images: { imageUrl: string; sortOrder: number }[];
     description: string;
     width: number;
     height: number;
     depth: number;
 }
-
-// Sample data
-const initialProducts: Product[] = [
-    {
-        id: 1,
-        name: "Hampton 3-Seater Sofa",
-        sku: "SOF-0912",
-        category: "Sofas",
-        price: 257999.0,
-        colors: ["#C6A75E", "#1C1C1C", "#663F23"],
-        materials: ["Fabric", "Wood"],
-        image: "",
-        description: "Elegant 3-seater sofa with premium fabric upholstery and solid wood legs.",
-        width: 210,
-        height: 85,
-        depth: 90,
-    },
-    {
-        id: 2,
-        name: "Oskar Dining Chair",
-        sku: "CHR-4431",
-        category: "Chairs",
-        price: 12999.0,
-        colors: ["#1C1C1C", "#E5E5E5"],
-        materials: ["Wood"],
-        image: "",
-        description: "Minimalist wooden dining chair featuring an ergonomic curved backrest and a comfortable upholstered seat.",
-        width: 45,
-        height: 85,
-        depth: 50,
-    },
-    {
-        id: 3,
-        name: "Aura Marble Coffee Table",
-        sku: "TBL-1029",
-        category: "Tables",
-        price: 22599.0,
-        colors: ["#E5E5E5", "#1C1C1C"],
-        materials: ["Marble", "Metal"],
-        image: "",
-        description: "Stunning marble top coffee table with sleek metal base.",
-        width: 120,
-        height: 45,
-        depth: 60,
-    },
-    {
-        id: 4,
-        name: "Luna Upholstered Bed",
-        sku: "BED-7762",
-        category: "Beds",
-        price: 349999.0,
-        colors: ["#E5E5E5", "#663F23"],
-        materials: ["Fabric", "Wood"],
-        image: "",
-        description: "Luxurious upholstered bed frame with padded headboard.",
-        width: 180,
-        height: 120,
-        depth: 210,
-    },
-];
 
 const allMaterials = ["Wood", "Fabric", "Metal", "Leather", "Velvet", "Marble"];
 const allCategories = ["Sofas", "Chairs", "Tables", "Beds", "Lighting", "Storage", "Rugs"];
@@ -113,7 +55,7 @@ const allColorOptions = [
 
 export default function CatalogueManagement() {
     const router = useRouter();
-    const [products, setProducts] = useState<Product[]>(initialProducts);
+    const [products, setProducts] = useState<Product[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All categories");
     const [selectedMaterial, setSelectedMaterial] = useState("All materials");
@@ -123,33 +65,50 @@ export default function CatalogueManagement() {
     const [addForm, setAddForm] = useState({
         name: "",
         sku: "",
-        category: "Sofa",
+        category: "Sofas",
         price: 0,
         description: "",
         image: "",
     });
     const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [toastType, setToastType] = useState<"success" | "error">("success");
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [user, setUser] = useState<any>(null);
+
+    const fetchProducts = useCallback(async () => {
+        try {
+            setLoading(true);
+            const params: Record<string, string> = {};
+            if (searchQuery) params.search = searchQuery;
+            if (selectedCategory !== "All categories") params.category = selectedCategory;
+            const res = await api.get("/api/products", { params });
+            setProducts(res.data.products || []);
+        } catch {
+            setToastType("error");
+            setToastMessage("Failed to load products");
+        } finally {
+            setLoading(false);
+        }
+    }, [searchQuery, selectedCategory]);
+
+    useEffect(() => {
+        setUser(getUser());
+    }, []);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        router.push("/admin/login");
+        logout();
     };
 
-    // Filter products
-    const filteredProducts = products.filter((p) => {
-        const matchesSearch =
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.sku.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory =
-            selectedCategory === "All categories" || p.category === selectedCategory;
-        const matchesMaterial =
-            selectedMaterial === "All materials" ||
-            p.materials.some((m) => m === selectedMaterial);
-        return matchesSearch && matchesCategory && matchesMaterial;
-    });
+    const filteredProducts = selectedMaterial === "All materials"
+        ? products
+        : products.filter((p) => p.materials.some((m) => m === selectedMaterial));
 
     const handleEdit = (product: Product) => {
         setEditingProduct(product);
@@ -161,50 +120,84 @@ export default function CatalogueManagement() {
         setEditForm(null);
     };
 
-    const handleSaveChanges = () => {
+    const handleSaveChanges = async () => {
         if (!editForm) return;
-        setProducts(products.map((p) => (p.id === editForm.id ? editForm : p)));
-        handleCloseEdit();
+        try {
+            setSaving(true);
+            await api.put(`/api/products/${editForm._id}`, {
+                name: editForm.name,
+                sku: editForm.sku,
+                category: editForm.category,
+                price: editForm.price,
+                description: editForm.description,
+                width: editForm.width,
+                height: editForm.height,
+                depth: editForm.depth,
+                colors: editForm.colors,
+                materials: editForm.materials,
+            });
+            setToastType("success");
+            setToastMessage("Product updated successfully");
+            handleCloseEdit();
+            await fetchProducts();
+        } catch {
+            setToastType("error");
+            setToastMessage("Failed to update product");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleDeleteProduct = () => {
         setIsDeleteModalOpen(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!editForm) return;
-        setProducts(products.filter((p) => p.id !== editForm.id));
-        setToastMessage("Product deleted successfully");
-        setIsDeleteModalOpen(false);
-        handleCloseEdit();
+        try {
+            setSaving(true);
+            await api.delete(`/api/products/${editForm._id}`);
+            setToastType("success");
+            setToastMessage("Product deleted successfully");
+            setIsDeleteModalOpen(false);
+            handleCloseEdit();
+            await fetchProducts();
+        } catch {
+            setToastType("error");
+            setToastMessage("Failed to delete product");
+        } finally {
+            setSaving(false);
+        }
     };
 
-    const handleAddProductSubmit = () => {
-        const newProduct: Product = {
-            id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
-            name: addForm.name,
-            sku: addForm.sku,
-            category: addForm.category,
-            price: addForm.price,
-            description: addForm.description,
-            image: addForm.image || "",
-            colors: [],
-            materials: [],
-            width: 0,
-            height: 0,
-            depth: 0,
-        };
-        setProducts([...products, newProduct]);
-        setIsAddModalOpen(false);
-        setToastMessage("Product added successfully");
-        setAddForm({
-            name: "",
-            sku: "",
-            category: "Sofa",
-            price: 0,
-            description: "",
-            image: "",
-        });
+    const handleAddProductSubmit = async () => {
+        try {
+            setSaving(true);
+            await api.post("/api/products", {
+                name: addForm.name,
+                sku: addForm.sku,
+                category: addForm.category,
+                price: addForm.price,
+                description: addForm.description,
+            });
+            setIsAddModalOpen(false);
+            setToastType("success");
+            setToastMessage("Product added successfully");
+            setAddForm({
+                name: "",
+                sku: "",
+                category: "Sofas",
+                price: 0,
+                description: "",
+                image: "",
+            });
+            await fetchProducts();
+        } catch {
+            setToastType("error");
+            setToastMessage("Failed to add product");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const toggleMaterial = (material: string) => {
@@ -227,14 +220,12 @@ export default function CatalogueManagement() {
         return `Rs.${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    // Stats
     const totalProducts = products.length;
     const totalCategories = [...new Set(products.map((p) => p.category))].length;
     const totalMaterials = [...new Set(products.flatMap((p) => p.materials))].length;
 
     return (
         <div className="min-h-screen bg-white flex overflow-hidden font-sans text-[#1C1C1C]">
-            {/* Sidebar */}
             <aside className="w-64 bg-[#F5F1E8] border-r border-[#E5E5E5] flex flex-col justify-between shrink-0 h-screen sticky top-0">
                 <div>
                     <div className="h-20 flex items-center px-8 border-b border-[#E5E5E5]/50">
@@ -294,28 +285,20 @@ export default function CatalogueManagement() {
                     </button>
 
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
-                            <Image
-                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
-                                alt="Profile"
-                                fill
-                                className="object-cover"
-                            />
+                        <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center text-white text-xs font-bold">
+                            {user?.name?.charAt(0)?.toUpperCase() || "A"}
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+                            <span className="text-sm font-semibold text-[#1C1C1C]">{user?.name || "Admin"}</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50">{user?.role || "admin"}</span>
                         </div>
                     </div>
                 </div>
             </aside>
 
-            {/* Main Content */}
             <main className="flex-1 overflow-y-auto bg-[#F5F1E8]">
                 <div className="flex h-screen">
-                    {/* Product List Section */}
                     <div className={`${editingProduct ? "flex-1" : "flex-1"} p-8 overflow-y-auto`}>
-                        {/* Header */}
                         <div className="flex justify-between items-start mb-6">
                             <div>
                                 <h1 className="text-2xl font-bold text-[#1C1C1C] mb-1">Furniture Catalogue Management</h1>
@@ -333,14 +316,13 @@ export default function CatalogueManagement() {
                             </div>
                         </div>
 
-                        {/* Stats */}
                         <div className="flex gap-4 mb-6">
                             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-[#E5E5E5]/50 text-sm">
                                 <Sofa size={14} className="text-[#1C1C1C]/50" />
                                 <span className="font-medium">{totalProducts} products</span>
                             </div>
                             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-[#E5E5E5]/50 text-sm">
-                                <span className="text-[#1C1C1C]/50">⊞</span>
+                                <span className="text-[#1C1C1C]/50">&#8862;</span>
                                 <span className="font-medium">{totalCategories} categories</span>
                             </div>
                             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-[#E5E5E5]/50 text-sm">
@@ -349,7 +331,6 @@ export default function CatalogueManagement() {
                             </div>
                         </div>
 
-                        {/* Search & Filters */}
                         <div className="flex gap-3 mb-6">
                             <div className="flex-1 relative">
                                 <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40" />
@@ -399,9 +380,7 @@ export default function CatalogueManagement() {
                             </div>
                         </div>
 
-                        {/* Product Table */}
                         <div className="bg-white rounded-xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm">
-                            {/* Table Header */}
                             <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-6 py-3 border-b border-[#E5E5E5]/50 text-xs font-medium text-[#1C1C1C]/50 uppercase tracking-wider">
                                 <span>Product details</span>
                                 <span>Category</span>
@@ -411,82 +390,91 @@ export default function CatalogueManagement() {
                                 <span>Actions</span>
                             </div>
 
-                            {/* Product Rows */}
-                            {filteredProducts.map((product) => (
-                                <div
-                                    key={product.id}
-                                    className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-6 py-4 border-b border-[#E5E5E5]/30 items-center hover:bg-[#F5F1E8]/30 transition-colors ${editingProduct?.id === product.id ? "bg-[#F5F1E8]/50" : ""}`}
-                                >
-                                    {/* Product Details */}
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-14 h-14 rounded-lg bg-[#F5F1E8] border border-[#E5E5E5]/50 flex items-center justify-center shrink-0 overflow-hidden">
-                                            <Sofa size={20} className="text-[#1C1C1C]/30" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-sm text-[#1C1C1C] leading-tight">{product.name}</p>
-                                            <p className="text-xs text-[#1C1C1C]/40 mt-0.5">SKU: {product.sku}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Category */}
-                                    <div>
-                                        <span className="px-3 py-1 bg-[#F5F1E8] text-[#663F23] text-xs font-medium rounded-full">
-                                            {product.category}
-                                        </span>
-                                    </div>
-
-                                    {/* Price */}
-                                    <div>
-                                        <span className="text-sm font-semibold text-[#1C1C1C]">{formatPrice(product.price)}</span>
-                                    </div>
-
-                                    {/* Colors */}
-                                    <div className="flex items-center gap-1.5">
-                                        {product.colors.slice(0, 3).map((color, i) => (
-                                            <div
-                                                key={i}
-                                                className="w-6 h-6 rounded-full border border-[#E5E5E5]"
-                                                style={{ backgroundColor: color }}
-                                            />
-                                        ))}
-                                        {product.colors.length > 3 && (
-                                            <span className="text-xs text-[#1C1C1C]/50 ml-1">+{product.colors.length - 3}</span>
-                                        )}
-                                    </div>
-
-                                    {/* Materials */}
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {product.materials.map((mat) => (
-                                            <span key={mat} className="px-2 py-0.5 bg-[#F5F1E8] text-[#1C1C1C]/70 text-[11px] font-medium rounded">
-                                                {mat}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div>
-                                        <button
-                                            onClick={() => handleEdit(product)}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F5F1E8] text-[#1C1C1C]/40 hover:text-[#663F23] transition-colors"
+                            {loading ? (
+                                <div className="px-6 py-12 flex items-center justify-center">
+                                    <Loader2 size={24} className="animate-spin text-[#663F23]" />
+                                    <span className="ml-3 text-sm text-[#1C1C1C]/50">Loading products...</span>
+                                </div>
+                            ) : (
+                                <>
+                                    {filteredProducts.map((product) => (
+                                        <div
+                                            key={product._id}
+                                            className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-6 py-4 border-b border-[#E5E5E5]/30 items-center hover:bg-[#F5F1E8]/30 transition-colors ${editingProduct?._id === product._id ? "bg-[#F5F1E8]/50" : ""}`}
                                         >
-                                            <Pencil size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-14 h-14 rounded-lg bg-[#F5F1E8] border border-[#E5E5E5]/50 flex items-center justify-center shrink-0 overflow-hidden relative">
+                                                    {product.images?.[0]?.imageUrl ? (
+                                                        <Image
+                                                            src={product.images[0].imageUrl}
+                                                            alt={product.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <Sofa size={20} className="text-[#1C1C1C]/30" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-sm text-[#1C1C1C] leading-tight">{product.name}</p>
+                                                    <p className="text-xs text-[#1C1C1C]/40 mt-0.5">SKU: {product.sku}</p>
+                                                </div>
+                                            </div>
 
-                            {filteredProducts.length === 0 && (
-                                <div className="px-6 py-12 text-center text-sm text-[#1C1C1C]/40">
-                                    No products found matching your search.
-                                </div>
+                                            <div>
+                                                <span className="px-3 py-1 bg-[#F5F1E8] text-[#663F23] text-xs font-medium rounded-full">
+                                                    {product.category}
+                                                </span>
+                                            </div>
+
+                                            <div>
+                                                <span className="text-sm font-semibold text-[#1C1C1C]">{formatPrice(product.price)}</span>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5">
+                                                {product.colors.slice(0, 3).map((color, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className="w-6 h-6 rounded-full border border-[#E5E5E5]"
+                                                        style={{ backgroundColor: color }}
+                                                    />
+                                                ))}
+                                                {product.colors.length > 3 && (
+                                                    <span className="text-xs text-[#1C1C1C]/50 ml-1">+{product.colors.length - 3}</span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {product.materials.map((mat) => (
+                                                    <span key={mat} className="px-2 py-0.5 bg-[#F5F1E8] text-[#1C1C1C]/70 text-[11px] font-medium rounded">
+                                                        {mat}
+                                                    </span>
+                                                ))}
+                                            </div>
+
+                                            <div>
+                                                <button
+                                                    onClick={() => handleEdit(product)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F5F1E8] text-[#1C1C1C]/40 hover:text-[#663F23] transition-colors"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {filteredProducts.length === 0 && (
+                                        <div className="px-6 py-12 text-center text-sm text-[#1C1C1C]/40">
+                                            No products found matching your search.
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
 
-                    {/* Edit Panel */}
                     {editingProduct && editForm && (
                         <div className="w-[380px] bg-white border-l border-[#E5E5E5] h-screen overflow-y-auto p-6 shrink-0">
-                            {/* Edit Header */}
                             <div className="flex justify-between items-start mb-6">
                                 <div>
                                     <h2 className="text-lg font-bold text-[#1C1C1C]">Edit product</h2>
@@ -500,17 +488,26 @@ export default function CatalogueManagement() {
                                 </button>
                             </div>
 
-                            {/* Product Image Upload */}
                             <div className="mb-6">
                                 <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Product Image</p>
-                                <div className="border-2 border-dashed border-[#E5E5E5] rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#663F23]/50 transition-colors bg-[#FAFAF8]">
-                                    <Upload size={24} className="text-[#1C1C1C]/30 mb-2" />
-                                    <p className="text-sm font-medium text-[#1C1C1C]/60">Click to upload product image</p>
-                                    <p className="text-xs text-[#1C1C1C]/30 mt-1">PNG or JPG · Up to 5MB</p>
-                                </div>
+                                {editForm.images?.[0]?.imageUrl ? (
+                                    <div className="rounded-xl overflow-hidden border border-[#E5E5E5] relative w-full h-48">
+                                        <Image
+                                            src={editForm.images[0].imageUrl}
+                                            alt={editForm.name}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="border-2 border-dashed border-[#E5E5E5] rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#663F23]/50 transition-colors bg-[#FAFAF8]">
+                                        <Upload size={24} className="text-[#1C1C1C]/30 mb-2" />
+                                        <p className="text-sm font-medium text-[#1C1C1C]/60">Click to upload product image</p>
+                                        <p className="text-xs text-[#1C1C1C]/30 mt-1">PNG or JPG &middot; Up to 5MB</p>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Basic Details */}
                             <div className="mb-6">
                                 <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Basic Details</p>
 
@@ -574,7 +571,6 @@ export default function CatalogueManagement() {
                                 </div>
                             </div>
 
-                            {/* Dimensions */}
                             <div className="mb-6">
                                 <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Dimensions (CM)</p>
                                 <div className="grid grid-cols-3 gap-3">
@@ -608,7 +604,6 @@ export default function CatalogueManagement() {
                                 </div>
                             </div>
 
-                            {/* Available Colours */}
                             <div className="mb-6">
                                 <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Available Colours</p>
                                 <div className="flex gap-3 flex-wrap">
@@ -627,7 +622,6 @@ export default function CatalogueManagement() {
                                 <p className="text-[10px] text-[#1C1C1C]/40 mt-2">Select existing swatches or add a new colour option.</p>
                             </div>
 
-                            {/* Materials */}
                             <div className="mb-8">
                                 <p className="text-[10px] font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-3">Manage Textures / Materials</p>
                                 <div className="flex flex-wrap gap-2">
@@ -644,11 +638,11 @@ export default function CatalogueManagement() {
                                 <p className="text-[10px] text-[#1C1C1C]/40 mt-2">Toggle which materials are available for this product.</p>
                             </div>
 
-                            {/* Action Buttons */}
                             <div className="flex items-center justify-between pt-4 border-t border-[#E5E5E5]/50">
                                 <button
                                     onClick={handleDeleteProduct}
-                                    className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
+                                    disabled={saving}
+                                    className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
                                 >
                                     Delete product
                                 </button>
@@ -661,8 +655,10 @@ export default function CatalogueManagement() {
                                     </button>
                                     <button
                                         onClick={handleSaveChanges}
-                                        className="px-4 py-2 bg-[#1C1C1C] text-white rounded-lg text-sm font-medium hover:bg-[#333] transition-colors"
+                                        disabled={saving}
+                                        className="px-4 py-2 bg-[#1C1C1C] text-white rounded-lg text-sm font-medium hover:bg-[#333] transition-colors disabled:opacity-50 flex items-center gap-2"
                                     >
+                                        {saving && <Loader2 size={14} className="animate-spin" />}
                                         Save changes
                                     </button>
                                 </div>
@@ -672,7 +668,6 @@ export default function CatalogueManagement() {
                 </div>
             </main>
 
-            {/* Add Product Modal */}
             {isAddModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="fixed inset-0 bg-[#1C1C1C]/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
@@ -696,13 +691,9 @@ export default function CatalogueManagement() {
                                 <label className="block text-sm font-medium text-[#1C1C1C] mb-1.5">Category</label>
                                 <div className="relative">
                                     <select value={addForm.category} onChange={e => setAddForm({ ...addForm, category: e.target.value })} className="appearance-none w-full px-3 py-2.5 pr-10 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23]">
-                                        <option value="Sofa">Sofa</option>
-                                        <option value="Chair">Chair</option>
-                                        <option value="Table">Table</option>
-                                        <option value="Bed">Bed</option>
-                                        <option value="Storage">Storage</option>
-                                        <option value="Lighting">Lighting</option>
-                                        <option value="Decor">Decor</option>
+                                        {allCategories.map((cat) => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
                                     </select>
                                     <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
                                 </div>
@@ -741,14 +732,17 @@ export default function CatalogueManagement() {
                         </div>
                         <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E5E5]/50">
                             <button onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 text-sm font-medium text-[#1C1C1C] bg-white border border-[#E5E5E5] rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-                            <button onClick={handleAddProductSubmit} className="px-4 py-2 text-sm font-medium text-[#F5F1E8] bg-[#663F23] rounded-lg hover:bg-[#4A2D19] transition-colors shadow-sm">Add Product</button>
+                            <button onClick={handleAddProductSubmit} disabled={saving} className="px-4 py-2 text-sm font-medium text-[#F5F1E8] bg-[#663F23] rounded-lg hover:bg-[#4A2D19] transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2">
+                                {saving && <Loader2 size={14} className="animate-spin" />}
+                                Add Product
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
             {toastMessage && (
-                <Toast message={toastMessage} type="success" onClose={() => setToastMessage(null)} />
+                <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage(null)} />
             )}
 
             {isDeleteModalOpen && editForm && (

@@ -16,7 +16,7 @@ export const getAdminConsultations = async (req: Request, res: Response): Promis
     }
 
     const consultations = await Consultation.find(filters)
-      .populate("userId", "fullName email phone")
+      .populate("userId", "name email phone")
       .populate("designId", "name status")
       .skip(skip)
       .limit(limitNumber)
@@ -42,7 +42,7 @@ export const getAdminConsultations = async (req: Request, res: Response): Promis
 export const getAdminConsultationById = async (req: Request, res: Response): Promise<void> => {
   try {
     const consultation = await Consultation.findById(req.params.id)
-      .populate("userId", "fullName email phone")
+      .populate("userId", "name email phone")
       .populate("designId", "name layoutData status");
 
     if (!consultation) {

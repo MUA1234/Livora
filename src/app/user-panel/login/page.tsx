@@ -22,10 +22,10 @@ export default function UserLogin() {
         setIsLoading(true);
         try {
             const response = await api.post('/api/auth/login', { email, password });
-            const { token, user } = response.data;
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
-            document.cookie = `livora-token=${token}; path=/; max-age=604800`;
+            const data = response.data;
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify({ id: data._id, name: data.name, email: data.email, role: data.role }));
+            document.cookie = `livora-token=${data.token}; path=/; max-age=604800`;
             setToast({ message: 'Welcome back!', type: 'success' });
             setTimeout(() => router.push('/user-panel/furniture-catalogue'), 500);
         } catch (err: any) {

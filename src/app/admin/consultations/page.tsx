@@ -23,6 +23,9 @@ import {
   LogOut,
   Loader2,
   RefreshCw,
+  Share2,
+  Copy,
+  LinkIcon,
   LayoutDashboard,
   Monitor,
   Sofa,
@@ -38,6 +41,7 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Toast, ToastType } from "@/components/ui/Toast";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { getUser } from "@/lib/auth";
 
 type Status = "pending" | "confirmed" | "completed" | "rejected";
 
@@ -49,12 +53,13 @@ interface Message {
 
 interface ConsultationRequest {
   id: string;
-  _id: string; // Real DB ID
+  _id: string;
   customerName: string;
   email: string;
   phone: string;
   roomSize: string;
   roomType: string;
+  designId: string | null;
   preferredDate: string;
   submittedDate: string;
   message: string;
@@ -82,11 +87,18 @@ export default function ConsultationManagementPage() {
   const [toastConfig, setToastConfig] = useState<{ message: string; type: ToastType } | null>(null);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [adminUser, setAdminUser] = useState<any>(null);
+
+  useEffect(() => {
+      setAdminUser(getUser());
+  }, []);
 
   // Loading & Pagination States
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [isShareLoading, setIsShareLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -122,8 +134,9 @@ export default function ConsultationManagementPage() {
         customerName: item.userId?.name || "Unknown Customer",
         email: item.userId?.email || "N/A",
         phone: item.userId?.phone || "N/A",
-        roomSize: "N/A", // Not in schema, but kept for UI consistency
+        roomSize: "N/A",
         roomType: item.designId?.name || "Consultation Request",
+        designId: item.designId?._id || null,
         preferredDate: new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
         submittedDate: new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
         message: item.messageThread?.[0]?.message || "No initial message.",
@@ -163,6 +176,7 @@ export default function ConsultationManagementPage() {
     setIsDrawerOpen(true);
     setIsDetailLoading(true);
     setResponseMessage("");
+    setShareUrl(null);
     
     try {
       const response = await api.get(`/api/admin/consultations/${request._id}`);
@@ -231,6 +245,30 @@ export default function ConsultationManagementPage() {
       setToastConfig({ message: "Failed to send response.", type: "error" });
     } finally {
       setIsActionLoading(false);
+    }
+  };
+
+  const handleGenerateShareLink = async () => {
+    if (!selectedRequest?.designId) return;
+    try {
+      setIsShareLoading(true);
+      const response = await api.post(`/api/designs/${selectedRequest.designId}/share`, { expiresInDays: 30 });
+      setShareUrl(response.data.shareUrl);
+      setToastConfig({ message: "Preview link generated!", type: "success" });
+    } catch (err: any) {
+      setToastConfig({ message: "Failed to generate preview link.", type: "error" });
+    } finally {
+      setIsShareLoading(false);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setToastConfig({ message: "Link copied to clipboard!", type: "success" });
+    } catch {
+      setToastConfig({ message: "Failed to copy link.", type: "error" });
     }
   };
 
@@ -305,17 +343,12 @@ export default function ConsultationManagementPage() {
             <span className="font-medium text-sm">Logout</span>
           </button>
           <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-            <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
-              <Image
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
-                alt="Profile"
-                fill
-                className="object-cover"
-              />
+            <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center">
+              <span className="text-xs font-bold text-white">{adminUser?.name?.charAt(0) || "A"}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
-              <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+              <span className="text-sm font-semibold text-[#1C1C1C] truncate max-w-[120px]">{adminUser?.name || "Admin"}</span>
+              <span className="text-[10px] text-[#1C1C1C]/50 uppercase tracking-wider">{adminUser?.role || "admin"}</span>
             </div>
           </div>
         </div>
@@ -600,6 +633,35 @@ export default function ConsultationManagementPage() {
                         </button>
                       )}
                     </div>
+
+                    {selectedRequest.designId && (
+                      <div className="space-y-3">
+                        <label className="block text-[12px] font-bold text-[#6C6C6C] uppercase tracking-tight">Share Design Preview</label>
+                        {shareUrl ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 flex items-center gap-2 px-3 py-3 bg-[#F8F6F0] border border-[#E5E5E5] rounded-xl text-[13px] text-[#1C1C1C] overflow-hidden">
+                              <LinkIcon className="w-4 h-4 text-[#A8A8A8] shrink-0" />
+                              <span className="truncate">{shareUrl}</span>
+                            </div>
+                            <button
+                              onClick={handleCopyShareLink}
+                              className="shrink-0 w-11 h-11 flex items-center justify-center bg-[#6E421E] text-white rounded-xl hover:bg-[#5A3518] transition-colors"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={handleGenerateShareLink}
+                            disabled={isShareLoading}
+                            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[#8B6914] rounded-xl text-[13px] font-bold hover:bg-[#D4AF37]/20 transition-all disabled:opacity-50"
+                          >
+                            {isShareLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+                            Generate Preview Link for Customer
+                          </button>
+                        )}
+                      </div>
+                    )}
 
                     {/* Reply Form */}
                     <div className="space-y-3">

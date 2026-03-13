@@ -13,6 +13,7 @@ import {
 import designVersionRoutes from "./designVersion.routes";
 import { getCostSummary, getCostReportPdf } from "../controllers/designCost.controller";
 import { getDesignsComparison } from "../controllers/designCompare.controller";
+import { generateShareLink, revokeShareLink } from "../controllers/designShare.controller";
 
 const router = Router();
 
@@ -44,5 +45,11 @@ router.get("/:id/cost-summary", getCostSummary);
 
 // GET /api/designs/:id/cost-report/pdf
 router.get("/:id/cost-report/pdf", getCostReportPdf);
+
+// POST /api/designs/:id/share - Generate share link
+router.post("/:id/share", generateShareLink);
+
+// DELETE /api/designs/:id/share - Revoke share link
+router.delete("/:id/share", revokeShareLink);
 
 export default router;

@@ -24,7 +24,8 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        if (error.response && error.response.status === 401) {
+        const status = error.response?.status;
+        if (status === 401 || status === 403) {
             if (typeof window !== "undefined") {
                 try {
                     const userStr = localStorage.getItem("user");

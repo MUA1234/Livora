@@ -229,17 +229,12 @@ export default function SettingsPage() {
                     </button>
 
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
-                            <Image
-                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
-                                alt="Profile"
-                                fill
-                                className="object-cover"
-                            />
+                        <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center">
+                            <span className="text-xs font-bold text-white">{fullName?.charAt(0) || "A"}</span>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C]">{fullName || "Admin"}</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50">Administrator</span>
+                            <span className="text-sm font-semibold text-[#1C1C1C] truncate max-w-[120px]">{fullName || "Admin"}</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50 uppercase tracking-wider">Administrator</span>
                         </div>
                     </div>
                 </div>

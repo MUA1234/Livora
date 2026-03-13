@@ -9,9 +9,11 @@ import api from "@/lib/api";
 import { getUser, getToken, logout } from "@/lib/auth";
 import { Toast } from "@/components/ui/Toast";
 import { useRouter } from "next/navigation";
+import { useWishlist } from "@/context/WishlistContext";
 
 export default function MyAccountPage() {
     const router = useRouter();
+    const { items: wishlistItems } = useWishlist();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -193,61 +195,37 @@ export default function MyAccountPage() {
                         </div>
                     </section>
 
-                    {/* Wishlist Overview */}
-                    <section className="bg-white rounded-3xl p-8 mb-8 shadow-sm">
+                    <section className="bg-white rounded-3xl p-8 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-lg font-bold text-[#663F23]">Wishlist Overview</h2>
                             <Link href="/user-panel/wishlist" className="px-4 py-1.5 border border-[#D4AF37] text-[#D4AF37] rounded-full text-sm font-medium">
                                 View Full Wishlist
                             </Link>
                         </div>
-                        <div className="flex gap-4">
-                            {/* Card 1 */}
-                            <div className="border border-[#1C1C1C]/10 rounded-2xl p-4 w-1/3 text-center">
-                                <div className="h-32 relative mb-4">
-                                    <Image src="https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&q=80&w=300" alt="Velvet Armchair" fill className="object-cover rounded-xl" />
-                                </div>
-                                <div className="text-sm font-medium">Velvet Armchair</div>
-                                <div className="text-xs text-[#D4AF37] mt-1">Rs.25,000</div>
+                        {wishlistItems.length === 0 ? (
+                            <div className="text-center py-8 text-[#1C1C1C]/40">
+                                <Heart className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                                <p className="text-sm">Your wishlist is empty. Browse our catalogue to add items.</p>
                             </div>
-                            {/* Card 2 */}
-                            <div className="border border-[#1C1C1C]/10 rounded-2xl p-4 w-1/3 text-center">
-                                <div className="h-32 relative mb-4">
-                                    <Image src="https://images.unsplash.com/photo-1532588213369-0eb66191cfa3?auto=format&fit=crop&q=80&w=300" alt="Walnut Dining Table" fill className="object-cover rounded-xl" />
-                                </div>
-                                <div className="text-sm font-medium">Walnut Dining Table</div>
-                                <div className="text-xs text-[#D4AF37] mt-1">Rs.25,000</div>
+                        ) : (
+                            <div className="flex gap-4">
+                                {wishlistItems.slice(0, 3).map((item) => (
+                                    <Link key={item.id} href={`/user-panel/furniture-details/${item.id}`} className="border border-[#1C1C1C]/10 rounded-2xl p-4 w-1/3 text-center hover:border-[#D4AF37] transition-colors">
+                                        <div className="h-32 relative mb-4 bg-[#F5F5F5] rounded-xl overflow-hidden">
+                                            {item.image ? (
+                                                <Image src={item.image} alt={item.name} fill className="object-cover rounded-xl" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <Heart className="w-8 h-8 text-[#D4AF37]/30" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-sm font-medium truncate">{item.name}</div>
+                                        <div className="text-xs text-[#D4AF37] mt-1">Rs.{item.price.toLocaleString()}</div>
+                                    </Link>
+                                ))}
                             </div>
-                            {/* Card 3 */}
-                            <div className="border border-[#1C1C1C]/10 rounded-2xl p-4 w-1/3 text-center">
-                                <div className="h-32 relative mb-4 bg-[#F5F5F5] flex items-center justify-center rounded-xl overflow-hidden">
-                                    <Image src="https://images.unsplash.com/photo-1617104424032-b9e933e4b7b2?auto=format&fit=crop&q=80&w=300" alt="Ceramic Décor Vase" fill className="object-cover" />
-                                </div>
-                                <div className="text-sm font-medium">Ceramic Décor Vase</div>
-                                <div className="text-xs text-[#D4AF37] mt-1">Rs.5,000</div>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Comparison History */}
-                    <section className="bg-white rounded-3xl p-8 shadow-sm">
-                        <h2 className="text-lg font-bold text-[#663F23] mb-6">Comparison History</h2>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center py-4 px-6 bg-[#F5F2EC]/50 rounded-2xl border border-[#1C1C1C]/10">
-                                <div>
-                                    <div className="font-medium text-sm">Velvet Armchair vs. Leather Recliner</div>
-                                    <div className="text-xs text-[#1C1C1C]/40 mt-1">Feb 12, 2026</div>
-                                </div>
-                                <button className="text-[#D4AF37] text-sm">View Again</button>
-                            </div>
-                            <div className="flex justify-between items-center py-4 px-6 bg-[#F5F2EC]/50 rounded-2xl border border-[#1C1C1C]/10">
-                                <div>
-                                    <div className="font-medium text-sm">Velvet Armchair vs. Leather Recliner</div>
-                                    <div className="text-xs text-[#1C1C1C]/40 mt-1">Feb 12, 2026</div>
-                                </div>
-                                <button className="text-[#D4AF37] text-sm">View Again</button>
-                            </div>
-                        </div>
+                        )}
                     </section>
                 </div>
             </main>

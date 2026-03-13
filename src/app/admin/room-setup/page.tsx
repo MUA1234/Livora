@@ -26,11 +26,17 @@ import {
 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import api from "@/lib/api";
+import { getUser } from "@/lib/auth";
 import { Toast } from "@/components/ui/Toast";
 
 export default function RoomSetup() {
     const router = useRouter();
+    const [adminUser, setAdminUser] = useState<any>(null);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    useEffect(() => {
+        setAdminUser(getUser());
+    }, []);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
@@ -206,17 +212,12 @@ export default function RoomSetup() {
                         <span className="font-medium text-sm">Logout</span>
                     </button>
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
-                            <Image
-                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
-                                alt="Profile"
-                                fill
-                                className="object-cover"
-                            />
+                        <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center">
+                            <span className="text-xs font-bold text-white">{adminUser?.name?.charAt(0) || "A"}</span>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+                            <span className="text-sm font-semibold text-[#1C1C1C] truncate max-w-[120px]">{adminUser?.name || "Admin"}</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50 uppercase tracking-wider">{adminUser?.role || "admin"}</span>
                         </div>
                     </div>
                 </div>

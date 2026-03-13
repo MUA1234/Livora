@@ -22,6 +22,7 @@ import {
     LogOut
 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { getUser } from "@/lib/auth";
 import api from "@/lib/api";
 
 interface DesignOption {
@@ -70,6 +71,11 @@ export default function CompareDesigns() {
     const [showDropdownA, setShowDropdownA] = useState(false);
     const [showDropdownB, setShowDropdownB] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [adminUser, setAdminUser] = useState<any>(null);
+
+    useEffect(() => {
+        setAdminUser(getUser());
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -202,17 +208,12 @@ export default function CompareDesigns() {
                         <span className="font-medium text-sm">Logout</span>
                     </button>
                     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
-                            <Image
-                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
-                                alt="Profile"
-                                fill
-                                className="object-cover"
-                            />
+                        <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center">
+                            <span className="text-xs font-bold text-white">{adminUser?.name?.charAt(0) || "A"}</span>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+                            <span className="text-sm font-semibold text-[#1C1C1C] truncate max-w-[120px]">{adminUser?.name || "Admin"}</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50 uppercase tracking-wider">{adminUser?.role || "admin"}</span>
                         </div>
                     </div>
                 </div>

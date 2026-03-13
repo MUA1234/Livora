@@ -21,20 +21,19 @@ export default function AdminLogin() {
 
         try {
             const response = await api.post('/api/auth/login', { email, password });
-            const { token, user } = response.data;
+            const data = response.data;
 
-            if (user.role !== 'admin') {
+            if (data.role !== 'admin') {
                 setToast({ message: 'Admin access only. Please use the user login.', type: 'error' });
                 setIsLoading(false);
                 return;
             }
 
-            // Save to localStorage
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify({ id: data._id, name: data.name, email: data.email, role: data.role }));
 
             // Save to cookie for middleware
-            document.cookie = `livora-token=${token}; path=/; max-age=604800`;
+            document.cookie = `livora-token=${data.token}; path=/; max-age=604800`;
 
             setToast({ message: 'Welcome back!', type: 'success' });
 

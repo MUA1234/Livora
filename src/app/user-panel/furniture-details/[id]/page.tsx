@@ -1,5 +1,7 @@
 "use client";
 
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -10,29 +12,151 @@ import {
     Calendar,
     PenSquare,
     ChevronRight,
+    Loader2,
 } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
+import api from "@/lib/api";
 
-const PRODUCT = {
-    id: "1",
-    name: "Lumina Premium Velvet Sofa",
-    price: 345899,
-    image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1200",
-    rating: 4,
-    reviews: 124,
-};
+interface ProductImage {
+    imageUrl: string;
+    sortOrder: number;
+}
+
+interface Product {
+    _id: string;
+    name: string;
+    sku: string;
+    category: string;
+    price: number;
+    description: string;
+    width: number;
+    height: number;
+    depth: number;
+    colors: string[];
+    materials: string[];
+    images: ProductImage[];
+}
+
+interface ReviewStats {
+    averageRating: number;
+    totalReviews: number;
+    distribution: number[];
+}
 
 export default function FurnitureDetails() {
+    const { id } = useParams<{ id: string }>();
     const { items, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-    const isLiked = isInWishlist(PRODUCT.id);
+
+    const [product, setProduct] = useState<Product | null>(null);
+    const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
+    const [selectedImage, setSelectedImage] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!id) return;
+
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const [productRes, reviewsRes] = await Promise.all([
+                    api.get(`/api/products/${id}`),
+                    api.get(`/api/reviews/product/${id}?limit=3`),
+                ]);
+
+                setProduct(productRes.data);
+                setReviewStats(reviewsRes.data?.data?.stats ?? null);
+            } catch {
+                setError("Failed to load product details. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [id]);
+
+    const isLiked = product ? isInWishlist(product._id) : false;
 
     const toggleWishlist = () => {
-        if (isLiked) removeFromWishlist(PRODUCT.id);
-        else addToWishlist(PRODUCT);
+        if (!product) return;
+        if (isLiked) {
+            removeFromWishlist(product._id);
+        } else {
+            const mainImage = sortedImages.length > 0 ? sortedImages[0].imageUrl : "";
+            addToWishlist({
+                id: product._id,
+                name: product.name,
+                price: product.price,
+                image: mainImage,
+            });
+        }
     };
+
+    const sortedImages = product
+        ? [...product.images].sort((a, b) => a.sortOrder - b.sortOrder)
+        : [];
+
+    const averageRating = reviewStats?.averageRating ?? 0;
+    const totalReviews = reviewStats?.totalReviews ?? 0;
+
+    const renderStars = (rating: number) => {
+        const fullStars = Math.floor(rating);
+        const fraction = rating - fullStars;
+
+        return (
+            <div className="flex text-[#D4AF37]">
+                {Array.from({ length: 5 }, (_, i) => {
+                    if (i < fullStars) {
+                        return <Star key={i} size={16} fill="currentColor" />;
+                    }
+                    if (i === fullStars && fraction > 0) {
+                        return (
+                            <div key={i} className="relative">
+                                <Star size={16} className="text-[#E5E5E5]" />
+                                <div
+                                    className="absolute inset-0 overflow-hidden text-[#D4AF37]"
+                                    style={{ width: `${fraction * 100}%` }}
+                                >
+                                    <Star size={16} fill="currentColor" />
+                                </div>
+                            </div>
+                        );
+                    }
+                    return <Star key={i} size={16} className="text-[#E5E5E5]" />;
+                })}
+            </div>
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-[#663F23]" />
+            </div>
+        );
+    }
+
+    if (error || !product) {
+        return (
+            <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center gap-4">
+                <p className="text-lg text-[#1C1C1C]/70">{error || "Product not found."}</p>
+                <Link
+                    href="/user-panel/furniture-catalogue"
+                    className="px-6 py-3 bg-[#663F23] text-white rounded-lg font-medium hover:bg-[#52321A] transition-colors"
+                >
+                    Back to Catalogue
+                </Link>
+            </div>
+        );
+    }
+
+    const mainImageUrl = sortedImages.length > 0 ? sortedImages[selectedImage]?.imageUrl : "";
+
     return (
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
-            {/* Top Navigation */}
             <header className="bg-[#FAF8F5] px-8 md:px-16 h-20 flex items-center justify-between sticky top-0 z-50">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full border border-[#663F23] flex items-center justify-center relative overflow-hidden">
@@ -73,122 +197,118 @@ export default function FurnitureDetails() {
             </header>
 
             <main className="max-w-[1400px] mx-auto px-8 md:px-16 py-8">
-                {/* Breadcrumb */}
                 <div className="flex items-center gap-2 text-sm text-[#1C1C1C]/60 mb-8">
                     <Link href="/" className="hover:text-[#1C1C1C] transition-colors">Home</Link>
                     <ChevronRight size={14} />
                     <Link href="/user-panel/furniture-catalogue" className="hover:text-[#1C1C1C] transition-colors">Catalogue</Link>
                     <ChevronRight size={14} />
-                    <Link href="#" className="hover:text-[#1C1C1C] transition-colors">Living Room</Link>
+                    <Link href="#" className="hover:text-[#1C1C1C] transition-colors">{product.category}</Link>
                     <ChevronRight size={14} />
-                    <span className="font-semibold text-[#1C1C1C]">Lumina Premium Velvet Sofa</span>
+                    <span className="font-semibold text-[#1C1C1C]">{product.name}</span>
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-12">
-                    {/* Left: Images */}
                     <div className="w-full lg:w-[55%] flex flex-col gap-4">
                         <div className="relative w-full aspect-[4/3] bg-[#E5E5E5] rounded-2xl overflow-hidden">
-                            <Image
-                                src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1200"
-                                alt="Lumina Premium Velvet Sofa"
-                                fill
-                                className="object-cover"
-                            />
+                            {mainImageUrl && (
+                                <Image
+                                    src={mainImageUrl}
+                                    alt={product.name}
+                                    fill
+                                    className="object-cover"
+                                />
+                            )}
                         </div>
-                        <div className="grid grid-cols-4 gap-4">
-                            <div className="relative aspect-[4/3] bg-[#E5E5E5] rounded-xl overflow-hidden cursor-pointer ring-2 ring-[#D4AF37] ring-offset-2">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=300"
-                                    alt="Sofa view 1"
-                                    fill
-                                    className="object-cover"
-                                />
+                        {sortedImages.length > 1 && (
+                            <div className="grid grid-cols-4 gap-4">
+                                {sortedImages.map((img, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setSelectedImage(index)}
+                                        className={`relative aspect-[4/3] bg-[#E5E5E5] rounded-xl overflow-hidden cursor-pointer transition-opacity ${
+                                            selectedImage === index
+                                                ? "ring-2 ring-[#D4AF37] ring-offset-2"
+                                                : "hover:opacity-80"
+                                        }`}
+                                    >
+                                        <Image
+                                            src={img.imageUrl}
+                                            alt={`${product.name} view ${index + 1}`}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </button>
+                                ))}
                             </div>
-                            <div className="relative aspect-[4/3] bg-[#E5E5E5] rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&q=80&w=300"
-                                    alt="Sofa view 2"
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                            <div className="relative aspect-[4/3] bg-white rounded-xl overflow-hidden cursor-pointer border border-[#E5E5E5] hover:opacity-80 transition-opacity flex items-center justify-center">
-                                {/* Mock white image */}
-                            </div>
-                            <div className="relative aspect-[4/3] bg-[#E5E5E5] rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1540574163026-643ea2032beb?auto=format&fit=crop&q=80&w=300"
-                                    alt="Sofa view 3"
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                        </div>
+                        )}
                     </div>
 
-                    {/* Right: Product Details */}
                     <div className="w-full lg:w-[45%] flex flex-col">
-                        <h1 className="text-4xl font-extrabold text-[#1C1C1C] mb-3">Lumina Premium Velvet Sofa</h1>
+                        <h1 className="text-4xl font-extrabold text-[#1C1C1C] mb-3">{product.name}</h1>
 
                         <div className="flex items-center gap-2 mb-6 text-sm">
-                            <div className="flex text-[#D4AF37]">
-                                <Star size={16} fill="currentColor" />
-                                <Star size={16} fill="currentColor" />
-                                <Star size={16} fill="currentColor" />
-                                <Star size={16} fill="currentColor" />
-                                <div className="relative">
-                                    <Star size={16} className="text-[#E5E5E5]" />
-                                    <div className="absolute inset-0 overflow-hidden w-[80%] text-[#D4AF37]">
-                                        <Star size={16} fill="currentColor" />
-                                    </div>
-                                </div>
-                            </div>
-                            <span className="text-[#1C1C1C]/60 underline cursor-pointer hover:text-[#1C1C1C]">4.8 (124 reviews)</span>
+                            {renderStars(averageRating)}
+                            <span className="text-[#1C1C1C]/60 underline cursor-pointer hover:text-[#1C1C1C]">
+                                {averageRating.toFixed(1)} ({totalReviews} {totalReviews === 1 ? "review" : "reviews"})
+                            </span>
                         </div>
 
-                        <div className="text-4xl font-bold text-[#1C1C1C] mb-6">Rs.345,899.00</div>
+                        <div className="text-4xl font-bold text-[#1C1C1C] mb-6">
+                            Rs.{product.price.toLocaleString("en-LK", { minimumFractionDigits: 2 })}
+                        </div>
 
                         <p className="text-[#1C1C1C]/80 leading-relaxed mb-8">
-                            Elevate your living space with the Lumina Premium Velvet Sofa. Designed with a timeless silhouette, high-density foam cushions, and a sturdy kiln-dried hardwood frame, this piece perfectly balances luxury and durability.
+                            {product.description}
                         </p>
 
-                        <div className="mb-8">
-                            <h3 className="font-bold text-lg mb-4 text-[#1C1C1C]">Available Colours</h3>
-                            <div className="flex gap-4">
-                                <button className="w-8 h-8 rounded-full bg-[#303E48] ring-2 ring-offset-2 ring-[#303E48]"></button>
-                                <button className="w-8 h-8 rounded-full bg-[#A08168] hover:ring-2 ring-offset-2 ring-[#A08168] transition-all"></button>
-                                <button className="w-8 h-8 rounded-full bg-[#E5E7EB] border border-gray-300 hover:ring-2 ring-offset-2 ring-[#E5E7EB] transition-all"></button>
-                                <button className="w-8 h-8 rounded-full bg-[#5C6E3D] hover:ring-2 ring-offset-2 ring-[#5C6E3D] transition-all"></button>
+                        {product.colors.length > 0 && (
+                            <div className="mb-8">
+                                <h3 className="font-bold text-lg mb-4 text-[#1C1C1C]">Available Colours</h3>
+                                <div className="flex gap-4">
+                                    {product.colors.map((color, index) => (
+                                        <button
+                                            key={index}
+                                            className="w-8 h-8 rounded-full border border-gray-300 hover:ring-2 ring-offset-2 transition-all"
+                                            style={{ backgroundColor: color, outlineColor: color }}
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="mb-10 bg-white p-6 rounded-2xl border border-[#E5E5E5]">
                             <h3 className="font-bold text-lg mb-4 text-[#1C1C1C]">Specifications & Dimensions</h3>
                             <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-                                <div>
-                                    <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Material Type</span>
-                                    <span className="font-semibold text-[#1C1C1C]">Premium Velvet</span>
-                                </div>
-                                <div>
-                                    <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Frame</span>
-                                    <span className="font-semibold text-[#1C1C1C]">Kiln-dried hardwood</span>
-                                </div>
-                                <div>
-                                    <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Overall Width</span>
-                                    <span className="font-semibold text-[#1C1C1C]">84 inches</span>
-                                </div>
-                                <div>
-                                    <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Overall Depth</span>
-                                    <span className="font-semibold text-[#1C1C1C]">38 inches</span>
-                                </div>
-                                <div>
-                                    <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Overall Height</span>
-                                    <span className="font-semibold text-[#1C1C1C]">34 inches</span>
-                                </div>
-                                <div>
-                                    <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Seat Height</span>
-                                    <span className="font-semibold text-[#1C1C1C]">18 inches</span>
-                                </div>
+                                {product.materials.length > 0 && (
+                                    <div>
+                                        <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Materials</span>
+                                        <span className="font-semibold text-[#1C1C1C]">{product.materials.join(", ")}</span>
+                                    </div>
+                                )}
+                                {product.sku && (
+                                    <div>
+                                        <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">SKU</span>
+                                        <span className="font-semibold text-[#1C1C1C]">{product.sku}</span>
+                                    </div>
+                                )}
+                                {product.width > 0 && (
+                                    <div>
+                                        <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Overall Width</span>
+                                        <span className="font-semibold text-[#1C1C1C]">{product.width} inches</span>
+                                    </div>
+                                )}
+                                {product.depth > 0 && (
+                                    <div>
+                                        <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Overall Depth</span>
+                                        <span className="font-semibold text-[#1C1C1C]">{product.depth} inches</span>
+                                    </div>
+                                )}
+                                {product.height > 0 && (
+                                    <div>
+                                        <span className="text-[#1C1C1C]/50 text-xs uppercase tracking-wider block mb-1">Overall Height</span>
+                                        <span className="font-semibold text-[#1C1C1C]">{product.height} inches</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -200,10 +320,11 @@ export default function FurnitureDetails() {
                                 <button
                                     onClick={toggleWishlist}
                                     title={isLiked ? "Remove from Wishlist" : "Add to Wishlist"}
-                                    className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors shrink-0 ${isLiked
+                                    className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
+                                        isLiked
                                             ? "bg-red-500 text-white hover:bg-red-600"
                                             : "bg-[#D4AF37] text-white hover:bg-[#C19B2E]"
-                                        }`}
+                                    }`}
                                 >
                                     <Heart size={20} className={isLiked ? "fill-white" : ""} />
                                 </button>
@@ -220,7 +341,6 @@ export default function FurnitureDetails() {
                                 <PenSquare size={18} /> Write a Review
                             </Link>
                         </div>
-
                     </div>
                 </div>
             </main>
