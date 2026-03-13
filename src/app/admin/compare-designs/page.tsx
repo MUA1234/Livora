@@ -2,7 +2,26 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronDown, Repeat, Loader2, AlertCircle, Inbox } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import {
+    ChevronLeft,
+    ChevronDown,
+    Repeat,
+    Loader2,
+    AlertCircle,
+    Inbox,
+    LayoutDashboard,
+    Monitor,
+    Sofa,
+    LayoutTemplate,
+    FileText,
+    Users,
+    ScrollText,
+    Settings,
+    LogOut
+} from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import api from "@/lib/api";
 
 interface DesignOption {
@@ -39,6 +58,7 @@ interface ComparisonData {
 const fmt = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
 export default function CompareDesigns() {
+    const router = useRouter();
     const [designs, setDesigns] = useState<DesignOption[]>([]);
     const [selectedA, setSelectedA] = useState("");
     const [selectedB, setSelectedB] = useState("");
@@ -49,6 +69,13 @@ export default function CompareDesigns() {
     const [error, setError] = useState<string | null>(null);
     const [showDropdownA, setShowDropdownA] = useState(false);
     const [showDropdownB, setShowDropdownB] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/admin/login");
+    };
 
     // Fetch design list
     useEffect(() => {
@@ -112,17 +139,89 @@ export default function CompareDesigns() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F5F1E8] p-8 font-sans text-[#1C1C1C]">
-            {/* Header */}
-            <div className="flex justify-between items-start mb-8">
+        <div className="min-h-screen bg-[#F5F1E8] flex overflow-hidden font-sans text-[#1C1C1C]">
+            <aside className="w-64 bg-[#F5F1E8] border-r border-[#E5E5E5] flex flex-col justify-between shrink-0 h-screen sticky top-0">
                 <div>
-                    <h1 className="text-3xl font-bold mb-2">Design Comparison</h1>
-                    <p className="text-[#1C1C1C]/60 text-sm">Compare layouts, furniture lists &amp; costs side-by-side.</p>
+                    <div className="h-20 flex items-center px-8 border-b border-[#E5E5E5]/50">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full border border-[#663F23] flex items-center justify-center relative overflow-hidden bg-white">
+                                <Image
+                                    src="/logo.png"
+                                    alt="LIVORA"
+                                    width={40}
+                                    height={40}
+                                    className="object-cover"
+                                />
+                            </div>
+                            <span className="text-2xl font-bold text-[#663F23] tracking-tight">Livora</span>
+                        </div>
+                    </div>
+
+                    <nav className="p-4 space-y-1 mt-4">
+                        <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <LayoutDashboard size={20} />
+                            <span className="font-medium text-sm">Dashboard</span>
+                        </Link>
+                        <Link href="/admin/room-setup" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <Monitor size={20} />
+                            <span className="font-medium text-sm">Room Setup</span>
+                        </Link>
+                        <Link href="/admin/catalogue" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <Sofa size={20} />
+                            <span className="font-medium text-sm">Catalogue</span>
+                        </Link>
+                        <Link href="/admin/compare-designs" className="flex items-center gap-3 px-4 py-3 bg-[#663F23] text-white rounded-lg">
+                            <LayoutTemplate size={20} />
+                            <span className="font-medium text-sm">Compare Designs</span>
+                        </Link>
+                        <Link href="/admin/cost-summary" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <FileText size={20} />
+                            <span className="font-medium text-sm">Cost Summary</span>
+                        </Link>
+                        <Link href="/admin/consultations" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <Users size={20} />
+                            <span className="font-medium text-sm">Consultations</span>
+                        </Link>
+                        <Link href="/admin/design-history" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <ScrollText size={20} />
+                            <span className="font-medium text-sm">Design History</span>
+                        </Link>
+                    </nav>
                 </div>
-                <Link href="/dashboard" className="flex items-center gap-2 bg-[#663F23]/80 hover:bg-[#663F23] text-white px-4 py-2 rounded-full text-sm font-medium transition-colors">
-                    <ChevronLeft size={16} />
-                    Back to Dashboard
-                </Link>
+
+                <div className="p-4 border-t border-[#E5E5E5]/50 shrink-0">
+                    <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
+                        <Settings size={20} />
+                        <span className="font-medium text-sm">Settings</span>
+                    </Link>
+                    <button
+                        onClick={() => setIsLogoutModalOpen(true)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors mb-4 focus:outline-none cursor-pointer"
+                    >
+                        <LogOut size={20} />
+                        <span className="font-medium text-sm">Logout</span>
+                    </button>
+                    <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
+                            <Image
+                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
+                                alt="Profile"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <main className="flex-1 overflow-y-auto p-8">
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold mb-2">Design Comparison</h1>
+                <p className="text-[#1C1C1C]/60 text-sm">Compare layouts, furniture lists &amp; costs side-by-side.</p>
             </div>
 
             {/* Selectors */}
@@ -352,6 +451,16 @@ export default function CompareDesigns() {
                     </div>
                 </>
             )}
+
+            {isLogoutModalOpen && (
+                <ConfirmModal
+                    title="Confirm Logout"
+                    message="Are you sure you want to logout from Livora admin panel?"
+                    onConfirm={handleLogout}
+                    onCancel={() => setIsLogoutModalOpen(false)}
+                />
+            )}
+            </main>
         </div>
     );
 }

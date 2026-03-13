@@ -22,8 +22,17 @@ import {
   Ban,
   LogOut,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  LayoutDashboard,
+  Monitor,
+  Sofa,
+  LayoutTemplate,
+  FileText,
+  Users,
+  ScrollText,
+  Settings
 } from "lucide-react";
+import Link from "next/link";
 import Image from "next/image";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Toast, ToastType } from "@/components/ui/Toast";
@@ -233,53 +242,96 @@ export default function ConsultationManagementPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8F6F0] font-sans text-[#1C1C1C] flex flex-col">
-      {/* Header */}
+    <div className="min-h-screen bg-[#F8F6F0] font-sans text-[#1C1C1C] flex overflow-hidden">
+      <aside className="w-64 bg-[#F5F1E8] border-r border-[#E5E5E5] flex flex-col justify-between shrink-0 h-screen sticky top-0">
+        <div>
+          <div className="h-20 flex items-center px-8 border-b border-[#E5E5E5]/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full border border-[#663F23] flex items-center justify-center relative overflow-hidden bg-white">
+                <Image
+                  src="/logo.png"
+                  alt="LIVORA"
+                  width={40}
+                  height={40}
+                  className="object-cover"
+                />
+              </div>
+              <span className="text-2xl font-bold text-[#663F23] tracking-tight">Livora</span>
+            </div>
+          </div>
+
+          <nav className="p-4 space-y-1 mt-4">
+            <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+              <LayoutDashboard size={20} />
+              <span className="font-medium text-sm">Dashboard</span>
+            </Link>
+            <Link href="/admin/room-setup" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+              <Monitor size={20} />
+              <span className="font-medium text-sm">Room Setup</span>
+            </Link>
+            <Link href="/admin/catalogue" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+              <Sofa size={20} />
+              <span className="font-medium text-sm">Catalogue</span>
+            </Link>
+            <Link href="/admin/compare-designs" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+              <LayoutTemplate size={20} />
+              <span className="font-medium text-sm">Compare Designs</span>
+            </Link>
+            <Link href="/admin/cost-summary" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+              <FileText size={20} />
+              <span className="font-medium text-sm">Cost Summary</span>
+            </Link>
+            <Link href="/admin/consultations" className="flex items-center gap-3 px-4 py-3 bg-[#663F23] text-white rounded-lg">
+              <Users size={20} />
+              <span className="font-medium text-sm">Consultations</span>
+            </Link>
+            <Link href="/admin/design-history" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+              <ScrollText size={20} />
+              <span className="font-medium text-sm">Design History</span>
+            </Link>
+          </nav>
+        </div>
+
+        <div className="p-4 border-t border-[#E5E5E5]/50 shrink-0">
+          <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
+            <Settings size={20} />
+            <span className="font-medium text-sm">Settings</span>
+          </Link>
+          <button
+            onClick={() => setIsLogoutModalOpen(true)}
+            className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors mb-4 focus:outline-none cursor-pointer"
+          >
+            <LogOut size={20} />
+            <span className="font-medium text-sm">Logout</span>
+          </button>
+          <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
+            <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
+              <Image
+                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
+                alt="Profile"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
+              <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div className="flex-1 overflow-y-auto flex flex-col">
       <div className="bg-white">
         <div className="flex items-center justify-between px-10 py-6 border-b border-[#E5E5E5]/60 w-full">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-[#F4F1ED] text-[#8C8C8C] hover:text-[#6E421E] transition-colors"
-              title="Back to Dashboard"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <div className="w-12 h-12 rounded-full border border-[#D4C3A3] flex items-center justify-center relative overflow-hidden bg-white shrink-0">
-              <span className="text-xl font-bold text-[#6E421E]">L</span>
-            </div>
             <div>
               <h1 className="text-[22px] font-bold text-[#1C1C1C] leading-snug">Consultation Management</h1>
               <p className="text-[13px] font-medium text-[#8C8C8C]">Manage and respond to design consultation requests</p>
             </div>
           </div>
-
-          <div className="flex items-center gap-4 relative">
-            <span className="text-sm font-semibold text-[#8C8C8C]">Livora Admin</span>
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="w-10 h-10 bg-[#6E421E] rounded-full flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#5A3518] transition-colors"
-            >
-              <span className="text-[13px] text-white font-bold">AD</span>
-            </button>
-            {showProfileMenu && (
-              <div className="absolute top-12 right-0 w-48 bg-white border border-[#E5E5E5] rounded-xl shadow-lg z-50 overflow-hidden">
-                <div className="py-2">
-                  <button
-                    onClick={() => { setShowProfileMenu(false); setIsLogoutModalOpen(true); }}
-                    className="w-full text-left px-4 py-3 text-[14px] font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Filter Tabs */}
         <div className="px-10 py-5 flex items-center gap-3 w-full border-b border-[#E5E5E5]/60 shadow-[0_4px_10px_rgba(0,0,0,0.02)]">
           {(["all", "pending", "confirmed", "completed", "rejected"] as const).map((status) => (
             <button
@@ -594,13 +646,14 @@ export default function ConsultationManagementPage() {
       )}
 
       {isLogoutModalOpen && (
-        <ConfirmModal 
-          title="Confirm Logout" 
-          message="Are you sure you want to logout from Livora admin panel?" 
-          onConfirm={handleLogout} 
-          onCancel={() => setIsLogoutModalOpen(false)} 
+        <ConfirmModal
+          title="Confirm Logout"
+          message="Are you sure you want to logout from Livora admin panel?"
+          onConfirm={handleLogout}
+          onCancel={() => setIsLogoutModalOpen(false)}
         />
       )}
+      </div>
     </div>
   );
 }

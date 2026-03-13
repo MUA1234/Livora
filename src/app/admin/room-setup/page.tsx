@@ -4,7 +4,26 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Save, ArrowLeft, ArrowRight, ArrowLeftRight, ArrowUpDown, MoveVertical, Settings, LogOut, ChevronDown, FolderOpen, Loader2 } from "lucide-react";
+import {
+    Save,
+    ArrowLeft,
+    ArrowRight,
+    ArrowLeftRight,
+    ArrowUpDown,
+    MoveVertical,
+    Settings,
+    LogOut,
+    ChevronDown,
+    FolderOpen,
+    Loader2,
+    LayoutDashboard,
+    Monitor,
+    Sofa,
+    LayoutTemplate,
+    FileText,
+    Users,
+    ScrollText
+} from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import api from "@/lib/api";
 import { Toast } from "@/components/ui/Toast";
@@ -124,8 +143,86 @@ export default function RoomSetup() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F5F1E8] flex flex-col font-sans text-[#1C1C1C] py-10 px-6 sm:px-12 md:px-20 lg:px-40 xl:px-60">
-            {/* Toast */}
+        <div className="min-h-screen bg-[#F5F1E8] flex overflow-hidden font-sans text-[#1C1C1C]">
+            <aside className="w-64 bg-[#F5F1E8] border-r border-[#E5E5E5] flex flex-col justify-between shrink-0 h-screen sticky top-0">
+                <div>
+                    <div className="h-20 flex items-center px-8 border-b border-[#E5E5E5]/50">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full border border-[#663F23] flex items-center justify-center relative overflow-hidden bg-white">
+                                <Image
+                                    src="/logo.png"
+                                    alt="LIVORA"
+                                    width={40}
+                                    height={40}
+                                    className="object-cover"
+                                />
+                            </div>
+                            <span className="text-2xl font-bold text-[#663F23] tracking-tight">Livora</span>
+                        </div>
+                    </div>
+
+                    <nav className="p-4 space-y-1 mt-4">
+                        <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <LayoutDashboard size={20} />
+                            <span className="font-medium text-sm">Dashboard</span>
+                        </Link>
+                        <Link href="/admin/room-setup" className="flex items-center gap-3 px-4 py-3 bg-[#663F23] text-white rounded-lg">
+                            <Monitor size={20} />
+                            <span className="font-medium text-sm">Room Setup</span>
+                        </Link>
+                        <Link href="/admin/catalogue" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <Sofa size={20} />
+                            <span className="font-medium text-sm">Catalogue</span>
+                        </Link>
+                        <Link href="/admin/compare-designs" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <LayoutTemplate size={20} />
+                            <span className="font-medium text-sm">Compare Designs</span>
+                        </Link>
+                        <Link href="/admin/cost-summary" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <FileText size={20} />
+                            <span className="font-medium text-sm">Cost Summary</span>
+                        </Link>
+                        <Link href="/admin/consultations" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <Users size={20} />
+                            <span className="font-medium text-sm">Consultations</span>
+                        </Link>
+                        <Link href="/admin/design-history" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
+                            <ScrollText size={20} />
+                            <span className="font-medium text-sm">Design History</span>
+                        </Link>
+                    </nav>
+                </div>
+
+                <div className="p-4 border-t border-[#E5E5E5]/50 shrink-0">
+                    <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
+                        <Settings size={20} />
+                        <span className="font-medium text-sm">Settings</span>
+                    </Link>
+                    <button
+                        onClick={() => setIsLogoutModalOpen(true)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors mb-4 focus:outline-none cursor-pointer"
+                    >
+                        <LogOut size={20} />
+                        <span className="font-medium text-sm">Logout</span>
+                    </button>
+                    <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative">
+                            <Image
+                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
+                                alt="Profile"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-[#1C1C1C]">Sara Samarasinghe</span>
+                            <span className="text-[10px] text-[#1C1C1C]/50">Lead Designer</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <main className="flex-1 overflow-y-auto p-10">
             {toast && (
                 <Toast
                     message={toast.message}
@@ -134,15 +231,9 @@ export default function RoomSetup() {
                 />
             )}
 
-            {/* Back Navigation */}
-            <div className="mb-6 flex items-center justify-between">
-                <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[#663F23] hover:text-[#4A2D19] transition-colors group">
-                    <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                    Back to Dashboard
-                </Link>
-
+            <div className="mb-6 flex items-center justify-end">
                 <div className="relative">
-                    <button 
+                    <button
                         onClick={() => setShowDraftsList(!showDraftsList)}
                         className="flex items-center gap-2 px-4 py-2 bg-white/50 hover:bg-white text-sm font-semibold rounded-lg border border-[#E5E5E5] transition-all"
                     >
@@ -185,7 +276,6 @@ export default function RoomSetup() {
                 </div>
             </div>
 
-            {/* Header */}
             <header className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-[#1C1C1C]">Room Setup</h1>
@@ -435,24 +525,16 @@ export default function RoomSetup() {
                 </section>
             </div>
 
-            {/* Logout Sidebar Substitute (Since it doesn't have a sidebar, we attach it bottom) */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-white p-4 rounded-2xl shadow-sm border border-[#E5E5E5]/50">
-                <button
-                    onClick={() => setIsLogoutModalOpen(true)}
-                    className="flex items-center gap-3 px-6 py-3.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-colors font-medium border border-red-100 w-full sm:w-auto focus:outline-none cursor-pointer"
-                >
-                    <LogOut size={18} />
-                    Logout
-                </button>
-                <Link 
-                    href={roomId ? `/admin/2d-layout?roomId=${roomId}` : "#"} 
+            <div className="flex justify-end mt-8">
+                <Link
+                    href={roomId ? `/admin/2d-layout?roomId=${roomId}` : "#"}
                     onClick={(e) => {
                         if (!roomId) {
                             e.preventDefault();
                             setToast({ message: "Please save the room configuration first", type: "info" });
                         }
                     }}
-                    className={`w-full sm:w-auto px-8 py-3.5 bg-[#663F23] text-white font-semibold rounded-xl hover:bg-[#52321c] transition-colors flex items-center justify-center gap-2 ${!roomId ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`px-8 py-3.5 bg-[#663F23] text-white font-semibold rounded-xl hover:bg-[#52321c] transition-colors flex items-center justify-center gap-2 ${!roomId ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                     Continue to 2D Layout
                     <ArrowRight size={18} />
@@ -467,6 +549,7 @@ export default function RoomSetup() {
                     onCancel={() => setIsLogoutModalOpen(false)}
                 />
             )}
+            </main>
         </div>
     );
 }

@@ -16,7 +16,10 @@
       "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npx next build 2>&1 | tail -35)",
       "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\\\\livora-backend\" && npx tsc 2>&1)",
       "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && rm screenshot.mjs)",
-      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npx next build 2>&1 | grep -E \"\\(error|Error|✓|○|ƒ|Route\\)\" | head -30)"
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npx next build 2>&1 | grep -E \"\\(error|Error|✓|○|ƒ|Route\\)\" | head -30)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && node screenshot-admin.mjs 2>&1)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard 2>&1)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && node -e \"\nconst { chromium } = require\\('playwright'\\);\nconst path = require\\('path'\\);\nconst dir = path.join\\(__dirname, 'debug-screenshots'\\);\n\nconst pages = [\n  { name: 'admin-room-setup', url: 'http://localhost:3000/admin/room-setup' },\n  { name: 'admin-compare-designs', url: 'http://localhost:3000/admin/compare-designs' },\n  { name: 'admin-consultations', url: 'http://localhost:3000/admin/consultations' },\n  { name: 'admin-dashboard', url: 'http://localhost:3000/dashboard' },\n  { name: 'admin-catalogue', url: 'http://localhost:3000/admin/catalogue' },\n  { name: 'admin-cost-summary', url: 'http://localhost:3000/admin/cost-summary' },\n];\n\n\\(async \\(\\) => {\n  const browser = await chromium.launch\\(\\);\n  const context = await browser.newContext\\({ viewport: { width: 1440, height: 900 } }\\);\n  for \\(const p of pages\\) {\n    const page = await context.newPage\\(\\);\n    try {\n      await page.goto\\(p.url, { waitUntil: 'networkidle', timeout: 15000 }\\);\n      await page.waitForTimeout\\(2000\\);\n    } catch \\(e\\) {\n      console.log\\('TIMEOUT: ' + p.name + ' - ' + e.message\\);\n    }\n    await page.screenshot\\({ path: path.join\\(dir, p.name + '.png'\\), fullPage: true }\\);\n    console.log\\('OK: ' + p.name\\);\n    await page.close\\(\\);\n  }\n  await browser.close\\(\\);\n  console.log\\('Done!'\\);\n}\\)\\(\\);\n\" 2>&1)"
     ]
   }
 }
