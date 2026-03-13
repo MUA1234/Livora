@@ -21,6 +21,7 @@ import {
     Loader2
 } from "lucide-react";
 import Image from "next/image";
+import PhoneInput from "@/components/ui/PhoneInput";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -90,7 +91,7 @@ export default function SettingsPage() {
                 setIsProfileLoading(false);
             }
         })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ---------- Handlers ----------
@@ -301,13 +302,12 @@ export default function SettingsPage() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-[#1C1C1C] mb-2">Phone no</label>
-                                        <input
-                                            type="tel"
+                                        <PhoneInput
                                             value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                            autoComplete="off"
-                                            className="w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border border-[#E5E5E5]/50 text-sm text-[#1C1C1C] focus:outline-none focus:border-[#663F23] transition-colors"
-                                            placeholder="Enter your phone number"
+                                            onChange={setPhone}
+                                            placeholder="Phone number"
+                                            style={{ background: "#F5F1E8", border: "1px solid rgba(229,229,229,0.5)", borderRadius: "8px" }}
+                                            id="admin-phone"
                                         />
                                     </div>
 
@@ -337,9 +337,8 @@ export default function SettingsPage() {
                                         value={currentPassword}
                                         onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(null); }}
                                         autoComplete="off"
-                                        className={`w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border text-sm text-[#1C1C1C] focus:outline-none transition-colors pr-12 ${
-                                            passwordError?.toLowerCase().includes("current") ? "border-red-400 focus:border-red-500" : "border-[#E5E5E5]/50 focus:border-[#663F23]"
-                                        }`}
+                                        className={`w-full px-4 py-3 bg-[#F5F1E8] rounded-lg border text-sm text-[#1C1C1C] focus:outline-none transition-colors pr-12 ${passwordError?.toLowerCase().includes("current") ? "border-red-400 focus:border-red-500" : "border-[#E5E5E5]/50 focus:border-[#663F23]"
+                                            }`}
                                     />
                                     <button
                                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}

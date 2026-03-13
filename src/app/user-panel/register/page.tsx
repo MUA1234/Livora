@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Mail, Lock, Loader2, Eye, EyeOff, User, Phone, ArrowRight, Check } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, User, ArrowRight, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import api from '@/lib/api';
 import { Toast } from '@/components/ui/Toast';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 function PasswordStrength({ password }: { password: string }) {
     const getStrength = () => {
@@ -187,16 +188,16 @@ export default function UserRegister() {
                             <div>
                                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
                                     style={{ color: '#663F23' }}>Phone</label>
-                                <div className="relative">
-                                    <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: focusedField === 'phone' ? '#663F23' : '#aaa' }} />
-                                    <input type="tel" required value={form.phone}
-                                        onChange={e => update('phone', e.target.value)}
-                                        onFocus={() => setFocusedField('phone')}
-                                        onBlur={() => setFocusedField(null)}
-                                        placeholder="+94 77 000 0000"
-                                        className="w-full pl-9 pr-3 py-3 rounded-xl text-sm outline-none transition-all"
-                                        style={fieldStyle('phone')} />
-                                </div>
+                                <PhoneInput
+                                    value={form.phone}
+                                    onChange={(val) => update('phone', val)}
+                                    onFocus={() => setFocusedField('phone')}
+                                    onBlur={() => setFocusedField(null)}
+                                    required
+                                    placeholder="77 000 0000"
+                                    style={fieldStyle('phone')}
+                                    id="register-phone"
+                                />
                             </div>
                         </div>
 

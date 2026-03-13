@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { User, Send, Heart, Star, LogOut, Eye } from "lucide-react";
 import Image from "next/image";
+import PhoneInput from "@/components/ui/PhoneInput";
 
 export default function MyAccountPage() {
+    const [phone, setPhone] = useState("");
     return (
         <div className="min-h-screen bg-[#F5F2EC] flex text-[#1C1C1C] font-sans">
             {/* Left Sidebar */}
@@ -69,7 +72,13 @@ export default function MyAccountPage() {
                                 </div>
                                 <div className="flex-1">
                                     <label className="block text-sm mb-2">Phone Number</label>
-                                    <input type="text" className="w-full bg-[#F5F2EC] rounded-xl px-4 py-3 outline-none" defaultValue="" />
+                                    <PhoneInput
+                                        value={phone}
+                                        onChange={setPhone}
+                                        placeholder="Phone number"
+                                        style={{ background: "#F5F2EC", borderRadius: "12px" }}
+                                        id="account-phone"
+                                    />
                                 </div>
                             </div>
                             <div className="flex justify-end">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PhoneInput from "@/components/ui/PhoneInput";
 import {
   User,
   Mail,
@@ -242,13 +243,13 @@ export default function ConsultationRequestPage() {
                     <Phone className="w-4 h-4 text-charcoal/30" />
                     Phone Number <span className="text-red-400">*</span>
                   </label>
-                  <input
-                    type="tel"
-                    required
+                  <PhoneInput
                     value={formData.phone}
-                    onChange={(e) => handleChange("phone", e.target.value)}
-                    placeholder="+1 (555) 000-0000"
-                    className="w-full px-4 py-3.5 bg-cream/50 rounded-xl border border-silver/40 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/10 focus:bg-white transition-all"
+                    onChange={(val) => handleChange("phone", val)}
+                    required
+                    placeholder="Phone number"
+                    style={{ background: "rgba(250,248,244,0.5)", border: "1px solid rgba(200,200,200,0.4)", borderRadius: "12px" }}
+                    id="consultation-phone"
                   />
                 </div>
               </div>
