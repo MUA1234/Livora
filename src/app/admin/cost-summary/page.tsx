@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Toast, ToastType } from "@/components/ui/Toast";
@@ -40,7 +40,15 @@ interface CostData {
     grandTotal: number;
 }
 
-export default function CostSummary() {
+export default function CostSummaryPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#F5F1E8] flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+            <CostSummary />
+        </Suspense>
+    );
+}
+
+function CostSummary() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const designId = searchParams.get("designId") || "";

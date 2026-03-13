@@ -11,6 +11,8 @@ import designRoutes from "./routes/design.routes";
 import adminConsultationRoutes from "./routes/admin.consultation.routes";
 import adminDashboardRoutes from "./routes/admin.dashboard.routes";
 import adminProfileRoutes from "./routes/admin.profile.routes";
+import consultationRequestRoutes from "./routes/consultationRequest.routes";
+import userRoutes from "./routes/user.routes";
 
 dotenv.config();
 
@@ -20,7 +22,8 @@ dns.setServers(["8.8.8.8", "8.8.4.4"]);
 const app = express();
 
 // Middleware
-app.use(cors({ origin: "http://localhost:3000" }));
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000").split(",");
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 // Routes
@@ -31,6 +34,8 @@ app.use("/api/designs", designRoutes);
 app.use("/api/admin/consultations", adminConsultationRoutes);
 app.use("/api/admin/dashboard", adminDashboardRoutes);
 app.use("/api/admin/profile", adminProfileRoutes);
+app.use("/api/consultation-requests", consultationRequestRoutes);
+app.use("/api/users", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;

@@ -1,13 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { User, Send, Heart, Star, LogOut, Eye } from "lucide-react";
+import { User, Send, Heart, Star, LogOut, Eye, Loader2 } from "lucide-react";
 import Image from "next/image";
 import PhoneInput from "@/components/ui/PhoneInput";
+import api from "@/lib/api";
+import { getUser, getToken, logout } from "@/lib/auth";
+import { Toast } from "@/components/ui/Toast";
+import { useRouter } from "next/navigation";
 
 export default function MyAccountPage() {
+    const router = useRouter();
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+    const [consultations, setConsultations] = useState<any[]>([]);
+
+    useEffect(() => {
+        const token = getToken();
+        if (!token) {
+            router.push("/user-panel/login");
+            return;
+        }
+        loadProfile();
+        loadConsultations();
+    }, []);
+
+    const loadProfile = async () => {
+        try {
+            const res = await api.get("/api/users/profile");
+            const u = res.data.data;
+            setName(u.name || "");
+            setEmail(u.email || "");
+            setPhone(u.phone || "");
+        } catch {
+            const user = getUser();
+            if (user) {
+                setName(user.name || "");
+                setEmail(user.email || "");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadConsultations = async () => {
+        try {
+            const res = await api.get("/api/consultation-requests/my");
+            setConsultations(res.data.data || []);
+        } catch {
+            setConsultations([]);
+        }
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            await api.put("/api/users/profile", { name, email, phone });
+            setToast({ message: "Profile updated successfully", type: "success" });
+        } catch (err: any) {
+            setToast({ message: err.response?.data?.message || "Failed to update profile", type: "error" });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleLogout = () => {
+        logout();
+    };
     return (
         <div className="min-h-screen bg-[#F5F2EC] flex text-[#1C1C1C] font-sans">
             {/* Left Sidebar */}
@@ -38,11 +102,11 @@ export default function MyAccountPage() {
 
                 <div className="mt-auto bg-[#B5A196] p-4 rounded-2xl flex items-center gap-4 text-white">
                     <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#B5A196] font-bold shrink-0">
-                        AJ
+                        {name ? name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "U"}
                     </div>
                     <div>
-                        <div className="font-bold">Alex Janny</div>
-                        <div className="text-xs text-white/80">AlexJanny@gmail.com</div>
+                        <div className="font-bold">{name || "User"}</div>
+                        <div className="text-xs text-white/80">{email}</div>
                     </div>
                 </div>
             </aside>
@@ -52,7 +116,7 @@ export default function MyAccountPage() {
                 <div className="max-w-[800px]">
                     <div className="flex items-center justify-between mb-8">
                         <h1 className="text-4xl font-bold text-[#663F23]">My Account</h1>
-                        <button className="flex items-center gap-2 px-6 py-2 border border-[#1C1C1C]/20 rounded-full hover:bg-white transition-colors text-sm font-medium">
+                        <button onClick={handleLogout} className="flex items-center gap-2 px-6 py-2 border border-[#1C1C1C]/20 rounded-full hover:bg-white transition-colors text-sm font-medium">
                             <LogOut size={16} /> Logout
                         </button>
                     </div>
@@ -63,12 +127,12 @@ export default function MyAccountPage() {
                         <div className="space-y-6">
                             <div>
                                 <label className="block text-sm mb-2">Full Name</label>
-                                <input type="text" className="w-full bg-[#F5F2EC] rounded-xl px-4 py-3 outline-none" defaultValue="" />
+                                <input type="text" className="w-full bg-[#F5F2EC] rounded-xl px-4 py-3 outline-none" value={name} onChange={(e) => setName(e.target.value)} />
                             </div>
                             <div className="flex gap-6">
                                 <div className="flex-1">
                                     <label className="block text-sm mb-2">Email Address</label>
-                                    <input type="email" className="w-full bg-[#F5F2EC] rounded-xl px-4 py-3 outline-none" defaultValue="" />
+                                    <input type="email" className="w-full bg-[#F5F2EC] rounded-xl px-4 py-3 outline-none" value={email} onChange={(e) => setEmail(e.target.value)} />
                                 </div>
                                 <div className="flex-1">
                                     <label className="block text-sm mb-2">Phone Number</label>
@@ -82,8 +146,8 @@ export default function MyAccountPage() {
                                 </div>
                             </div>
                             <div className="flex justify-end">
-                                <button className="px-6 py-2.5 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors">
-                                    Save Changes
+                                <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors disabled:opacity-60">
+                                    {saving ? "Saving..." : "Save Changes"}
                                 </button>
                             </div>
                         </div>
@@ -93,7 +157,7 @@ export default function MyAccountPage() {
                     <section className="bg-white rounded-3xl p-8 mb-8 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-lg font-bold text-[#663F23]">Saved Consultation Requests</h2>
-                            <button className="text-[#D4AF37] text-sm font-medium">View All</button>
+                            <Link href="/consultation-request" className="text-[#D4AF37] text-sm font-medium">Book New</Link>
                         </div>
                         <div className="w-full text-sm">
                             <div className="flex justify-between font-bold mb-4 px-2">
@@ -102,18 +166,30 @@ export default function MyAccountPage() {
                                 <div className="w-1/4">Status</div>
                                 <div className="w-1/4 text-center">Action</div>
                             </div>
-                            <div className="flex justify-between items-center border-t border-[#F5F2EC] py-4 px-2">
-                                <div className="w-1/4">Living Room</div>
-                                <div className="w-1/4">Feb 14, 2026</div>
-                                <div className="w-1/4"><span className="px-3 py-1 bg-[#F5F2EC] rounded-md text-xs">Pending</span></div>
-                                <div className="w-1/4 flex justify-center"><button className="flex items-center gap-1 text-[#D4AF37]"><Eye size={14} /> view</button></div>
-                            </div>
-                            <div className="flex justify-between items-center border-t border-[#F5F2EC] py-4 px-2">
-                                <div className="w-1/4">Master Bedroom</div>
-                                <div className="w-1/4">Feb 2, 2026</div>
-                                <div className="w-1/4"><span className="px-3 py-1 bg-[#B5A196] text-white rounded-md text-xs">Confirmed</span></div>
-                                <div className="w-1/4 flex justify-center"><button className="flex items-center gap-1 text-[#D4AF37]"><Eye size={14} /> view</button></div>
-                            </div>
+                            {consultations.length === 0 ? (
+                                <div className="text-center py-8 text-[#1C1C1C]/40">
+                                    No consultation requests yet.{" "}
+                                    <Link href="/consultation-request" className="text-[#D4AF37] font-medium">Book one now</Link>
+                                </div>
+                            ) : (
+                                consultations.slice(0, 5).map((c: any) => (
+                                    <div key={c._id} className="flex justify-between items-center border-t border-[#F5F2EC] py-4 px-2">
+                                        <div className="w-1/4 capitalize">{c.roomType?.replace("-", " ")}</div>
+                                        <div className="w-1/4">{new Date(c.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                                        <div className="w-1/4">
+                                            <span className={`px-3 py-1 rounded-md text-xs capitalize ${
+                                                c.status === "confirmed" ? "bg-[#B5A196] text-white" :
+                                                c.status === "completed" ? "bg-green-100 text-green-700" :
+                                                c.status === "rejected" ? "bg-red-100 text-red-600" :
+                                                "bg-[#F5F2EC]"
+                                            }`}>{c.status}</span>
+                                        </div>
+                                        <div className="w-1/4 flex justify-center">
+                                            <button className="flex items-center gap-1 text-[#D4AF37]"><Eye size={14} /> view</button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </section>
 
@@ -175,6 +251,7 @@ export default function MyAccountPage() {
                     </section>
                 </div>
             </main>
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         </div>
     );
 }

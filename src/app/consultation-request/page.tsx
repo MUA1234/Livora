@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import PhoneInput from "@/components/ui/PhoneInput";
+import api from "@/lib/api";
+import { Toast } from "@/components/ui/Toast";
 import {
   User,
   Mail,
@@ -35,9 +37,28 @@ export default function ConsultationRequestPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
+    try {
+      await api.post("/api/consultation-requests", {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        roomType: formData.roomType,
+        roomSize: formData.roomSize,
+        preferredDate: formData.preferredDate || undefined,
+        notes: formData.notes || undefined,
+      });
+      setSubmitted(true);
+    } catch (err: any) {
+      setToast({ message: err.response?.data?.message || "Failed to submit request", type: "error" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const roomTypes = [
@@ -341,10 +362,11 @@ export default function ConsultationRequestPage() {
               </p>
               <button
                 type="submit"
-                className="flex items-center gap-2 px-8 py-3.5 bg-brown text-cream rounded-xl text-sm font-medium hover:bg-brown-dark transition-colors shadow-sm hover:shadow-md"
+                disabled={isSubmitting}
+                className="flex items-center gap-2 px-8 py-3.5 bg-brown text-cream rounded-xl text-sm font-medium hover:bg-brown-dark transition-colors shadow-sm hover:shadow-md disabled:opacity-60"
               >
                 <Send className="w-4 h-4" />
-                Submit Request
+                {isSubmitting ? "Submitting..." : "Submit Request"}
               </button>
             </div>
           </form>
@@ -375,6 +397,7 @@ export default function ConsultationRequestPage() {
           </div>
         </div>
       </div>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

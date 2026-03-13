@@ -4,21 +4,24 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function ForgotPassword() {
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [email, setEmail] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-
-        // Simulate an API call
-        setTimeout(() => {
-            setIsLoading(false);
+        try {
+            await api.post("/api/users/forgot-password", { email });
             setIsSubmitted(true);
-        }, 1500);
+        } catch {
+            setIsSubmitted(true);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

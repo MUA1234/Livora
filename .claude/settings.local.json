@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npx playwright install chromium 2>&1 | tail -5)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && node screenshot.mjs 2>&1)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npm uninstall playwright && npm install --save-dev playwright 2>&1 | tail -5)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npx next build 2>&1 | tail -40)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npx next build 2>&1 | tail -30)",
+      "Bash(pkill -f \"ts-node\" 2>/dev/null; pkill -f \"next dev\" 2>/dev/null; sleep 2 && echo \"killed\")",
+      "Bash(netstat -ano | grep \":3000\" | head -3)",
+      "Bash(curl -s -X POST http://localhost:5000/api/consultation-requests \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"fullName\":\"Test User\",\"email\":\"test@example.com\",\"phone\":\"+94 77 123 4567\",\"roomType\":\"living-room\",\"roomSize\":\"5x4m\"}' 2>&1)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\\\\livora-backend\" && npx ts-node -e \"import r from './src/routes/consultationRequest.routes'; console.log\\('routes loaded', typeof r\\)\" 2>&1)",
+      "Bash(curl -s http://localhost:5000/api/users/forgot-password -X POST -H \"Content-Type: application/json\" -d '{\"email\":\"test@test.com\"}' 2>&1)",
+      "Bash(netstat -ano | grep \":5000\" | head -3)",
+      "Bash(curl -s -X POST http://localhost:5000/api/users/forgot-password \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"email\":\"test@example.com\"}' 2>&1)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npx next build 2>&1 | tail -35)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\\\\livora-backend\" && npx tsc 2>&1)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && rm screenshot.mjs)",
+      "Bash(cd \"D:\\\\MUA\\\\New folder \\(5\\)\\\\Livora\" && npx next build 2>&1 | grep -E \"\\(error|Error|✓|○|ƒ|Route\\)\" | head -30)"
+    ]
+  }
+}

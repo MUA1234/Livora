@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -33,7 +33,15 @@ interface Version {
     saveType: string;
 }
 
-export default function DesignHistory() {
+export default function DesignHistoryPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#F5F1E8] flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+            <DesignHistory />
+        </Suspense>
+    );
+}
+
+function DesignHistory() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const designId = searchParams.get("designId") || searchParams.get("id"); // Handle both common variants

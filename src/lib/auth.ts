@@ -38,12 +38,10 @@ export const isLoggedIn = (): boolean => {
 
 export const logout = () => {
     if (typeof window !== "undefined") {
+        const admin = isAdmin();
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         document.cookie = "livora-token=; path=/; max-age=0";
-        // We use window.location here because it's a generic utility module 
-        // and might be called outside of React components. Next.js router 
-        // requires a React Context.
-        window.location.href = "/admin/login";
+        window.location.href = admin ? "/admin/login" : "/user-panel/login";
     }
 };

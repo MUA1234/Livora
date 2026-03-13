@@ -1,37 +1,60 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import api from '@/lib/api';
 
-export default function ResetPassword() {
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+            <ResetPassword />
+        </Suspense>
+    );
+}
+
+function ResetPassword() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         if (password !== confirmPassword) {
-            alert("Passwords do not match");
+            setError("Passwords do not match");
+            return;
+        }
+        if (password.length < 6) {
+            setError("Password must be at least 6 characters");
+            return;
+        }
+
+        const token = searchParams.get('token');
+        if (!token) {
+            setError("Invalid reset link. Please request a new one.");
             return;
         }
 
         setIsLoading(true);
-
-        // Simulate an API call
-        setTimeout(() => {
-            setIsLoading(false);
+        try {
+            await api.post("/api/users/reset-password", { token, password });
             setIsSuccess(true);
-            // Redirect to login after a short delay
             setTimeout(() => {
-                router.push('/');
+                router.push('/user-panel/login');
             }, 3000);
-        }, 1500);
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Failed to reset password");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -96,6 +119,11 @@ export default function ResetPassword() {
 
                     {!isSuccess ? (
                         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+                            {error && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                                    {error}
+                                </div>
+                            )}
                             <div className="space-y-4">
                                 <div>
                                     <label htmlFor="password" className="block text-sm font-medium text-neutral-700">
