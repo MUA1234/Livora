@@ -1,24 +1,674 @@
 "use client";
 
-import React from 'react';
-import Link from 'next/link';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, Box, Plane, Text, ContactShadows } from "@react-three/drei";
+import * as THREE from "three";
 import {
-    Box, Maximize2, RotateCw, ZoomIn, ZoomOut,
+    Box as BoxIcon,
+    Maximize2, Minimize2,
     Sun, Sunset, Moon, Lightbulb,
-    Eye, ChevronDown, ChevronRight, Check,
-    Sofa, Table2, Lamp, Library,
-    X, Compass, Palette, Ruler, Package, ChevronLeft
-} from 'lucide-react';
+    ChevronDown, ChevronUp,
+    X, Palette, Ruler, Package, ChevronLeft,
+    Eye, Camera, Crosshair, ArrowUp, CornerUpRight,
+    Loader2, AlertCircle
+} from "lucide-react";
+import api from "@/lib/api";
 
-export default function ThreeDViewer() {
+interface FurnitureLayoutItem {
+    productId: string;
+    position: { x: number; y: number; z: number };
+    rotation: number;
+}
+
+interface ProductData {
+    _id: string;
+    name: string;
+    sku: string;
+    category: string;
+    price: number;
+    description?: string;
+    width?: number;
+    height?: number;
+    depth?: number;
+    colors: string[];
+    materials: string[];
+    images: { imageUrl: string; sortOrder: number }[];
+}
+
+interface RoomDimensions {
+    length: number;
+    width: number;
+    height: number;
+    unit: string;
+}
+
+interface RoomData {
+    _id: string;
+    name: string;
+    dimensions: RoomDimensions;
+    shape: string;
+    flooring?: { type: string; material?: string };
+}
+
+interface DesignData {
+    _id: string;
+    name: string;
+    roomId: string;
+    layoutData: {
+        furniture: FurnitureLayoutItem[];
+    };
+    status: string;
+}
+
+interface SceneFurniture {
+    id: string;
+    productId: string;
+    product: ProductData;
+    position: THREE.Vector3;
+    rotation: number;
+    dimensions: { width: number; height: number; depth: number };
+}
+
+type LightingMode = "daylight" | "sunset" | "night" | "studio";
+type CameraPreset = "top" | "front" | "side" | "corner";
+
+const CATEGORY_COLORS: Record<string, string> = {
+    sofa: "#8B5A2B",
+    chair: "#6B8E23",
+    table: "#A0522D",
+    bed: "#4A6FA5",
+    wardrobe: "#8B6914",
+    lamp: "#DAA520",
+    shelf: "#CD853F",
+    bookshelf: "#CD853F",
+    desk: "#7B68EE",
+    cabinet: "#708090",
+    dresser: "#B8860B",
+    default: "#9B7653",
+};
+
+function getCategoryColor(category: string): string {
+    const lower = category?.toLowerCase() || "";
+    for (const key of Object.keys(CATEGORY_COLORS)) {
+        if (lower.includes(key)) return CATEGORY_COLORS[key];
+    }
+    return CATEGORY_COLORS.default;
+}
+
+function convertToMeters(value: number, unit: string): number {
+    switch (unit) {
+        case "cm": return value / 100;
+        case "inch": return value / 39.37;
+        case "ft": return value * 0.3048;
+        case "m": return value;
+        default: return value;
+    }
+}
+
+function cmToMeters(cm: number): number {
+    return cm / 100;
+}
+
+function RoomBox({
+    length,
+    width,
+    height,
+}: {
+    length: number;
+    width: number;
+    height: number;
+}) {
+    const wallThickness = 0.05;
+    const wallOpacity = 0.35;
+    const wallColor = "#F5F1E8";
+    const floorColor = "#D4B896";
+
     return (
-        <div className="flex h-screen w-full bg-[#f8f6f0] font-sans text-[#1C1C1C] overflow-hidden">
-            {/* Left Sidebar */}
+        <group>
+            <Plane
+                args={[length, width]}
+                rotation={[-Math.PI / 2, 0, 0]}
+                position={[length / 2, 0, width / 2]}
+                receiveShadow
+            >
+                <meshStandardMaterial color={floorColor} roughness={0.8} metalness={0.1} />
+            </Plane>
+
+            <Box
+                args={[length, height, wallThickness]}
+                position={[length / 2, height / 2, 0]}
+            >
+                <meshStandardMaterial
+                    color={wallColor}
+                    transparent
+                    opacity={wallOpacity}
+                    side={THREE.DoubleSide}
+                />
+            </Box>
+
+            <Box
+                args={[length, height, wallThickness]}
+                position={[length / 2, height / 2, width]}
+            >
+                <meshStandardMaterial
+                    color={wallColor}
+                    transparent
+                    opacity={wallOpacity}
+                    side={THREE.DoubleSide}
+                />
+            </Box>
+
+            <Box
+                args={[wallThickness, height, width]}
+                position={[0, height / 2, width / 2]}
+            >
+                <meshStandardMaterial
+                    color={wallColor}
+                    transparent
+                    opacity={wallOpacity}
+                    side={THREE.DoubleSide}
+                />
+            </Box>
+
+            <Box
+                args={[wallThickness, height, width]}
+                position={[length, height / 2, width / 2]}
+            >
+                <meshStandardMaterial
+                    color={wallColor}
+                    transparent
+                    opacity={wallOpacity}
+                    side={THREE.DoubleSide}
+                />
+            </Box>
+
+            <gridHelper
+                args={[Math.max(length, width) * 2, Math.max(length, width) * 4, "#ccc", "#e5e5e5"]}
+                position={[length / 2, 0.001, width / 2]}
+            />
+        </group>
+    );
+}
+
+function FurnitureBox({
+    item,
+    isSelected,
+    onSelect,
+}: {
+    item: SceneFurniture;
+    isSelected: boolean;
+    onSelect: (id: string) => void;
+}) {
+    const meshRef = useRef<THREE.Mesh>(null);
+    const outlineRef = useRef<THREE.Mesh>(null);
+    const [hovered, setHovered] = useState(false);
+    const color = getCategoryColor(item.product.category);
+    const { width, height, depth } = item.dimensions;
+
+    useFrame(() => {
+        if (outlineRef.current) {
+            outlineRef.current.visible = isSelected;
+        }
+    });
+
+    return (
+        <group
+            position={[item.position.x, item.position.y + height / 2, item.position.z]}
+            rotation={[0, (item.rotation * Math.PI) / 180, 0]}
+        >
+            <Box
+                ref={meshRef}
+                args={[width, height, depth]}
+                castShadow
+                receiveShadow
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(item.id);
+                }}
+                onPointerOver={(e) => {
+                    e.stopPropagation();
+                    setHovered(true);
+                    document.body.style.cursor = "pointer";
+                }}
+                onPointerOut={() => {
+                    setHovered(false);
+                    document.body.style.cursor = "auto";
+                }}
+            >
+                <meshStandardMaterial
+                    color={hovered ? new THREE.Color(color).lerp(new THREE.Color("#ffffff"), 0.2) : color}
+                    roughness={0.6}
+                    metalness={0.1}
+                />
+            </Box>
+
+            <Box ref={outlineRef} args={[width + 0.02, height + 0.02, depth + 0.02]}>
+                <meshBasicMaterial color="#C6A75E" wireframe transparent opacity={0.8} />
+            </Box>
+
+            <Text
+                position={[0, height / 2 + 0.15, 0]}
+                fontSize={0.12}
+                color="#1C1C1C"
+                anchorX="center"
+                anchorY="bottom"
+                maxWidth={width + 0.5}
+            >
+                {item.product.name}
+            </Text>
+        </group>
+    );
+}
+
+function SceneLighting({
+    mode,
+    intensity,
+}: {
+    mode: LightingMode;
+    intensity: number;
+}) {
+    switch (mode) {
+        case "daylight":
+            return (
+                <>
+                    <ambientLight intensity={0.6 * intensity} color="#ffffff" />
+                    <directionalLight
+                        position={[5, 8, 5]}
+                        intensity={1.2 * intensity}
+                        color="#fffaf0"
+                        castShadow
+                        shadow-mapSize-width={2048}
+                        shadow-mapSize-height={2048}
+                    />
+                    <directionalLight position={[-3, 4, -3]} intensity={0.3 * intensity} color="#e8f4fd" />
+                </>
+            );
+        case "sunset":
+            return (
+                <>
+                    <ambientLight intensity={0.3 * intensity} color="#ff8c42" />
+                    <directionalLight
+                        position={[8, 3, 2]}
+                        intensity={1.0 * intensity}
+                        color="#ff6b35"
+                        castShadow
+                    />
+                    <directionalLight position={[-2, 5, -2]} intensity={0.2 * intensity} color="#ffd700" />
+                    <pointLight position={[0, 4, 0]} intensity={0.4 * intensity} color="#ff9f43" />
+                </>
+            );
+        case "night":
+            return (
+                <>
+                    <ambientLight intensity={0.15 * intensity} color="#1a237e" />
+                    <directionalLight
+                        position={[3, 6, 3]}
+                        intensity={0.3 * intensity}
+                        color="#90caf9"
+                        castShadow
+                    />
+                    <pointLight position={[0, 3, 0]} intensity={0.5 * intensity} color="#bbdefb" distance={10} />
+                </>
+            );
+        case "studio":
+            return (
+                <>
+                    <ambientLight intensity={0.5 * intensity} color="#ffffff" />
+                    <pointLight position={[4, 6, 4]} intensity={0.8 * intensity} color="#ffffff" castShadow />
+                    <pointLight position={[-4, 6, -4]} intensity={0.6 * intensity} color="#ffffff" />
+                    <pointLight position={[4, 6, -4]} intensity={0.4 * intensity} color="#f5f5f5" />
+                    <pointLight position={[-4, 6, 4]} intensity={0.4 * intensity} color="#f5f5f5" />
+                </>
+            );
+        default:
+            return <ambientLight intensity={0.5 * intensity} />;
+    }
+}
+
+function CameraController({
+    preset,
+    focusTarget,
+    roomLength,
+    roomWidth,
+    roomHeight,
+    onPresetConsumed,
+}: {
+    preset: CameraPreset | null;
+    focusTarget: THREE.Vector3 | null;
+    roomLength: number;
+    roomWidth: number;
+    roomHeight: number;
+    onPresetConsumed: () => void;
+}) {
+    const { camera } = useThree();
+    const controlsRef = useRef<any>(null);
+    const maxDim = Math.max(roomLength, roomWidth, roomHeight);
+    const centerX = roomLength / 2;
+    const centerZ = roomWidth / 2;
+
+    useEffect(() => {
+        if (!preset) return;
+
+        const dist = maxDim * 1.5;
+        let pos: THREE.Vector3;
+        const target = new THREE.Vector3(centerX, roomHeight * 0.3, centerZ);
+
+        switch (preset) {
+            case "top":
+                pos = new THREE.Vector3(centerX, maxDim * 2, centerZ + 0.01);
+                break;
+            case "front":
+                pos = new THREE.Vector3(centerX, roomHeight * 0.5, -dist);
+                break;
+            case "side":
+                pos = new THREE.Vector3(-dist, roomHeight * 0.5, centerZ);
+                break;
+            case "corner":
+            default:
+                pos = new THREE.Vector3(centerX + dist, dist * 0.8, centerZ + dist);
+                break;
+        }
+
+        camera.position.copy(pos);
+        if (controlsRef.current) {
+            controlsRef.current.target.copy(target);
+            controlsRef.current.update();
+        }
+        onPresetConsumed();
+    }, [preset, camera, centerX, centerZ, roomHeight, maxDim, onPresetConsumed]);
+
+    useEffect(() => {
+        if (!focusTarget) return;
+
+        const offset = new THREE.Vector3(2, 2, 2);
+        camera.position.copy(focusTarget.clone().add(offset));
+        if (controlsRef.current) {
+            controlsRef.current.target.copy(focusTarget);
+            controlsRef.current.update();
+        }
+    }, [focusTarget, camera]);
+
+    return (
+        <OrbitControls
+            ref={controlsRef}
+            makeDefault
+            enableDamping
+            dampingFactor={0.1}
+            minDistance={0.5}
+            maxDistance={maxDim * 4}
+            maxPolarAngle={Math.PI / 2 - 0.05}
+        />
+    );
+}
+
+function ThreeDScene({
+    furniture,
+    roomDimensions,
+    lightingMode,
+    lightingIntensity,
+    selectedId,
+    onSelect,
+    cameraPreset,
+    focusTarget,
+    onPresetConsumed,
+}: {
+    furniture: SceneFurniture[];
+    roomDimensions: { length: number; width: number; height: number };
+    lightingMode: LightingMode;
+    lightingIntensity: number;
+    selectedId: string | null;
+    onSelect: (id: string | null) => void;
+    cameraPreset: CameraPreset | null;
+    focusTarget: THREE.Vector3 | null;
+    onPresetConsumed: () => void;
+}) {
+    const { length, width, height } = roomDimensions;
+
+    return (
+        <>
+            <color attach="background" args={["#EFEBE0"]} />
+            <fog attach="fog" args={["#EFEBE0", 15, 30]} />
+
+            <SceneLighting mode={lightingMode} intensity={lightingIntensity} />
+
+            <CameraController
+                preset={cameraPreset}
+                focusTarget={focusTarget}
+                roomLength={length}
+                roomWidth={width}
+                roomHeight={height}
+                onPresetConsumed={onPresetConsumed}
+            />
+
+            <RoomBox length={length} width={width} height={height} />
+
+            {furniture.map((item) => (
+                <FurnitureBox
+                    key={item.id}
+                    item={item}
+                    isSelected={selectedId === item.id}
+                    onSelect={onSelect}
+                />
+            ))}
+
+            <ContactShadows
+                position={[length / 2, 0.01, width / 2]}
+                opacity={0.4}
+                scale={Math.max(length, width) * 2}
+                blur={2}
+                far={10}
+            />
+
+            <mesh
+                rotation={[-Math.PI / 2, 0, 0]}
+                position={[length / 2, -0.01, width / 2]}
+                onClick={() => onSelect(null)}
+            >
+                <planeGeometry args={[100, 100]} />
+                <meshBasicMaterial visible={false} />
+            </mesh>
+        </>
+    );
+}
+
+function ThreeDViewerContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const designId = searchParams.get("designId");
+
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [design, setDesign] = useState<DesignData | null>(null);
+    const [room, setRoom] = useState<RoomData | null>(null);
+    const [furniture, setFurniture] = useState<SceneFurniture[]>([]);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [lightingMode, setLightingMode] = useState<LightingMode>("daylight");
+    const [lightingIntensity, setLightingIntensity] = useState(0.85);
+    const [cameraPreset, setCameraPreset] = useState<CameraPreset | null>("corner");
+    const [focusTarget, setFocusTarget] = useState<THREE.Vector3 | null>(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [furnitureListOpen, setFurnitureListOpen] = useState(true);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const selectedItem = useMemo(
+        () => furniture.find((f) => f.id === selectedId) || null,
+        [furniture, selectedId]
+    );
+
+    const roomDimensions = useMemo(() => {
+        if (!room) return { length: 5, width: 4, height: 3 };
+        const dims = room.dimensions;
+        return {
+            length: convertToMeters(dims.length, dims.unit),
+            width: convertToMeters(dims.width, dims.unit),
+            height: convertToMeters(dims.height, dims.unit),
+        };
+    }, [room]);
+
+    useEffect(() => {
+        if (!designId) {
+            setError("No design ID provided. Please go back and select a design.");
+            setLoading(false);
+            return;
+        }
+
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const designRes = await api.get(`/api/designs/${designId}`);
+                const designData: DesignData = designRes.data.data || designRes.data;
+                setDesign(designData);
+
+                const roomRes = await api.get(`/api/rooms/${designData.roomId}`);
+                const roomData: RoomData = roomRes.data.data || roomRes.data;
+                setRoom(roomData);
+
+                const furnitureItems = designData.layoutData?.furniture || [];
+
+                const productPromises = furnitureItems.map((item: FurnitureLayoutItem) =>
+                    api.get(`/api/products/${item.productId}`).catch(() => null)
+                );
+                const productResults = await Promise.all(productPromises);
+
+                const sceneFurniture: SceneFurniture[] = [];
+                furnitureItems.forEach((item: FurnitureLayoutItem, index: number) => {
+                    const productRes = productResults[index];
+                    if (!productRes) return;
+
+                    const product: ProductData = productRes.data.data || productRes.data;
+                    const w = product.width ? cmToMeters(product.width) : 0.6;
+                    const h = product.height ? cmToMeters(product.height) : 0.6;
+                    const d = product.depth ? cmToMeters(product.depth) : 0.6;
+
+                    sceneFurniture.push({
+                        id: `${product._id}-${index}`,
+                        productId: product._id,
+                        product,
+                        position: new THREE.Vector3(
+                            item.position.x,
+                            item.position.y || 0,
+                            item.position.z || item.position.y || 0
+                        ),
+                        rotation: item.rotation || 0,
+                        dimensions: { width: w, height: h, depth: d },
+                    });
+                });
+
+                setFurniture(sceneFurniture);
+            } catch (err: any) {
+                const msg = err.response?.data?.message || "Failed to load design data.";
+                setError(msg);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [designId]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                setSelectedId(null);
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
+    const handleToggleFullscreen = useCallback(() => {
+        if (!containerRef.current) return;
+        if (!document.fullscreenElement) {
+            containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+        } else {
+            document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+        }
+    }, []);
+
+    useEffect(() => {
+        const handler = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener("fullscreenchange", handler);
+        return () => document.removeEventListener("fullscreenchange", handler);
+    }, []);
+
+    const handleFocusItem = useCallback((item: SceneFurniture) => {
+        setSelectedId(item.id);
+        setFocusTarget(
+            new THREE.Vector3(
+                item.position.x,
+                item.position.y + item.dimensions.height / 2,
+                item.position.z
+            )
+        );
+    }, []);
+
+    const handlePresetConsumed = useCallback(() => {
+        setCameraPreset(null);
+    }, []);
+
+    const handleSelect = useCallback((id: string | null) => {
+        setSelectedId(id);
+        if (!id) setFocusTarget(null);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex h-screen w-full items-center justify-center bg-[#FAF8F5]">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-12 h-12 animate-spin text-[#663F23]" />
+                    <p className="text-sm font-medium text-[#1C1C1C]/50">Loading 3D viewer...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex h-screen w-full items-center justify-center bg-[#FAF8F5]">
+                <div className="flex flex-col items-center gap-6 max-w-md text-center">
+                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center">
+                        <AlertCircle className="w-10 h-10 text-red-400" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-[#1C1C1C]">Unable to Load Viewer</h1>
+                    <p className="text-[#1C1C1C]/50">{error}</p>
+                    <Link
+                        href="/admin/2d-layout"
+                        className="px-6 py-3 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors"
+                    >
+                        Back to Editor
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    const lightingModes: { key: LightingMode; label: string; icon: React.ReactNode }[] = [
+        { key: "daylight", label: "Daylight", icon: <Sun size={14} /> },
+        { key: "sunset", label: "Sunset", icon: <Sunset size={14} /> },
+        { key: "night", label: "Night", icon: <Moon size={14} /> },
+        { key: "studio", label: "Studio", icon: <Lightbulb size={14} /> },
+    ];
+
+    const cameraPresets: { key: CameraPreset; label: string; icon: React.ReactNode }[] = [
+        { key: "corner", label: "Corner", icon: <CornerUpRight size={14} /> },
+        { key: "top", label: "Top", icon: <ArrowUp size={14} /> },
+        { key: "front", label: "Front", icon: <Eye size={14} /> },
+        { key: "side", label: "Side", icon: <Crosshair size={14} /> },
+    ];
+
+    const intensityPercent = Math.round(((lightingIntensity - 0.2) / (1.5 - 0.2)) * 100);
+
+    return (
+        <div ref={containerRef} className="flex h-screen w-full bg-[#f8f6f0] font-sans text-[#1C1C1C] overflow-hidden">
             <div className="w-[300px] bg-[#fdfbf6] border-r border-[#E5E5E5] flex flex-col shrink-0 z-10 shadow-[4px_0_15px_rgba(0,0,0,0.02)] h-full overflow-y-auto hidden-scrollbar">
-                {/* Brand Header */}
                 <div className="px-6 py-5 border-b border-[#E5E5E5] flex items-center gap-3">
                     <div className="w-10 h-10 bg-[#7B4B29] rounded-lg flex items-center justify-center text-white shrink-0">
-                        <Box size={20} />
+                        <BoxIcon size={20} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-[#1C1C1C] leading-none">3D Viewer</h1>
@@ -26,361 +676,371 @@ export default function ThreeDViewer() {
                     </div>
                 </div>
 
-                {/* Camera Controls */}
                 <div className="px-6 py-6 border-b border-[#E5E5E5]">
-                    <h2 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider mb-4">Camera Controls</h2>
-                    <div className="flex gap-2 mb-6">
-                        <button className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 h-[72px] bg-[#F4F1ED] rounded-xl text-[#1C1C1C] hover:bg-[#EBE7DF] transition-colors border border-[#EBE7DF]">
-                            <RotateCw size={18} className="text-[#6C6C6C]" />
-                            <span className="text-[11px] font-semibold">Rotate</span>
-                        </button>
-                        <button className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 h-[72px] bg-[#F4F1ED] rounded-xl text-[#1C1C1C] hover:bg-[#EBE7DF] transition-colors border border-[#EBE7DF]">
-                            <ZoomIn size={18} className="text-[#6C6C6C]" />
-                            <span className="text-[11px] font-semibold">Zoom In</span>
-                        </button>
-                        <button className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 h-[72px] bg-[#F4F1ED] rounded-xl text-[#1C1C1C] hover:bg-[#EBE7DF] transition-colors border border-[#EBE7DF]">
-                            <ZoomOut size={18} className="text-[#6C6C6C]" />
-                            <span className="text-[11px] font-semibold">Zoom Out</span>
-                        </button>
-                    </div>
-                    <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="text-xs font-semibold text-[#8C8C8C]">Zoom Level</span>
-                            <span className="text-xs font-bold text-[#1C1C1C]">100%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-[#E5E5E5] rounded-full relative">
-                            <div className="absolute left-0 top-0 h-full w-full bg-[#D4C3A3] rounded-full"></div>
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-[#7B4B29] rounded-full shadow-sm hover:scale-110 transition-transform cursor-pointer"></div>
-                        </div>
+                    <h2 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <Camera size={12} />
+                        Camera Views
+                    </h2>
+                    <div className="grid grid-cols-2 gap-2">
+                        {cameraPresets.map((p) => (
+                            <button
+                                key={p.key}
+                                onClick={() => setCameraPreset(p.key)}
+                                className={`flex items-center gap-2 py-2.5 px-3 rounded-lg font-medium text-xs justify-center transition-colors ${
+                                    cameraPreset === p.key
+                                        ? "bg-[#7B4B29] text-white shadow-sm"
+                                        : "bg-[#F4F1ED] text-[#1C1C1C] hover:bg-[#EBE7DF] border border-[#EBE7DF]"
+                                }`}
+                            >
+                                <span className={cameraPreset === p.key ? "text-white" : "text-[#6C6C6C]"}>
+                                    {p.icon}
+                                </span>
+                                {p.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Lighting */}
                 <div className="px-6 py-6 border-b border-[#E5E5E5]">
                     <h2 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider mb-4">Lighting</h2>
                     <div className="grid grid-cols-2 gap-2 mb-6">
-                        <button className="flex items-center gap-2 py-2.5 px-3 bg-[#7B4B29] rounded-lg text-white font-medium text-xs justify-center shadow-sm">
-                            <Sun size={14} /> Daylight
-                        </button>
-                        <button className="flex items-center gap-2 py-2.5 px-3 bg-[#F4F1ED] rounded-lg text-[#1C1C1C] font-medium text-xs justify-center hover:bg-[#EBE7DF] transition-colors">
-                            <Sunset size={14} className="text-[#6C6C6C]" /> Sunset
-                        </button>
-                        <button className="flex items-center gap-2 py-2.5 px-3 bg-[#F4F1ED] rounded-lg text-[#1C1C1C] font-medium text-xs justify-center hover:bg-[#EBE7DF] transition-colors">
-                            <Moon size={14} className="text-[#6C6C6C]" /> Night
-                        </button>
-                        <button className="flex items-center gap-2 py-2.5 px-3 bg-[#F4F1ED] rounded-lg text-[#1C1C1C] font-medium text-xs justify-center hover:bg-[#EBE7DF] transition-colors">
-                            <Lightbulb size={14} className="text-[#6C6C6C]" /> Studio
-                        </button>
+                        {lightingModes.map((m) => (
+                            <button
+                                key={m.key}
+                                onClick={() => setLightingMode(m.key)}
+                                className={`flex items-center gap-2 py-2.5 px-3 rounded-lg font-medium text-xs justify-center transition-colors ${
+                                    lightingMode === m.key
+                                        ? "bg-[#7B4B29] text-white shadow-sm"
+                                        : "bg-[#F4F1ED] text-[#1C1C1C] hover:bg-[#EBE7DF]"
+                                }`}
+                            >
+                                <span className={lightingMode === m.key ? "text-white" : "text-[#6C6C6C]"}>
+                                    {m.icon}
+                                </span>
+                                {m.label}
+                            </button>
+                        ))}
                     </div>
                     <div>
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-xs font-semibold text-[#8C8C8C]">Intensity</span>
-                            <span className="text-xs font-bold text-[#1C1C1C]">75%</span>
+                            <span className="text-xs font-bold text-[#1C1C1C]">{intensityPercent}%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-[#E5E5E5] rounded-full relative">
-                            <div className="absolute left-0 top-0 h-full w-[75%] bg-[#D4C3A3] rounded-full"></div>
-                            <div className="absolute left-[75%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-[#7B4B29] rounded-full shadow-sm hover:scale-110 transition-transform cursor-pointer"></div>
-                        </div>
+                        <input
+                            type="range"
+                            min="0.2"
+                            max="1.5"
+                            step="0.05"
+                            value={lightingIntensity}
+                            onChange={(e) => setLightingIntensity(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-[#E5E5E5] rounded-full appearance-none cursor-pointer accent-[#7B4B29]"
+                        />
                     </div>
                 </div>
 
-                {/* Shading */}
-                <div className="px-6 py-6 border-b border-[#E5E5E5]">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">Shading</h2>
-                        <Eye size={14} className="text-[#A8A8A8]" />
-                    </div>
-                    <div className="flex bg-[#F4F1ED] rounded-xl p-1">
-                        <button className="flex-1 py-2 text-xs font-bold text-white bg-[#D4C3A3] rounded-lg shadow-sm">Smooth</button>
-                        <button className="flex-1 py-2 text-xs font-semibold text-[#6C6C6C] hover:text-[#1C1C1C]">Flat</button>
-                        <button className="flex-1 py-2 text-xs font-semibold text-[#6C6C6C] hover:text-[#1C1C1C]">Wireframe</button>
-                    </div>
-                </div>
-
-                {/* Furniture in Scene */}
                 <div className="px-6 py-6">
-                    <div className="flex justify-between items-center mb-4 cursor-pointer">
-                        <h2 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">Furniture in Scene</h2>
-                        <ChevronDown size={14} className="text-[#A8A8A8]" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3 p-3 bg-[#F4F1ED] rounded-xl border border-[#EBE7DF]">
-                            <div className="w-8 h-8 rounded-lg bg-white bg-opacity-50 flex items-center justify-center shrink-0">
-                                <Sofa size={16} className="text-[#7B4B29]" />
-                            </div>
-                            <div>
-                                <h3 className="text-xs font-bold text-[#1C1C1C]">Modern Sofa</h3>
-                                <p className="text-[10px] text-[#8C8C8C] mt-0.5">200 × 85 × 90 cm</p>
-                            </div>
+                    <button
+                        onClick={() => setFurnitureListOpen(!furnitureListOpen)}
+                        className="flex justify-between items-center mb-4 cursor-pointer w-full"
+                    >
+                        <h2 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">
+                            Furniture in Scene ({furniture.length})
+                        </h2>
+                        {furnitureListOpen ? (
+                            <ChevronUp size={14} className="text-[#A8A8A8]" />
+                        ) : (
+                            <ChevronDown size={14} className="text-[#A8A8A8]" />
+                        )}
+                    </button>
+                    {furnitureListOpen && (
+                        <div className="flex flex-col gap-2">
+                            {furniture.length === 0 && (
+                                <p className="text-xs text-[#A8A8A8] text-center py-4">No furniture placed yet.</p>
+                            )}
+                            {furniture.map((item) => {
+                                const isActive = selectedId === item.id;
+                                const wCm = Math.round(item.dimensions.width * 100);
+                                const hCm = Math.round(item.dimensions.height * 100);
+                                const dCm = Math.round(item.dimensions.depth * 100);
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => handleFocusItem(item)}
+                                        className={`flex items-center gap-3 p-3 rounded-xl text-left w-full transition-colors ${
+                                            isActive
+                                                ? "bg-[#F4F1ED] border border-[#C6A75E]"
+                                                : "bg-white border border-transparent hover:border-[#EBE7DF]"
+                                        }`}
+                                    >
+                                        <div
+                                            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                            style={{ backgroundColor: getCategoryColor(item.product.category) + "20" }}
+                                        >
+                                            <Package
+                                                size={16}
+                                                style={{ color: getCategoryColor(item.product.category) }}
+                                            />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="text-xs font-bold text-[#1C1C1C] truncate">
+                                                {item.product.name}
+                                            </h3>
+                                            <p className="text-[10px] text-[#8C8C8C] mt-0.5">
+                                                {wCm} x {hCm} x {dCm} cm
+                                            </p>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
-                        <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-transparent hover:border-[#EBE7DF] transition-colors cursor-pointer">
-                            <div className="w-8 h-8 rounded-lg bg-[#F4F1ED] flex items-center justify-center shrink-0">
-                                <Package size={16} className="text-[#6C6C6C]" />
-                            </div>
-                            <div>
-                                <h3 className="text-xs font-bold text-[#1C1C1C]">Coffee Table</h3>
-                                <p className="text-[10px] text-[#8C8C8C] mt-0.5">120 × 45 × 60 cm</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-transparent hover:border-[#EBE7DF] transition-colors cursor-pointer">
-                            <div className="w-8 h-8 rounded-lg bg-[#F4F1ED] flex items-center justify-center shrink-0">
-                                <Lamp size={16} className="text-[#6C6C6C]" />
-                            </div>
-                            <div>
-                                <h3 className="text-xs font-bold text-[#1C1C1C]">Floor Lamp</h3>
-                                <p className="text-[10px] text-[#8C8C8C] mt-0.5">40 × 160 × 40 cm</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-transparent hover:border-[#EBE7DF] transition-colors cursor-pointer">
-                            <div className="w-8 h-8 rounded-lg bg-[#F4F1ED] flex items-center justify-center shrink-0">
-                                <Library size={16} className="text-[#6C6C6C]" />
-                            </div>
-                            <div>
-                                <h3 className="text-xs font-bold text-[#1C1C1C]">Bookshelf</h3>
-                                <p className="text-[10px] text-[#8C8C8C] mt-0.5">80 × 180 × 35 cm</p>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
-            {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 bg-[#EFEBE0] relative">
-                {/* Header */}
-                <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-8 py-5 border-b border-transparent z-10">
+                <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-8 py-5 z-10">
                     <div className="flex items-center gap-4">
-                        <Link href="/admin/2d-layout" className="flex items-center justify-center w-8 h-8 rounded-full bg-white text-[#1C1C1C] hover:bg-gray-100 shadow-sm transition-colors">
+                        <Link
+                            href={designId ? `/admin/2d-layout?designId=${designId}` : "/admin/2d-layout"}
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-white text-[#1C1C1C] hover:bg-gray-100 shadow-sm transition-colors"
+                        >
                             <ChevronLeft size={18} />
                         </Link>
-                        <h1 className="text-[17px] font-bold text-[#1C1C1C]">Living Room Design</h1>
-                        <span className="px-2.5 py-1 text-[10px] font-bold text-[#2E7D32] bg-[#E8F5E9] rounded-full">Auto-saved</span>
+                        <h1 className="text-[17px] font-bold text-[#1C1C1C]">
+                            {design?.name || "3D Viewer"}
+                        </h1>
+                        <span className="px-2.5 py-1 text-[10px] font-bold text-[#663F23] bg-[#663F23]/10 rounded-full capitalize">
+                            {design?.status || "draft"}
+                        </span>
                     </div>
-                    <button className="text-[#A8A8A8] hover:text-[#1C1C1C] transition-colors">
-                        <Maximize2 size={18} />
+                    <button
+                        onClick={handleToggleFullscreen}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-[#A8A8A8] hover:text-[#1C1C1C] shadow-sm transition-colors"
+                    >
+                        {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                     </button>
                 </header>
 
-                {/* Floating controls in 3D view */}
                 <div className="absolute top-20 left-8 flex flex-col gap-2 z-10">
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
-                        <span className="text-[10px] font-bold text-[#A8A8A8] uppercase">ENV:</span>
-                        <span className="text-[11px] font-bold text-[#1C1C1C]">Daylight</span>
+                        <span className="text-[10px] font-bold text-[#A8A8A8] uppercase">Light:</span>
+                        <span className="text-[11px] font-bold text-[#1C1C1C] capitalize">{lightingMode}</span>
                     </div>
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
-                        <span className="text-[10px] font-bold text-[#A8A8A8] uppercase">SHADE:</span>
-                        <span className="text-[11px] font-bold text-[#1C1C1C]">smooth</span>
+                        <span className="text-[10px] font-bold text-[#A8A8A8] uppercase">Room:</span>
+                        <span className="text-[11px] font-bold text-[#1C1C1C]">{room?.name || "Unknown"}</span>
                     </div>
                 </div>
 
-                <div className="absolute top-20 right-8 z-10">
-                    <div className="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center relative">
-                        <div className="absolute top-1 text-[8px] font-bold text-[#1C1C1C]">N</div>
-                        <div className="absolute right-1 text-[8px] font-bold text-[#A8A8A8]">E</div>
-                        <div className="absolute bottom-1 text-[8px] font-bold text-[#A8A8A8]">S</div>
-                        <div className="absolute left-1 text-[8px] font-bold text-[#A8A8A8]">W</div>
-                        <div className="w-2.5 h-2.5 rotate-45 border-t-2 border-r-2 border-[#1C1C1C] -translate-y-0.5 -translate-x-0.5"></div>
-                    </div>
-                </div>
-
-                {/* 3D Scene Mockup */}
-                <div className="flex-1 flex items-center justify-center relative">
-                    {/* Scene Container */}
-                    <div className="relative w-[600px] h-[400px] flex items-end justify-center perspective-[1000px] transform-gpu scale-110">
-                        {/* Bookshelf */}
-                        <div className="absolute left-[5%] bottom-[15%] w-16 h-48 bg-[#C8A27B] rounded-sm flex flex-col">
-                            {/* Shelves */}
-                            <div className="w-full h-1/4 border-b-2 border-[#A37B52]"></div>
-                            <div className="w-full h-1/4 border-b-2 border-[#A37B52]"></div>
-                            <div className="w-full h-1/4 border-b-2 border-[#A37B52]"></div>
-                            {/* Books */}
-                            <div className="w-full h-1/4 relative flex items-end pb-1 px-2 gap-1">
-                                <div className="w-2 h-6 bg-[#A37B52]"></div>
-                                <div className="w-2 h-8 bg-[#8B5A2B]"></div>
-                            </div>
-                            <div className="absolute -left-1 w-1 h-full bg-[#A37B52] rounded-l-sm skew-y-[45deg] origin-right"></div>
-                        </div>
-
-                        {/* Modern Sofa */}
-                        <div className="absolute bottom-[10%] w-[320px] h-32 relative z-10">
-                            {/* Backrest */}
-                            <div className="absolute bottom-6 left-0 w-full h-24 bg-[#8B5A2B] rounded-t-3xl border-4 border-[#A37B52] shadow-inner"></div>
-                            {/* Cushions */}
-                            <div className="absolute bottom-6 left-[10%] w-[38%] h-12 bg-[#6E421E] rounded-md shadow-inner"></div>
-                            <div className="absolute bottom-6 right-[10%] w-[38%] h-12 bg-[#6E421E] rounded-md shadow-inner"></div>
-                            {/* Seating */}
-                            <div className="absolute bottom-2 left-0 w-full h-12 bg-[#A37B52] rounded-xl shadow-lg border-b-4 border-[#8B5A2B]"></div>
-                            {/* Legs */}
-                            <div className="absolute -bottom-2 left-8 w-1.5 h-4 bg-[#4A2D13] rounded-b-sm"></div>
-                            <div className="absolute -bottom-2 right-8 w-1.5 h-4 bg-[#4A2D13] rounded-b-sm"></div>
-                        </div>
-
-                        {/* Coffee Table */}
-                        <div className="absolute bottom-[5%] right-[20%] w-28 h-12 z-20">
-                            <div className="absolute top-0 left-0 w-full h-3 bg-[#A37B52] rounded-full shadow-sm"></div>
-                            <div className="absolute top-3 left-[20%] w-2 h-9 bg-[#6E421E] rounded-b-sm"></div>
-                            <div className="absolute top-3 right-[20%] w-2 h-9 bg-[#6E421E] rounded-b-sm"></div>
-                        </div>
-
-                        {/* Floor Lamp */}
-                        <div className="absolute right-[10%] bottom-[15%] flex flex-col items-center">
-                            {/* Shade */}
-                            <div className="w-16 h-10 bg-[#F4D03F] rounded-t-2xl rounded-b-sm opacity-90 shadow-lg relative z-10"></div>
-                            {/* Pole */}
-                            <div className="w-1.5 h-40 bg-[#A8A8A8]"></div>
-                            {/* Base */}
-                            <div className="w-12 h-1.5 bg-[#A8A8A8] rounded-full"></div>
-                        </div>
-                    </div>
+                <div className="flex-1">
+                    <Canvas
+                        shadows
+                        camera={{
+                            position: [
+                                roomDimensions.length * 1.2,
+                                roomDimensions.height * 1.5,
+                                roomDimensions.width * 1.2,
+                            ],
+                            fov: 50,
+                            near: 0.1,
+                            far: 100,
+                        }}
+                        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+                    >
+                        <ThreeDScene
+                            furniture={furniture}
+                            roomDimensions={roomDimensions}
+                            lightingMode={lightingMode}
+                            lightingIntensity={lightingIntensity}
+                            selectedId={selectedId}
+                            onSelect={handleSelect}
+                            cameraPreset={cameraPreset}
+                            focusTarget={focusTarget}
+                            onPresetConsumed={handlePresetConsumed}
+                        />
+                    </Canvas>
                 </div>
             </div>
 
-            {/* Right Sidebar */}
-            <div className="w-[320px] bg-[#fdfbf6] border-l border-[#E5E5E5] flex flex-col shrink-0 z-10 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] h-full overflow-y-auto hidden-scrollbar">
-                {/* Header */}
-                <div className="px-6 py-5 border-b border-[#E5E5E5] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#F4F1ED] rounded-lg flex items-center justify-center shrink-0">
-                            <Palette size={18} className="text-[#8B5A2B]" />
+            {selectedItem && (
+                <div className="w-[320px] bg-[#fdfbf6] border-l border-[#E5E5E5] flex flex-col shrink-0 z-10 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] h-full overflow-y-auto hidden-scrollbar">
+                    <div className="px-6 py-5 border-b border-[#E5E5E5] flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div
+                                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                                style={{ backgroundColor: getCategoryColor(selectedItem.product.category) + "20" }}
+                            >
+                                <Palette
+                                    size={18}
+                                    style={{ color: getCategoryColor(selectedItem.product.category) }}
+                                />
+                            </div>
+                            <div>
+                                <h2 className="text-[13px] font-bold text-[#1C1C1C] leading-none">
+                                    {selectedItem.product.name}
+                                </h2>
+                                <p className="text-[11px] text-[#8C8C8C] mt-1 font-medium capitalize">
+                                    {selectedItem.product.category}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="text-[13px] font-bold text-[#1C1C1C] leading-none">Customize</h2>
-                            <p className="text-[11px] text-[#8C8C8C] mt-1 font-medium">Sofa Selected</p>
-                        </div>
+                        <button
+                            onClick={() => setSelectedId(null)}
+                            className="text-[#A8A8A8] hover:text-[#1C1C1C] transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
                     </div>
-                    <button className="text-[#A8A8A8] hover:text-[#1C1C1C] transition-colors">
-                        <X size={16} />
-                    </button>
-                </div>
 
-                {/* Dimensions */}
-                <div className="p-6 border-b border-[#E5E5E5]">
-                    <div className="flex justify-between items-center mb-6 cursor-pointer">
-                        <div className="flex items-center gap-2">
+                    <div className="p-6 border-b border-[#E5E5E5]">
+                        <div className="flex items-center gap-2 mb-6">
                             <Ruler size={14} className="text-[#A8A8A8]" />
-                            <h3 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">Dimensions</h3>
+                            <h3 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">
+                                Dimensions
+                            </h3>
                         </div>
-                        <ChevronDown size={14} className="text-[#A8A8A8]" />
+                        <div className="space-y-4">
+                            {[
+                                { label: "Width", value: selectedItem.dimensions.width },
+                                { label: "Height", value: selectedItem.dimensions.height },
+                                { label: "Depth", value: selectedItem.dimensions.depth },
+                            ].map((dim) => (
+                                <div key={dim.label}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs font-semibold text-[#8C8C8C]">{dim.label}</span>
+                                        <span className="text-xs font-bold text-[#1C1C1C]">
+                                            {Math.round(dim.value * 100)} cm
+                                        </span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-[#E5E5E5] rounded-full relative">
+                                        <div
+                                            className="absolute left-0 top-0 h-full bg-[#D4C3A3] rounded-full"
+                                            style={{ width: `${Math.min((dim.value / 3) * 100, 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="space-y-5">
-                        {/* Width */}
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-xs font-semibold text-[#8C8C8C]">Width</span>
-                                <span className="text-xs font-bold text-[#1C1C1C]">200 cm</span>
+                    {selectedItem.product.colors && selectedItem.product.colors.length > 0 && (
+                        <div className="p-6 border-b border-[#E5E5E5]">
+                            <div className="flex items-center gap-2 mb-5">
+                                <Palette size={14} className="text-[#A8A8A8]" />
+                                <h3 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">
+                                    Colors
+                                </h3>
                             </div>
-                            <div className="h-1.5 w-full bg-[#E5E5E5] rounded-full relative">
-                                <div className="absolute left-0 top-0 h-full w-full bg-[#D4C3A3] rounded-full"></div>
-                                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-[#7B4B29] rounded-full shadow-sm hover:scale-110 transition-transform cursor-pointer"></div>
-                            </div>
-                        </div>
-                        {/* Height */}
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-xs font-semibold text-[#8C8C8C]">Height</span>
-                                <span className="text-xs font-bold text-[#1C1C1C]">85 cm</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-[#E5E5E5] rounded-full relative">
-                                <div className="absolute left-0 top-0 h-full w-[40%] bg-[#D4C3A3] rounded-full"></div>
-                                <div className="absolute left-[40%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-[#7B4B29] rounded-full shadow-sm hover:scale-110 transition-transform cursor-pointer"></div>
-                            </div>
-                        </div>
-                        {/* Depth */}
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-xs font-semibold text-[#8C8C8C]">Depth</span>
-                                <span className="text-xs font-bold text-[#1C1C1C]">90 cm</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-[#E5E5E5] rounded-full relative">
-                                <div className="absolute left-0 top-0 h-full w-[80%] bg-[#D4C3A3] rounded-full"></div>
-                                <div className="absolute left-[80%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-[#7B4B29] rounded-full shadow-sm hover:scale-110 transition-transform cursor-pointer"></div>
+                            <div className="flex flex-wrap gap-2">
+                                {selectedItem.product.colors.map((color, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-[#F4F1ED] rounded-lg">
+                                        <div
+                                            className="w-4 h-4 rounded-full border border-[#E5E5E5]"
+                                            style={{
+                                                backgroundColor: color.startsWith("#") ? color : undefined,
+                                            }}
+                                        />
+                                        <span className="text-xs font-semibold text-[#1C1C1C] capitalize">
+                                            {color}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
+                    )}
+
+                    {selectedItem.product.materials && selectedItem.product.materials.length > 0 && (
+                        <div className="p-6 border-b border-[#E5E5E5]">
+                            <div className="flex items-center gap-2 mb-5">
+                                <BoxIcon size={14} className="text-[#A8A8A8]" />
+                                <h3 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">
+                                    Materials
+                                </h3>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                {selectedItem.product.materials.map((material, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="flex items-center gap-3 p-3 bg-[#F4F1ED] rounded-xl"
+                                    >
+                                        <div className="w-5 h-5 rounded bg-[#D4C3A3]" />
+                                        <span className="text-[13px] font-bold text-[#1C1C1C] capitalize">
+                                            {material}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedItem.product.description && (
+                        <div className="p-6">
+                            <h3 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider mb-3">
+                                Description
+                            </h3>
+                            <p className="text-xs text-[#6C6C6C] leading-relaxed">
+                                {selectedItem.product.description}
+                            </p>
+                        </div>
+                    )}
+
+                    {!selectedItem.product.colors?.length &&
+                        !selectedItem.product.materials?.length &&
+                        !selectedItem.product.description && (
+                            <div className="p-6">
+                                <p className="text-xs text-[#A8A8A8] text-center py-4">
+                                    No additional details available for this item.
+                                </p>
+                            </div>
+                        )}
                 </div>
-
-                {/* Color */}
-                <div className="p-6 border-b border-[#E5E5E5]">
-                    <div className="flex justify-between items-center mb-5 cursor-pointer">
-                        <div className="flex items-center gap-2">
-                            <Palette size={14} className="text-[#A8A8A8]" />
-                            <h3 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">Color</h3>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-5 gap-y-3 gap-x-2 mb-6">
-                        <div className="aspect-square rounded-lg bg-[#6E421E] border-2 border-[#1C1C1C] ring-2 ring-transparent ring-offset-1 flex items-center justify-center"></div>
-                        <div className="aspect-square rounded-lg bg-[#1C1C1C]"></div>
-                        <div className="aspect-square rounded-lg bg-[#F8F6F0] border border-[#E5E5E5]"></div>
-                        <div className="aspect-square rounded-lg bg-[#C8A27B]"></div>
-                        <div className="aspect-square rounded-lg bg-[#8B4513]"></div>
-                        <div className="aspect-square rounded-lg bg-[#2F4F4F]"></div>
-                        <div className="aspect-square rounded-lg bg-[#800000]"></div>
-                        <div className="aspect-square rounded-lg bg-[#D2B48C]"></div>
-                        <div className="aspect-square rounded-lg bg-[#556B2F]"></div>
-                        <div className="aspect-square rounded-lg bg-[#3E2723]"></div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-semibold text-[#8C8C8C]">Custom:</span>
-                        <div className="flex items-center gap-2">
-                            <div className="w-5 h-5 rounded bg-[#6E421E]"></div>
-                            <span className="text-[11px] font-bold text-[#A8A8A8]">#663F23</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Texture */}
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-5 cursor-pointer">
-                        <div className="flex items-center gap-2">
-                            <Box size={14} className="text-[#A8A8A8]" />
-                            <h3 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider">Texture</h3>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between p-3 bg-white border border-[#D4C3A3] rounded-xl shadow-sm cursor-pointer relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-[#D4C3A3]"></div>
-                            <div className="flex items-center gap-3 relative z-10 pl-2">
-                                <div className="w-5 h-5 rounded shrink-0 bg-[#6E421E] bg-opacity-80"></div>
-                                <span className="text-[13px] font-bold text-[#1C1C1C]">Leather</span>
-                            </div>
-                            <span className="text-[10px] font-bold text-[#D4C3A3]">Active</span>
-                        </div>
-
-                        <div className="flex items-center gap-3 p-3 bg-[#F8F6F0] rounded-xl cursor-pointer hover:bg-[#F4F1ED] transition-colors border border-transparent">
-                            <div className="w-5 h-5 rounded shrink-0 bg-[#A8A8A8]"></div>
-                            <span className="text-[13px] font-bold text-[#1C1C1C]">Fabric</span>
-                        </div>
-
-                        <div className="flex items-center gap-3 p-3 bg-[#F8F6F0] rounded-xl cursor-pointer hover:bg-[#F4F1ED] transition-colors border border-transparent">
-                            <div className="w-5 h-5 rounded shrink-0 bg-[#C8A27B]"></div>
-                            <span className="text-[13px] font-bold text-[#1C1C1C]">Wood</span>
-                        </div>
-
-                        <div className="flex items-center gap-3 p-3 bg-[#F8F6F0] rounded-xl cursor-pointer hover:bg-[#F4F1ED] transition-colors border border-transparent">
-                            <div className="w-5 h-5 rounded shrink-0 bg-[#8C8C8C]"></div>
-                            <span className="text-[13px] font-bold text-[#1C1C1C]">Metal</span>
-                        </div>
-
-                        <div className="flex items-center gap-3 p-3 bg-[#F8F6F0] rounded-xl cursor-pointer hover:bg-[#F4F1ED] transition-colors border border-transparent">
-                            <div className="w-5 h-5 rounded shrink-0 bg-[#4B0082]"></div>
-                            <span className="text-[13px] font-bold text-[#1C1C1C]">Velvet</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            )}
 
             <style jsx global>{`
                 .hidden-scrollbar::-webkit-scrollbar {
                     display: none;
                 }
                 .hidden-scrollbar {
-                    -ms-overflow-style: none; /* IE and Edge */
-                    scrollbar-width: none; /* Firefox */
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                input[type="range"]::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 14px;
+                    height: 14px;
+                    border-radius: 50%;
+                    background: #7B4B29;
+                    cursor: pointer;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                }
+                input[type="range"]::-moz-range-thumb {
+                    width: 14px;
+                    height: 14px;
+                    border-radius: 50%;
+                    background: #7B4B29;
+                    cursor: pointer;
+                    border: none;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
                 }
             `}</style>
         </div>
+    );
+}
+
+export default function ThreeDViewer() {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex h-screen w-full items-center justify-center bg-[#FAF8F5]">
+                    <div className="flex flex-col items-center gap-4">
+                        <Loader2 className="w-12 h-12 animate-spin text-[#663F23]" />
+                        <p className="text-sm font-medium text-[#1C1C1C]/50">Initializing 3D viewer...</p>
+                    </div>
+                </div>
+            }
+        >
+            <ThreeDViewerContent />
+        </Suspense>
     );
 }
