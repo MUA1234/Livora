@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Toast, ToastType } from "@/components/ui/Toast";
 import api from "@/lib/api";
 import {
@@ -10,7 +10,9 @@ import {
     ScrollText,
     Eye,
     RotateCcw,
-    Loader2
+    Loader2,
+    ChevronDown,
+    Search
 } from "lucide-react";
 import Image from "next/image";
 import AdminSidebar from "@/components/AdminSidebar";
@@ -26,6 +28,12 @@ interface Version {
     saveType: string;
 }
 
+interface DesignOption {
+    _id: string;
+    name: string;
+    status?: string;
+}
+
 export default function DesignHistoryPage() {
     return (
         <Suspense fallback={<div className="min-h-screen bg-[#F5F1E8] flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
@@ -36,27 +44,55 @@ export default function DesignHistoryPage() {
 
 function DesignHistory() {
     const searchParams = useSearchParams();
-    const designId = searchParams.get("designId") || searchParams.get("id"); // Handle both common variants
+    const router = useRouter();
+    const initialDesignId = searchParams.get("designId") || searchParams.get("id") || "";
+
+    const [designId, setDesignId] = useState(initialDesignId);
+    const [designs, setDesigns] = useState<DesignOption[]>([]);
+    const [isListLoading, setIsListLoading] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [designSearch, setDesignSearch] = useState("");
 
     const [versionsList, setVersionsList] = useState<Version[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
+    // Fetch designs list
+    useEffect(() => {
+        (async () => {
+            try {
+                setIsListLoading(true);
+                const res = await api.get("/api/designs");
+                const list = Array.isArray(res.data) ? res.data : res.data.data || [];
+                setDesigns(list);
+            } catch {
+                console.error("Failed to load designs list");
+            } finally {
+                setIsListLoading(false);
+            }
+        })();
+    }, []);
+
+    const selectDesign = (id: string) => {
+        setDesignId(id);
+        setVersionsList([]);
+        setSelectedVersion(null);
+        setError(null);
+        setShowDropdown(false);
+        setDesignSearch("");
+        router.replace(`/admin/design-history?designId=${id}`, { scroll: false });
+    };
+
     const fetchVersions = useCallback(async () => {
-        if (!designId) {
-            setError("No Design ID provided in the URL.");
-            setIsLoading(false);
-            return;
-        }
+        if (!designId) return;
 
         try {
             setIsLoading(true);
             const response = await api.get(`/api/designs/${designId}/versions`);
-            
-            // Backend returns an array directly, but let's be safe
+
             const rawVersions = Array.isArray(response.data) ? response.data : response.data.data || [];
 
             const formattedVersions: Version[] = rawVersions.map((v: any) => {
@@ -66,14 +102,14 @@ function DesignHistory() {
                 return {
                     id: v._id || v.id,
                     version: v.label || "Versioned Snapshot",
-                    date: isValidDate 
+                    date: isValidDate
                         ? dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                         : "Date Unavailable",
-                    time: isValidDate 
+                    time: isValidDate
                         ? dateObj.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
                         : "Time Unavailable",
                     description: v.description || "Design state captured during editing.",
-                    image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800", // Placeholder for now
+                    image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800",
                     savedBy: v.createdBy || "Admin",
                     saveType: v.label?.toLowerCase().includes("auto") ? "Auto" : "Manual",
                 };
@@ -93,8 +129,8 @@ function DesignHistory() {
     }, [designId]);
 
     useEffect(() => {
-        fetchVersions();
-    }, [fetchVersions]);
+        if (designId) fetchVersions();
+    }, [designId, fetchVersions]);
 
     const handleRestore = async (versionId: string) => {
         if (!designId) return;
@@ -139,6 +175,11 @@ function DesignHistory() {
         }
     };
 
+    const selectedDesignName = designs.find(d => d._id === designId)?.name;
+    const filteredDesigns = designs.filter(d =>
+        d.name.toLowerCase().includes(designSearch.toLowerCase())
+    );
+
     return (
         <div className="min-h-screen bg-white flex overflow-hidden font-sans text-[#1C1C1C]">
             <AdminSidebar />
@@ -151,6 +192,71 @@ function DesignHistory() {
                         <h1 className="text-2xl font-bold text-[#663F23] mb-1">Design History & Version Control</h1>
                         <p className="text-sm text-[#1C1C1C]/50">Track, compare, and restore previous design versions.</p>
                     </div>
+
+                    {/* Design Selector */}
+                    <div className="mb-8 relative">
+                        <label className="block text-xs font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-2">Select Design</label>
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className="w-full flex justify-between items-center px-5 py-4 bg-white rounded-xl border border-[#E5E5E5] hover:border-[#663F23]/30 transition-colors text-left shadow-sm"
+                        >
+                            <span className={`font-semibold ${designId ? "text-[#1C1C1C]" : "text-[#A8A8A8]"}`}>
+                                {selectedDesignName || "Choose a design to view history..."}
+                            </span>
+                            <ChevronDown size={18} className={`text-[#1C1C1C]/40 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {showDropdown && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#E5E5E5] rounded-xl shadow-lg z-50 overflow-hidden">
+                                <div className="p-3 border-b border-[#E5E5E5]/50">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/30" size={16} />
+                                        <input
+                                            type="text"
+                                            placeholder="Search designs..."
+                                            value={designSearch}
+                                            onChange={(e) => setDesignSearch(e.target.value)}
+                                            className="w-full pl-9 pr-3 py-2 text-sm border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-[#663F23]"
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+                                <div className="max-h-60 overflow-y-auto">
+                                    {isListLoading ? (
+                                        <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-[#663F23]" /></div>
+                                    ) : filteredDesigns.length === 0 ? (
+                                        <p className="p-6 text-sm text-[#A8A8A8] text-center">No designs found</p>
+                                    ) : (
+                                        filteredDesigns.map(d => (
+                                            <button
+                                                key={d._id}
+                                                onClick={() => selectDesign(d._id)}
+                                                className={`w-full text-left px-5 py-3 text-sm font-medium hover:bg-[#F5F1E8] transition-colors flex justify-between items-center ${designId === d._id ? "bg-[#F5F1E8] text-[#663F23] font-bold" : "text-[#1C1C1C]"}`}
+                                            >
+                                                <span>{d.name}</span>
+                                                {d.status && (
+                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${d.status === "published" ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
+                                                        {d.status}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* No design selected */}
+                    {!designId && !isLoading && (
+                        <div className="h-64 flex flex-col items-center justify-center bg-white rounded-2xl border border-[#E5E5E5]/50 shadow-sm p-8 text-center">
+                            <div className="w-12 h-12 bg-[#F5F1E8] text-[#663F23] rounded-full flex items-center justify-center mb-4">
+                                <ScrollText size={24} />
+                            </div>
+                            <h3 className="text-lg font-bold text-[#1C1C1C] mb-2">No Design Selected</h3>
+                            <p className="text-[#1C1C1C]/50">Choose a design from the dropdown above to view its version history.</p>
+                        </div>
+                    )}
 
                     {isLoading ? (
                         <div className="h-64 flex flex-col items-center justify-center bg-white rounded-2xl border border-[#E5E5E5]/50 shadow-sm">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Toast, ToastType } from "@/components/ui/Toast";
 import api from "@/lib/api";
 import {
@@ -10,7 +10,9 @@ import {
     AlertCircle,
     Download,
     ArrowLeft,
-    RefreshCw
+    RefreshCw,
+    ChevronDown,
+    Search
 } from "lucide-react";
 import AdminSidebar from "@/components/AdminSidebar";
 
@@ -31,6 +33,12 @@ interface CostData {
     grandTotal: number;
 }
 
+interface DesignOption {
+    _id: string;
+    name: string;
+    status?: string;
+}
+
 export default function CostSummaryPage() {
     return (
         <Suspense fallback={<div className="min-h-screen bg-[#F5F1E8] flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
@@ -41,20 +49,39 @@ export default function CostSummaryPage() {
 
 function CostSummary() {
     const searchParams = useSearchParams();
-    const designId = searchParams.get("designId") || "";
+    const router = useRouter();
+    const initialDesignId = searchParams.get("designId") || "";
+
+    const [designId, setDesignId] = useState(initialDesignId);
+    const [designs, setDesigns] = useState<DesignOption[]>([]);
+    const [isListLoading, setIsListLoading] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [designSearch, setDesignSearch] = useState("");
 
     const [costData, setCostData] = useState<CostData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [toastConfig, setToastConfig] = useState<{ message: string; type: ToastType } | null>(null);
 
+    // Fetch designs list
+    useEffect(() => {
+        (async () => {
+            try {
+                setIsListLoading(true);
+                const res = await api.get("/api/designs");
+                const list = Array.isArray(res.data) ? res.data : res.data.data || [];
+                setDesigns(list);
+            } catch {
+                console.error("Failed to load designs list");
+            } finally {
+                setIsListLoading(false);
+            }
+        })();
+    }, []);
+
     const fetchCostSummary = useCallback(async () => {
-        if (!designId) {
-            setError("No design ID provided. Please select a design first.");
-            setIsLoading(false);
-            return;
-        }
+        if (!designId) return;
         try {
             setIsLoading(true);
             setError(null);
@@ -72,8 +99,17 @@ function CostSummary() {
     }, [designId]);
 
     useEffect(() => {
-        fetchCostSummary();
-    }, [fetchCostSummary]);
+        if (designId) fetchCostSummary();
+    }, [designId, fetchCostSummary]);
+
+    const selectDesign = (id: string) => {
+        setDesignId(id);
+        setCostData(null);
+        setError(null);
+        setShowDropdown(false);
+        setDesignSearch("");
+        router.replace(`/admin/cost-summary?designId=${id}`, { scroll: false });
+    };
 
     const handleExportPdf = async () => {
         if (!designId) return;
@@ -106,6 +142,11 @@ function CostSummary() {
         return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
     };
 
+    const selectedDesignName = designs.find(d => d._id === designId)?.name;
+    const filteredDesigns = designs.filter(d =>
+        d.name.toLowerCase().includes(designSearch.toLowerCase())
+    );
+
     return (
         <div className="min-h-screen bg-white flex overflow-hidden font-sans text-[#1C1C1C]">
             <AdminSidebar />
@@ -113,6 +154,77 @@ function CostSummary() {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto bg-[#F5F1E8] p-8 md:p-12">
                 <div className="max-w-4xl ml-0 h-full">
+
+                    {/* Page Header */}
+                    <div className="mb-8">
+                        <h1 className="text-2xl font-bold text-[#663F23] mb-1">Cost Summary</h1>
+                        <p className="text-sm text-[#1C1C1C]/50">View itemized cost breakdowns for your designs.</p>
+                    </div>
+
+                    {/* Design Selector */}
+                    <div className="mb-8 relative">
+                        <label className="block text-xs font-bold text-[#1C1C1C]/50 uppercase tracking-wider mb-2">Select Design</label>
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className="w-full flex justify-between items-center px-5 py-4 bg-white rounded-xl border border-[#E5E5E5] hover:border-[#663F23]/30 transition-colors text-left shadow-sm"
+                        >
+                            <span className={`font-semibold ${designId ? "text-[#1C1C1C]" : "text-[#A8A8A8]"}`}>
+                                {selectedDesignName || "Choose a design to view costs..."}
+                            </span>
+                            <ChevronDown size={18} className={`text-[#1C1C1C]/40 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {showDropdown && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#E5E5E5] rounded-xl shadow-lg z-50 overflow-hidden">
+                                <div className="p-3 border-b border-[#E5E5E5]/50">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/30" size={16} />
+                                        <input
+                                            type="text"
+                                            placeholder="Search designs..."
+                                            value={designSearch}
+                                            onChange={(e) => setDesignSearch(e.target.value)}
+                                            className="w-full pl-9 pr-3 py-2 text-sm border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-[#663F23]"
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+                                <div className="max-h-60 overflow-y-auto">
+                                    {isListLoading ? (
+                                        <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-[#663F23]" /></div>
+                                    ) : filteredDesigns.length === 0 ? (
+                                        <p className="p-6 text-sm text-[#A8A8A8] text-center">No designs found</p>
+                                    ) : (
+                                        filteredDesigns.map(d => (
+                                            <button
+                                                key={d._id}
+                                                onClick={() => selectDesign(d._id)}
+                                                className={`w-full text-left px-5 py-3 text-sm font-medium hover:bg-[#F5F1E8] transition-colors flex justify-between items-center ${designId === d._id ? "bg-[#F5F1E8] text-[#663F23] font-bold" : "text-[#1C1C1C]"}`}
+                                            >
+                                                <span>{d.name}</span>
+                                                {d.status && (
+                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${d.status === "published" ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"}`}>
+                                                        {d.status}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* No design selected state */}
+                    {!designId && !isLoading && (
+                        <div className="flex flex-col items-center justify-center py-24 gap-5 text-center bg-white rounded-2xl border border-[#E5E5E5]/50 shadow-sm">
+                            <FileText className="w-14 h-14 text-[#E5E5E5]" />
+                            <div>
+                                <h3 className="text-xl font-bold text-[#1C1C1C]">No Design Selected</h3>
+                                <p className="text-[#8C8C8C] mt-2">Choose a design from the dropdown above to view its cost breakdown.</p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Loading State */}
                     {isLoading && (
@@ -124,7 +236,7 @@ function CostSummary() {
 
                     {/* Error State */}
                     {!isLoading && error && (
-                        <div className="flex flex-col items-center justify-center py-32 gap-5 text-center">
+                        <div className="flex flex-col items-center justify-center py-24 gap-5 text-center bg-white rounded-2xl border border-[#E5E5E5]/50 shadow-sm">
                             <AlertCircle className="w-14 h-14 text-red-400" />
                             <div>
                                 <h3 className="text-xl font-bold text-[#1C1C1C]">Unable to Load Cost Data</h3>
@@ -142,9 +254,8 @@ function CostSummary() {
                     {/* Data Loaded */}
                     {!isLoading && !error && costData && (
                         <>
-                            {/* Header */}
+                            {/* Design Info */}
                             <div className="mb-8">
-                                <h1 className="text-2xl font-bold text-[#2A2A2A] mb-2">Cost Summary</h1>
                                 <p className="text-lg text-[#6C6C6C]">
                                     Design: <span className="font-semibold text-[#2A2A2A]">{costData.designName}</span>
                                 </p>
@@ -233,17 +344,6 @@ function CostSummary() {
                                 </button>
                             </div>
                         </>
-                    )}
-
-                    {/* Empty state when no designId */}
-                    {!isLoading && !error && !costData && (
-                        <div className="flex flex-col items-center justify-center py-32 gap-5 text-center">
-                            <FileText className="w-14 h-14 text-[#E5E5E5]" />
-                            <div>
-                                <h3 className="text-xl font-bold text-[#1C1C1C]">No Design Selected</h3>
-                                <p className="text-[#8C8C8C] mt-2">Navigate here from a design to view its cost breakdown.</p>
-                            </div>
-                        </div>
                     )}
                 </div>
             </main>
