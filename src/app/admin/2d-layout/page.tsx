@@ -103,6 +103,409 @@ function getCategoryColor(category: string): string {
     return CATEGORY_COLORS.default;
 }
 
+function getModelType(category: string, name: string): string {
+    const s = (category + " " + name).toLowerCase();
+    if (s.includes("sectional")) return "sectional";
+    if (s.includes("sofa") || s.includes("couch")) return "sofa";
+    if (s.includes("lounge chair") || s.includes("lounge")) return "lounge";
+    if (s.includes("dining chair") || s.includes("chair")) return "chair";
+    if (s.includes("bed")) return "bed";
+    if (s.includes("coffee table")) return "coffee-table";
+    if (s.includes("round") && s.includes("table")) return "round-table";
+    if (s.includes("dining table")) return "round-table";
+    if (s.includes("desk")) return "desk";
+    if (s.includes("table")) return "table";
+    if (s.includes("bookshelf") || s.includes("shelf")) return "bookshelf";
+    if (s.includes("floor lamp")) return "floor-lamp";
+    if (s.includes("pendant") || s.includes("ceiling")) return "pendant";
+    if (s.includes("lamp") || s.includes("light")) return "floor-lamp";
+    if (s.includes("tv") || s.includes("console")) return "tv-console";
+    if (s.includes("nightstand")) return "nightstand";
+    if (s.includes("rug") || s.includes("carpet") || s.includes("area")) return "rug";
+    if (s.includes("mirror")) return "mirror";
+    if (s.includes("vase")) return "vase";
+    if (s.includes("wardrobe") || s.includes("cabinet") || s.includes("dresser")) return "cabinet";
+    return "box";
+}
+
+function hexLighten(hex: string, amt: number): string {
+    const num = parseInt(hex.replace("#", ""), 16);
+    const r = Math.min(255, ((num >> 16) & 0xff) + Math.round(amt * 255));
+    const g = Math.min(255, ((num >> 8) & 0xff) + Math.round(amt * 255));
+    const b = Math.min(255, (num & 0xff) + Math.round(amt * 255));
+    return `rgb(${r},${g},${b})`;
+}
+
+function hexDarken(hex: string, amt: number): string {
+    const num = parseInt(hex.replace("#", ""), 16);
+    const r = Math.max(0, ((num >> 16) & 0xff) - Math.round(amt * 255));
+    const g = Math.max(0, ((num >> 8) & 0xff) - Math.round(amt * 255));
+    const b = Math.max(0, (num & 0xff) - Math.round(amt * 255));
+    return `rgb(${r},${g},${b})`;
+}
+
+function FurnitureTopView({ w, d, color, type, id }: { w: number; d: number; color: string; type: string; id: string }) {
+    const lt = hexLighten(color, 0.12);
+    const dk = hexDarken(color, 0.1);
+    const dkr = hexDarken(color, 0.2);
+
+    switch (type) {
+        case "sofa": {
+            const armW = w * 0.08;
+            const backD = d * 0.18;
+            const cushionCount = Math.max(2, Math.round(w / 80));
+            const innerW = w - armW * 2;
+            const cw = (innerW - (cushionCount - 1) * 1) / cushionCount;
+            return (
+                <g>
+                    {/* Shadow */}
+                    <rect x={2} y={2} width={w} height={d} rx={3} fill="rgba(0,0,0,0.08)" />
+                    {/* Back */}
+                    <rect x={0} y={0} width={w} height={backD} rx={3} fill={dk} />
+                    {/* Base */}
+                    <rect x={armW} y={backD} width={innerW} height={d - backD} rx={2} fill={color} />
+                    {/* Seat cushions */}
+                    {Array.from({ length: cushionCount }, (_, i) => (
+                        <rect key={i} x={armW + i * (cw + 1) + 1} y={backD + 2} width={cw - 2} height={d - backD - 4} rx={3} fill={lt} stroke={dk} strokeWidth={0.5} />
+                    ))}
+                    {/* Back cushions */}
+                    {Array.from({ length: cushionCount }, (_, i) => (
+                        <rect key={`b${i}`} x={armW + i * (cw + 1) + 2} y={2} width={cw - 4} height={backD - 3} rx={2} fill={hexLighten(color, 0.06)} />
+                    ))}
+                    {/* Arms */}
+                    <rect x={0} y={0} width={armW} height={d} rx={3} fill={dkr} />
+                    <rect x={w - armW} y={0} width={armW} height={d} rx={3} fill={dkr} />
+                </g>
+            );
+        }
+
+        case "sectional": {
+            const backD = d * 0.14;
+            const extW = w * 0.35;
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={3} fill="rgba(0,0,0,0.08)" />
+                    {/* Main section */}
+                    <rect x={0} y={0} width={w} height={d * 0.5} rx={3} fill={color} />
+                    {/* Extension (chaise) */}
+                    <rect x={w - extW} y={0} width={extW} height={d} rx={3} fill={color} />
+                    {/* Back - L shape */}
+                    <rect x={0} y={0} width={w} height={backD} rx={2} fill={dk} />
+                    <rect x={w - backD} y={0} width={backD} height={d} rx={2} fill={dk} />
+                    {/* Main cushions */}
+                    <rect x={3} y={backD + 2} width={w - extW - 5} height={d * 0.5 - backD - 4} rx={3} fill={lt} stroke={dk} strokeWidth={0.5} />
+                    {/* Extension cushion */}
+                    <rect x={w - extW + 2} y={backD + 2} width={extW - backD - 3} height={d - backD - 4} rx={3} fill={lt} stroke={dk} strokeWidth={0.5} />
+                </g>
+            );
+        }
+
+        case "lounge": {
+            const armW = w * 0.10;
+            const backD = d * 0.20;
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={4} fill="rgba(0,0,0,0.08)" />
+                    <rect x={0} y={0} width={w} height={d} rx={4} fill={dkr} />
+                    {/* Back */}
+                    <rect x={armW} y={2} width={w - armW * 2} height={backD - 2} rx={3} fill={dk} />
+                    {/* Seat cushion */}
+                    <rect x={armW + 2} y={backD + 1} width={w - armW * 2 - 4} height={d - backD - 3} rx={4} fill={lt} stroke={dk} strokeWidth={0.5} />
+                    {/* Arms */}
+                    <rect x={1} y={1} width={armW - 1} height={d - 2} rx={4} fill={color} />
+                    <rect x={w - armW} y={1} width={armW - 1} height={d - 2} rx={4} fill={color} />
+                </g>
+            );
+        }
+
+        case "chair": {
+            const backD = d * 0.12;
+            const legR = Math.min(w, d) * 0.04;
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={2} fill="rgba(0,0,0,0.06)" />
+                    {/* Seat */}
+                    <rect x={1} y={backD} width={w - 2} height={d - backD - 1} rx={3} fill={lt} stroke={dk} strokeWidth={0.6} />
+                    {/* Back */}
+                    <rect x={2} y={0} width={w - 4} height={backD + 2} rx={2} fill={dk} />
+                    {/* Legs */}
+                    <circle cx={legR + 2} cy={legR + 2} r={legR} fill={dkr} />
+                    <circle cx={w - legR - 2} cy={legR + 2} r={legR} fill={dkr} />
+                    <circle cx={legR + 2} cy={d - legR - 2} r={legR} fill={dkr} />
+                    <circle cx={w - legR - 2} cy={d - legR - 2} r={legR} fill={dkr} />
+                </g>
+            );
+        }
+
+        case "bed": {
+            const headD = d * 0.06;
+            const footD = d * 0.03;
+            const pillowW = w * 0.38;
+            const pillowD = d * 0.12;
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={2} fill="rgba(0,0,0,0.07)" />
+                    {/* Frame */}
+                    <rect x={0} y={0} width={w} height={d} rx={2} fill={dk} stroke={dkr} strokeWidth={0.8} />
+                    {/* Headboard */}
+                    <rect x={-1} y={0} width={w + 2} height={headD} rx={2} fill={dkr} />
+                    {/* Footboard */}
+                    <rect x={0} y={d - footD} width={w} height={footD} rx={1} fill={dkr} />
+                    {/* Mattress */}
+                    <rect x={2} y={headD + 1} width={w - 4} height={d - headD - footD - 2} rx={2} fill={lt} stroke={hexDarken(color, 0.05)} strokeWidth={0.4} />
+                    {/* Duvet/blanket line */}
+                    <rect x={3} y={d * 0.45} width={w - 6} height={d * 0.45} rx={3} fill={hexLighten(color, 0.18)} stroke={dk} strokeWidth={0.3} />
+                    {/* Pillows */}
+                    <rect x={w * 0.06} y={headD + 3} width={pillowW} height={pillowD} rx={pillowD * 0.35} fill="white" stroke={hexDarken(color, 0.05)} strokeWidth={0.4} />
+                    <rect x={w - w * 0.06 - pillowW} y={headD + 3} width={pillowW} height={pillowD} rx={pillowD * 0.35} fill="white" stroke={hexDarken(color, 0.05)} strokeWidth={0.4} />
+                </g>
+            );
+        }
+
+        case "coffee-table": {
+            const legR = Math.min(w, d) * 0.035;
+            const inset = 4;
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={2} fill="rgba(0,0,0,0.06)" />
+                    {/* Table top */}
+                    <rect x={0} y={0} width={w} height={d} rx={2} fill={color} stroke={dk} strokeWidth={0.6} />
+                    {/* Wood grain lines */}
+                    {[0.25, 0.5, 0.75].map((f, i) => (
+                        <line key={i} x1={4} y1={d * f} x2={w - 4} y2={d * f} stroke={dk} strokeWidth={0.3} strokeOpacity={0.4} />
+                    ))}
+                    {/* Lower shelf outline */}
+                    <rect x={w * 0.12} y={d * 0.15} width={w * 0.76} height={d * 0.7} rx={1} fill="none" stroke={dk} strokeWidth={0.4} strokeDasharray="2 2" />
+                    {/* Legs */}
+                    <circle cx={inset} cy={inset} r={legR} fill={dkr} />
+                    <circle cx={w - inset} cy={inset} r={legR} fill={dkr} />
+                    <circle cx={inset} cy={d - inset} r={legR} fill={dkr} />
+                    <circle cx={w - inset} cy={d - inset} r={legR} fill={dkr} />
+                </g>
+            );
+        }
+
+        case "table": {
+            const legR = Math.min(w, d) * 0.03;
+            const inset = 5;
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={1} fill="rgba(0,0,0,0.06)" />
+                    <rect x={0} y={0} width={w} height={d} rx={1} fill={color} stroke={dk} strokeWidth={0.6} />
+                    {/* Wood grain */}
+                    {[0.2, 0.4, 0.6, 0.8].map((f, i) => (
+                        <line key={i} x1={3} y1={d * f} x2={w - 3} y2={d * f} stroke={dk} strokeWidth={0.2} strokeOpacity={0.3} />
+                    ))}
+                    <circle cx={inset} cy={inset} r={legR} fill={dkr} />
+                    <circle cx={w - inset} cy={inset} r={legR} fill={dkr} />
+                    <circle cx={inset} cy={d - inset} r={legR} fill={dkr} />
+                    <circle cx={w - inset} cy={d - inset} r={legR} fill={dkr} />
+                </g>
+            );
+        }
+
+        case "round-table": {
+            const rx = w / 2;
+            const ry = d / 2;
+            const pedR = Math.min(w, d) * 0.08;
+            return (
+                <g>
+                    <ellipse cx={rx + 2} cy={ry + 2} rx={rx} ry={ry} fill="rgba(0,0,0,0.06)" />
+                    <ellipse cx={rx} cy={ry} rx={rx} ry={ry} fill={color} stroke={dk} strokeWidth={0.7} />
+                    {/* Concentric ring detail */}
+                    <ellipse cx={rx} cy={ry} rx={rx * 0.75} ry={ry * 0.75} fill="none" stroke={dk} strokeWidth={0.3} strokeOpacity={0.3} />
+                    {/* Pedestal base */}
+                    <ellipse cx={rx} cy={ry} rx={pedR} ry={pedR} fill={dkr} />
+                </g>
+            );
+        }
+
+        case "desk": {
+            const drawerW = w * 0.35;
+            const legR = Math.min(w, d) * 0.025;
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={1} fill="rgba(0,0,0,0.06)" />
+                    {/* Desktop surface */}
+                    <rect x={0} y={0} width={w} height={d} rx={1} fill={color} stroke={dk} strokeWidth={0.6} />
+                    {/* Left panel leg */}
+                    <rect x={1} y={1} width={2} height={d - 2} fill={dkr} />
+                    {/* Drawer unit (right side) */}
+                    <rect x={w - drawerW} y={1} width={drawerW - 1} height={d - 2} rx={1} fill={dk} stroke={dkr} strokeWidth={0.4} />
+                    {/* Drawer lines */}
+                    <line x1={w - drawerW + 3} y1={d * 0.33} x2={w - 3} y2={d * 0.33} stroke={dkr} strokeWidth={0.4} />
+                    <line x1={w - drawerW + 3} y1={d * 0.66} x2={w - 3} y2={d * 0.66} stroke={dkr} strokeWidth={0.4} />
+                    {/* Drawer handles */}
+                    {[0.17, 0.5, 0.83].map((f, i) => (
+                        <circle key={i} cx={w - drawerW / 2} cy={d * f} r={legR} fill={hexLighten(color, 0.2)} stroke={dkr} strokeWidth={0.3} />
+                    ))}
+                    {/* Knee space */}
+                    <rect x={4} y={2} width={w - drawerW - 6} height={d - 4} rx={1} fill={hexLighten(color, 0.08)} strokeDasharray="1.5 1.5" stroke={dk} strokeWidth={0.3} />
+                </g>
+            );
+        }
+
+        case "bookshelf": {
+            const shelfCount = Math.max(3, Math.round(d / 30));
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={1} fill="rgba(0,0,0,0.06)" />
+                    <rect x={0} y={0} width={w} height={d} rx={1} fill={color} stroke={dk} strokeWidth={0.7} />
+                    {/* Side panels */}
+                    <rect x={0} y={0} width={w * 0.06} height={d} fill={dkr} />
+                    <rect x={w - w * 0.06} y={0} width={w * 0.06} height={d} fill={dkr} />
+                    {/* Shelf lines */}
+                    {Array.from({ length: shelfCount - 1 }, (_, i) => {
+                        const sy = ((i + 1) / shelfCount) * d;
+                        return <line key={i} x1={w * 0.06} y1={sy} x2={w - w * 0.06} y2={sy} stroke={dkr} strokeWidth={0.6} />;
+                    })}
+                    {/* Book-like fills on some shelves */}
+                    {Array.from({ length: Math.min(shelfCount - 1, 3) }, (_, i) => {
+                        const sy = ((i + 1) / shelfCount) * d + 1;
+                        const sh = d / shelfCount - 2;
+                        return <rect key={`b${i}`} x={w * 0.08} y={sy} width={w * 0.45} height={sh} rx={0.5} fill={hexLighten(color, 0.1 + i * 0.04)} />;
+                    })}
+                </g>
+            );
+        }
+
+        case "floor-lamp": {
+            const baseR = Math.min(w, d) * 0.35;
+            const poleR = Math.min(w, d) * 0.04;
+            const shadeR = Math.min(w, d) * 0.3;
+            return (
+                <g>
+                    {/* Shadow */}
+                    <ellipse cx={w / 2 + 1} cy={d / 2 + 1} rx={baseR} ry={baseR} fill="rgba(0,0,0,0.08)" />
+                    {/* Base */}
+                    <ellipse cx={w / 2} cy={d / 2} rx={baseR} ry={baseR} fill={dkr} stroke={dk} strokeWidth={0.5} />
+                    {/* Shade outline */}
+                    <ellipse cx={w / 2} cy={d / 2} rx={shadeR} ry={shadeR} fill={lt} fillOpacity={0.4} stroke={color} strokeWidth={0.6} />
+                    {/* Pole */}
+                    <circle cx={w / 2} cy={d / 2} r={poleR} fill={dkr} />
+                    {/* Glow */}
+                    <ellipse cx={w / 2} cy={d / 2} rx={shadeR * 0.4} ry={shadeR * 0.4} fill="#FFF8E0" fillOpacity={0.5} />
+                </g>
+            );
+        }
+
+        case "pendant": {
+            const shadeR = Math.min(w, d) * 0.38;
+            return (
+                <g>
+                    {/* Shade circle */}
+                    <ellipse cx={w / 2} cy={d / 2} rx={shadeR} ry={shadeR} fill={lt} fillOpacity={0.5} stroke={color} strokeWidth={0.6} strokeDasharray="2 1" />
+                    {/* Inner glow */}
+                    <ellipse cx={w / 2} cy={d / 2} rx={shadeR * 0.35} ry={shadeR * 0.35} fill="#FFF8E0" fillOpacity={0.6} />
+                    {/* Center point */}
+                    <circle cx={w / 2} cy={d / 2} r={1.5} fill={dkr} />
+                </g>
+            );
+        }
+
+        case "tv-console": {
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={2} fill="rgba(0,0,0,0.06)" />
+                    <rect x={0} y={0} width={w} height={d} rx={2} fill={color} stroke={dk} strokeWidth={0.6} />
+                    {/* Top surface highlight */}
+                    <rect x={1} y={1} width={w - 2} height={d - 2} rx={1.5} fill={lt} fillOpacity={0.3} />
+                    {/* Cabinet doors */}
+                    <rect x={2} y={2} width={w * 0.28} height={d - 4} rx={1} fill="none" stroke={dk} strokeWidth={0.4} />
+                    <rect x={w - w * 0.28 - 2} y={2} width={w * 0.28} height={d - 4} rx={1} fill="none" stroke={dk} strokeWidth={0.4} />
+                    {/* Open shelf (center) */}
+                    <rect x={w * 0.32} y={2} width={w * 0.36} height={d - 4} rx={1} fill={dk} fillOpacity={0.3} />
+                    {/* Handles */}
+                    <line x1={w * 0.26} y1={d * 0.4} x2={w * 0.26} y2={d * 0.6} stroke={dkr} strokeWidth={0.8} strokeLinecap="round" />
+                    <line x1={w * 0.74} y1={d * 0.4} x2={w * 0.74} y2={d * 0.6} stroke={dkr} strokeWidth={0.8} strokeLinecap="round" />
+                </g>
+            );
+        }
+
+        case "nightstand": {
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={2} fill="rgba(0,0,0,0.06)" />
+                    <rect x={0} y={0} width={w} height={d} rx={2} fill={color} stroke={dk} strokeWidth={0.6} />
+                    {/* Drawer front */}
+                    <rect x={2} y={2} width={w - 4} height={d * 0.45} rx={1} fill="none" stroke={dk} strokeWidth={0.4} />
+                    <rect x={2} y={d * 0.5} width={w - 4} height={d * 0.45} rx={1} fill="none" stroke={dk} strokeWidth={0.4} />
+                    {/* Handles */}
+                    <line x1={w * 0.35} y1={d * 0.25} x2={w * 0.65} y2={d * 0.25} stroke={dkr} strokeWidth={0.8} strokeLinecap="round" />
+                    <line x1={w * 0.35} y1={d * 0.72} x2={w * 0.65} y2={d * 0.72} stroke={dkr} strokeWidth={0.8} strokeLinecap="round" />
+                </g>
+            );
+        }
+
+        case "rug": {
+            const border = Math.min(w, d) * 0.06;
+            return (
+                <g>
+                    {/* Rug body */}
+                    <rect x={0} y={0} width={w} height={d} rx={1} fill={color} fillOpacity={0.5} />
+                    {/* Border */}
+                    <rect x={0} y={0} width={w} height={d} rx={1} fill="none" stroke={dk} strokeWidth={border} strokeOpacity={0.4} />
+                    {/* Inner border */}
+                    <rect x={border * 1.5} y={border * 1.5} width={w - border * 3} height={d - border * 3} rx={0.5} fill="none" stroke={dk} strokeWidth={0.4} strokeOpacity={0.3} />
+                    {/* Pattern center */}
+                    <ellipse cx={w / 2} cy={d / 2} rx={w * 0.18} ry={d * 0.18} fill="none" stroke={dk} strokeWidth={0.4} strokeOpacity={0.3} />
+                </g>
+            );
+        }
+
+        case "mirror": {
+            return (
+                <g>
+                    <rect x={0} y={0} width={w} height={d} rx={1} fill={dk} stroke={dkr} strokeWidth={0.7} />
+                    {/* Glass surface */}
+                    <rect x={2} y={2} width={w - 4} height={d - 4} rx={0.5} fill="#D8E4F0" fillOpacity={0.7} />
+                    {/* Reflection streak */}
+                    <line x1={w * 0.25} y1={3} x2={w * 0.15} y2={d - 3} stroke="white" strokeWidth={0.6} strokeOpacity={0.5} />
+                </g>
+            );
+        }
+
+        case "vase": {
+            const rx = w * 0.35;
+            const ry = d * 0.35;
+            return (
+                <g>
+                    <ellipse cx={w / 2 + 1} cy={d / 2 + 1} rx={rx} ry={ry} fill="rgba(0,0,0,0.06)" />
+                    <ellipse cx={w / 2} cy={d / 2} rx={rx} ry={ry} fill={color} stroke={dk} strokeWidth={0.5} />
+                    {/* Rim */}
+                    <ellipse cx={w / 2} cy={d / 2} rx={rx * 0.5} ry={ry * 0.5} fill={lt} stroke={dk} strokeWidth={0.4} />
+                    {/* Highlight */}
+                    <ellipse cx={w / 2 - rx * 0.2} cy={d / 2 - ry * 0.2} rx={rx * 0.15} ry={ry * 0.2} fill="white" fillOpacity={0.3} />
+                </g>
+            );
+        }
+
+        case "cabinet": {
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={1} fill="rgba(0,0,0,0.06)" />
+                    <rect x={0} y={0} width={w} height={d} rx={1} fill={color} stroke={dk} strokeWidth={0.7} />
+                    {/* Two doors */}
+                    <rect x={2} y={2} width={w / 2 - 3} height={d - 4} rx={1} fill="none" stroke={dk} strokeWidth={0.4} />
+                    <rect x={w / 2 + 1} y={2} width={w / 2 - 3} height={d - 4} rx={1} fill="none" stroke={dk} strokeWidth={0.4} />
+                    {/* Handles */}
+                    <line x1={w / 2 - 3} y1={d * 0.4} x2={w / 2 - 3} y2={d * 0.6} stroke={dkr} strokeWidth={1} strokeLinecap="round" />
+                    <line x1={w / 2 + 3} y1={d * 0.4} x2={w / 2 + 3} y2={d * 0.6} stroke={dkr} strokeWidth={1} strokeLinecap="round" />
+                </g>
+            );
+        }
+
+        default: {
+            return (
+                <g>
+                    <rect x={2} y={2} width={w} height={d} rx={2} fill="rgba(0,0,0,0.06)" />
+                    <rect x={0} y={0} width={w} height={d} rx={2} fill={color} fillOpacity={0.7} stroke={dk} strokeWidth={0.6} />
+                </g>
+            );
+        }
+    }
+}
+
 // Product dimensions in DB are already in cm
 const DIM_SCALE = 1;
 const GRID_STEP_CM = 10;
@@ -804,6 +1207,7 @@ function TwoDLayoutEditorInner() {
                                 {items.map((item) => {
                                     const isSelected = item.id === selectedId;
                                     const color = getCategoryColor(item.category);
+                                    const modelType = getModelType(item.category, item.name);
                                     return (
                                         <g
                                             key={item.id}
@@ -812,38 +1216,41 @@ function TwoDLayoutEditorInner() {
                                             onMouseDown={(e) => handleItemMouseDown(e, item.id)}
                                             style={{ cursor: "pointer" }}
                                         >
-                                            <rect
-                                                x={0}
-                                                y={0}
-                                                width={item.width}
-                                                height={item.depth}
-                                                fill={color}
-                                                fillOpacity={0.6}
-                                                stroke={isSelected ? "#2563EB" : color}
-                                                strokeWidth={isSelected ? 2.5 / scale : 1 / scale}
-                                                rx={2 / scale}
+                                            {/* Detailed furniture top view */}
+                                            <FurnitureTopView
+                                                w={item.width}
+                                                d={item.depth}
+                                                color={color}
+                                                type={modelType}
+                                                id={item.id}
                                             />
+                                            {/* Front indicator line */}
                                             <line
                                                 x1={item.width * 0.3}
                                                 y1={0}
                                                 x2={item.width * 0.7}
                                                 y2={0}
                                                 stroke={isSelected ? "#2563EB" : color}
-                                                strokeWidth={3 / scale}
+                                                strokeWidth={2 / scale}
                                             />
+                                            {/* Name label */}
                                             <text
                                                 x={item.width / 2}
                                                 y={item.depth / 2}
                                                 textAnchor="middle"
                                                 dominantBaseline="central"
                                                 fontSize={Math.min(
-                                                    item.width * 0.15,
-                                                    item.depth * 0.2,
-                                                    12 / scale
+                                                    item.width * 0.13,
+                                                    item.depth * 0.18,
+                                                    11 / scale
                                                 )}
-                                                fill="white"
+                                                fill="#1C1C1C"
                                                 fontWeight="600"
                                                 style={{ pointerEvents: "none" }}
+                                                paintOrder="stroke"
+                                                stroke="white"
+                                                strokeWidth={2.5 / scale}
+                                                strokeLinejoin="round"
                                             >
                                                 {item.name.length > 14
                                                     ? item.name.slice(0, 12) + "..."
@@ -851,17 +1258,21 @@ function TwoDLayoutEditorInner() {
                                             </text>
                                             <text
                                                 x={item.width / 2}
-                                                y={item.depth / 2 + Math.min(item.depth * 0.2, 12 / scale)}
+                                                y={item.depth / 2 + Math.min(item.depth * 0.18, 11 / scale)}
                                                 textAnchor="middle"
                                                 dominantBaseline="central"
                                                 fontSize={Math.min(
-                                                    item.width * 0.1,
-                                                    item.depth * 0.12,
-                                                    8 / scale
+                                                    item.width * 0.09,
+                                                    item.depth * 0.11,
+                                                    7 / scale
                                                 )}
-                                                fill="white"
-                                                fillOpacity={0.8}
+                                                fill="#1C1C1C"
+                                                fillOpacity={0.6}
                                                 style={{ pointerEvents: "none" }}
+                                                paintOrder="stroke"
+                                                stroke="white"
+                                                strokeWidth={2 / scale}
+                                                strokeLinejoin="round"
                                             >
                                                 {item.width.toFixed(0)} x {item.depth.toFixed(0)} cm
                                             </text>
