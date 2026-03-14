@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-    Search, ChevronDown, Star, Loader2, Package
+    Search, ChevronDown, Star, Loader2, Package, Heart
 } from "lucide-react";
 import UserNavbar from "@/components/UserNavbar";
 import Image from "next/image";
