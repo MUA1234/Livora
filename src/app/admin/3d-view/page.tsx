@@ -545,14 +545,15 @@ function ThreeDViewerContent() {
                     const h = product.height ? cmToMeters(product.height) : 0.6;
                     const d = product.depth ? cmToMeters(product.depth) : 0.6;
 
+                    // DB position is top-left corner (from 2D editor), offset by half dims to get center for Three.js
                     sceneFurniture.push({
                         id: `${product._id}-${index}`,
                         productId: product._id,
                         product,
                         position: new THREE.Vector3(
-                            item.position.x,
+                            (item.position.x || 0) + w / 2,
                             item.position.y || 0,
-                            item.position.z || item.position.y || 0
+                            (item.position.z || item.position.y || 0) + d / 2
                         ),
                         rotation: item.rotation || 0,
                         dimensions: { width: w, height: h, depth: d },
