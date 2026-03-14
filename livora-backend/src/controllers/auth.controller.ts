@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { User } from "../models/User.model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 
 const generateToken = (id: string, role: string) => {
     return jwt.sign(
@@ -59,7 +60,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         const user = await User.findOne({ email });
 
-        if (user && (await bcrypt.compare(password, user.passwordHash))) {
+        if (!user) {
+            res.status(401).json({ message: "Invalid email or password" });
+            return;
+        }
+
+        // If user signed up with Google and has no password set
+        if (user.authProvider === "google" && !user.passwordHash) {
+            res.status(401).json({ message: "This account uses Google sign-in. Please use the Google button to log in." });
+            return;
+        }
+
+        if (await bcrypt.compare(password, user.passwordHash)) {
             res.json({
                 _id: user._id,
                 name: user.name,
@@ -90,5 +102,92 @@ export const me = async (req: Request, res: Response): Promise<void> => {
         }
     } catch (error: any) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+export const googleLogin = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { credential, role } = req.body;
+
+        if (!credential) {
+            res.status(400).json({ message: "Google credential is required" });
+            return;
+        }
+
+        const clientId = process.env.GOOGLE_CLIENT_ID;
+        if (!clientId) {
+            res.status(500).json({ message: "Google OAuth is not configured on the server" });
+            return;
+        }
+
+        const client = new OAuth2Client(clientId);
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: clientId,
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            res.status(400).json({ message: "Invalid Google token" });
+            return;
+        }
+
+        const { sub: googleId, email, name, picture } = payload;
+
+        // Check if user already exists by email
+        let user = await User.findOne({ email });
+
+        if (user) {
+            // If admin login, verify role
+            if (role === "admin" && user.role !== "admin") {
+                res.status(403).json({ message: "Admin access only. This account does not have admin privileges." });
+                return;
+            }
+
+            // Link Google account if not already linked
+            if (!user.googleId) {
+                user.googleId = googleId;
+                if (user.authProvider === "local") {
+                    // Keep as local but add googleId for future logins
+                }
+                if (picture && !user.avatarUrl) {
+                    user.avatarUrl = picture;
+                }
+                await user.save();
+            }
+        } else {
+            // Admin login should not create new accounts
+            if (role === "admin") {
+                res.status(403).json({ message: "No admin account found for this Google account. Contact your administrator." });
+                return;
+            }
+
+            // Create new user for user-panel signups
+            user = await User.create({
+                name: name || email.split("@")[0],
+                email,
+                passwordHash: "",
+                googleId,
+                authProvider: "google",
+                avatarUrl: picture || "",
+                role: "user",
+            });
+        }
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            avatarUrl: user.avatarUrl,
+            token: generateToken(user._id.toString(), user.role),
+        });
+    } catch (error: any) {
+        console.error("Google auth error:", error);
+        if (error.message?.includes("Token used too late") || error.message?.includes("Invalid token")) {
+            res.status(401).json({ message: "Google token has expired. Please try again." });
+        } else {
+            res.status(500).json({ message: "Google authentication failed. Please try again." });
+        }
     }
 };

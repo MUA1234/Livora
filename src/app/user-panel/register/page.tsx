@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, Loader2, Eye, EyeOff, User, ArrowRight, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,7 @@ import Image from 'next/image';
 import api from '@/lib/api';
 import { Toast } from '@/components/ui/Toast';
 import PhoneInput from '@/components/ui/PhoneInput';
+import GoogleSignInButton from '@/components/ui/GoogleSignInButton';
 
 function PasswordStrength({ password }: { password: string }) {
     const getStrength = () => {
@@ -47,6 +48,18 @@ export default function UserRegister() {
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
     const update = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
+
+    const handleGoogleSuccess = useCallback((data: any) => {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify({ id: data._id, name: data.name, email: data.email, role: data.role }));
+        document.cookie = `livora-token=${data.token}; path=/; max-age=604800`;
+        setToast({ message: 'Account created! Welcome to Livora', type: 'success' });
+        setTimeout(() => router.push('/user-panel/furniture-catalogue'), 800);
+    }, [router]);
+
+    const handleGoogleError = useCallback((message: string) => {
+        setToast({ message, type: 'error' });
+    }, []);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -279,6 +292,21 @@ export default function UserRegister() {
                                 : <>Create Account <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" /></>
                             }
                         </button>
+
+                        {/* Divider */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 h-px" style={{ background: '#eee' }} />
+                            <span className="text-xs" style={{ color: '#bbb' }}>or</span>
+                            <div className="flex-1 h-px" style={{ background: '#eee' }} />
+                        </div>
+
+                        {/* Google Sign Up */}
+                        <GoogleSignInButton
+                            role="user"
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            text="signup_with"
+                        />
 
                         <p className="text-center text-sm pt-1" style={{ color: '#888' }}>
                             Already have an account?{' '}

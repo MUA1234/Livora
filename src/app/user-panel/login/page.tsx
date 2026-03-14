@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import api from '@/lib/api';
 import { Toast } from '@/components/ui/Toast';
+import GoogleSignInButton from '@/components/ui/GoogleSignInButton';
 
 export default function UserLogin() {
     const router = useRouter();
@@ -16,6 +17,18 @@ export default function UserLogin() {
     const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+    const handleGoogleSuccess = useCallback((data: any) => {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify({ id: data._id, name: data.name, email: data.email, role: data.role }));
+        document.cookie = `livora-token=${data.token}; path=/; max-age=604800`;
+        setToast({ message: 'Welcome back!', type: 'success' });
+        setTimeout(() => router.push('/user-panel/furniture-catalogue'), 500);
+    }, [router]);
+
+    const handleGoogleError = useCallback((message: string) => {
+        setToast({ message, type: 'error' });
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -263,6 +276,14 @@ export default function UserLogin() {
                             <span className="text-xs" style={{ color: '#bbb' }}>or</span>
                             <div className="flex-1 h-px" style={{ background: '#eee' }} />
                         </div>
+
+                        {/* Google Sign In */}
+                        <GoogleSignInButton
+                            role="user"
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            text="signin_with"
+                        />
 
                         {/* Register link */}
                         <p className="text-center text-sm" style={{ color: '#888' }}>

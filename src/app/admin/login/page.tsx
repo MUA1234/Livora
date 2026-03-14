@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import api from '@/lib/api';
 import { Toast } from '@/components/ui/Toast';
+import GoogleSignInButton from '@/components/ui/GoogleSignInButton';
 
 export default function AdminLogin() {
     const router = useRouter();
@@ -14,6 +15,22 @@ export default function AdminLogin() {
     const [email, setEmail] = useState('admin@livora.com');
     const [password, setPassword] = useState('');
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+    const handleGoogleSuccess = useCallback((data: any) => {
+        if (data.role !== 'admin') {
+            setToast({ message: 'Admin access only. Please use the user login.', type: 'error' });
+            return;
+        }
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify({ id: data._id, name: data.name, email: data.email, role: data.role }));
+        document.cookie = `livora-token=${data.token}; path=/; max-age=604800`;
+        setToast({ message: 'Welcome back!', type: 'success' });
+        setTimeout(() => router.push('/dashboard'), 500);
+    }, [router]);
+
+    const handleGoogleError = useCallback((message: string) => {
+        setToast({ message, type: 'error' });
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -185,6 +202,21 @@ export default function AdminLogin() {
                             </button>
                         </div>
                     </form>
+
+                    {/* Google Sign In */}
+                    <div className="w-full max-w-sm xl:max-w-md mt-6 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 h-px bg-neutral-200" />
+                            <span className="text-xs text-neutral-400">or</span>
+                            <div className="flex-1 h-px bg-neutral-200" />
+                        </div>
+                        <GoogleSignInButton
+                            role="admin"
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            text="signin_with"
+                        />
+                    </div>
                 </div>
             </div>
         </div>

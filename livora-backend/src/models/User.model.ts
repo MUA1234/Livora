@@ -7,6 +7,8 @@ export interface IUser extends Document {
     phone?: string;
     role: "admin" | "user";
     avatarUrl?: string;
+    googleId?: string;
+    authProvider: "local" | "google";
     preferences?: {
         emailAlerts?: boolean;
         pushAlerts?: boolean;
@@ -21,10 +23,12 @@ const UserSchema = new Schema<IUser>(
     {
         name: { type: String, required: true },
         email: { type: String, required: true, unique: true },
-        passwordHash: { type: String, required: true },
+        passwordHash: { type: String, default: "" },
         phone: { type: String },
         role: { type: String, enum: ["admin", "user"], default: "user" },
         avatarUrl: { type: String },
+        googleId: { type: String, sparse: true },
+        authProvider: { type: String, enum: ["local", "google"], default: "local" },
         preferences: {
             emailAlerts: { type: Boolean, default: true },
             pushAlerts: { type: Boolean, default: true },
