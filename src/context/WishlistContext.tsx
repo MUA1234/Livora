@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 
 export interface WishlistItem {
     id: string;
@@ -18,21 +18,26 @@ interface WishlistContextType {
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
-export function WishlistProvider({ children }: { children: React.ReactNode }) {
-    const [items, setItems] = useState<WishlistItem[]>([]);
-
-    // Load from local storage on mount
-    useEffect(() => {
+function getInitialWishlist(): WishlistItem[] {
+    if (typeof window === "undefined") return [];
+    try {
         const saved = localStorage.getItem("livora_wishlist");
-        if (saved) {
-            try {
-                setItems(JSON.parse(saved));
-            } catch (e) { }
-        }
-    }, []);
+        return saved ? JSON.parse(saved) : [];
+    } catch {
+        return [];
+    }
+}
 
-    // Save to local storage whenever items change
+export function WishlistProvider({ children }: { children: React.ReactNode }) {
+    const [items, setItems] = useState<WishlistItem[]>(getInitialWishlist);
+    const isInitialMount = useRef(true);
+
+    // Save to local storage whenever items change (skip initial mount)
     useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
         localStorage.setItem("livora_wishlist", JSON.stringify(items));
     }, [items]);
 

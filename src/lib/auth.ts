@@ -1,4 +1,11 @@
-export const setAuthData = (token: string, user: any) => {
+export interface AuthUser {
+    name?: string;
+    email?: string;
+    role?: string;
+    [key: string]: unknown;
+}
+
+export const setAuthData = (token: string, user: AuthUser) => {
     if (typeof window !== "undefined") {
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
@@ -13,13 +20,13 @@ export const getToken = (): string | null => {
     return null;
 };
 
-export const getUser = (): any | null => {
+export const getUser = (): AuthUser | null => {
     if (typeof window !== "undefined") {
         const userStr = localStorage.getItem("user");
         if (userStr) {
             try {
                 return JSON.parse(userStr);
-            } catch (e) {
+            } catch {
                 return null;
             }
         }
