@@ -4,7 +4,7 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Box, Plane, Text, ContactShadows } from "@react-three/drei";
+import { OrbitControls, Box, Plane, Text, ContactShadows, Cylinder, Sphere } from "@react-three/drei";
 import * as THREE from "three";
 import {
     Box as BoxIcon,
@@ -206,6 +206,619 @@ function convertToMeters(value: number, unit: string): number {
 
 function cmToMeters(cm: number): number {
     return cm / 100;
+}
+
+function lighten(hex: string, amt: number): string {
+    return "#" + new THREE.Color(hex).lerp(new THREE.Color("#ffffff"), amt).getHexString();
+}
+
+function darken(hex: string, amt: number): string {
+    return "#" + new THREE.Color(hex).lerp(new THREE.Color("#000000"), amt).getHexString();
+}
+
+function getModelType(category: string, name: string): string {
+    const s = (category + " " + name).toLowerCase();
+    if (s.includes("sectional")) return "sectional";
+    if (s.includes("sofa") || s.includes("couch")) return "sofa";
+    if (s.includes("lounge chair") || s.includes("lounge")) return "lounge";
+    if (s.includes("dining chair") || s.includes("chair")) return "chair";
+    if (s.includes("bed")) return "bed";
+    if (s.includes("coffee table")) return "coffee-table";
+    if (s.includes("round") && s.includes("table")) return "round-table";
+    if (s.includes("dining table")) return "round-table";
+    if (s.includes("desk")) return "desk";
+    if (s.includes("table")) return "table";
+    if (s.includes("bookshelf") || s.includes("shelf")) return "bookshelf";
+    if (s.includes("floor lamp")) return "floor-lamp";
+    if (s.includes("pendant") || s.includes("ceiling")) return "pendant";
+    if (s.includes("lamp") || s.includes("light")) return "floor-lamp";
+    if (s.includes("tv") || s.includes("console")) return "tv-console";
+    if (s.includes("nightstand")) return "nightstand";
+    if (s.includes("rug") || s.includes("carpet") || s.includes("area")) return "rug";
+    if (s.includes("mirror")) return "mirror";
+    if (s.includes("vase")) return "vase";
+    if (s.includes("wardrobe") || s.includes("cabinet") || s.includes("dresser")) return "cabinet";
+    return "box";
+}
+
+function Legs4({ w, d, legH, legR, color, inset = 0.03 }: { w: number; d: number; legH: number; legR: number; color: string; inset?: number }) {
+    const positions: [number, number][] = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+    return (
+        <>
+            {positions.map(([sx, sz], i) => (
+                <Cylinder key={i} args={[legR, legR, legH, 8]} position={[sx * (w / 2 - inset), legH / 2, sz * (d / 2 - inset)]} castShadow>
+                    <meshStandardMaterial color={color} roughness={0.3} metalness={0.4} />
+                </Cylinder>
+            ))}
+        </>
+    );
+}
+
+function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: number; d: number; col: string }) {
+    const lt = lighten(col, 0.22);
+    const dk = darken(col, 0.18);
+    const dkr = darken(col, 0.35);
+    const legR = Math.max(0.01, Math.min(w, d) * 0.025);
+
+    switch (type) {
+        case "sofa": {
+            const legH = h * 0.07;
+            const baseH = h * 0.28;
+            const baseY = legH + baseH / 2;
+            const seatH = h * 0.13;
+            const seatY = legH + baseH + seatH / 2;
+            const armW = w * 0.08;
+            const armH = h * 0.42 - legH;
+            const armY = legH + armH / 2;
+            const backH = h - legH - baseH - seatH;
+            const backY = legH + baseH + seatH + backH / 2;
+            const backD = d * 0.22;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR * 0.8} color={dkr} />
+                    <Box args={[w - armW * 2, baseH, d * 0.92]} position={[0, baseY, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.8} />
+                    </Box>
+                    {/* Seat cushions - split into 2-3 */}
+                    {Array.from({ length: Math.max(2, Math.round(w / 0.8)) }, (_, i) => {
+                        const count = Math.max(2, Math.round(w / 0.8));
+                        const cw = (w - armW * 2 - 0.02 * count) / count;
+                        const cx = -((w - armW * 2) / 2) + cw / 2 + 0.01 + i * (cw + 0.02);
+                        return (
+                            <Box key={`seat${i}`} args={[cw, seatH, d * 0.62]} position={[cx, seatY, d * 0.06]} castShadow>
+                                <meshStandardMaterial color={lt} roughness={0.92} />
+                            </Box>
+                        );
+                    })}
+                    {/* Back cushions */}
+                    {Array.from({ length: Math.max(2, Math.round(w / 0.8)) }, (_, i) => {
+                        const count = Math.max(2, Math.round(w / 0.8));
+                        const cw = (w - armW * 2 - 0.02 * count) / count;
+                        const cx = -((w - armW * 2) / 2) + cw / 2 + 0.01 + i * (cw + 0.02);
+                        return (
+                            <Box key={`back${i}`} args={[cw, backH * 0.88, backD]} position={[cx, backY, -(d / 2 - backD / 2 - 0.01)]} castShadow>
+                                <meshStandardMaterial color={col} roughness={0.88} />
+                            </Box>
+                        );
+                    })}
+                    <Box args={[armW, armH, d * 0.90]} position={[-(w / 2 - armW / 2), armY, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.85} />
+                    </Box>
+                    <Box args={[armW, armH, d * 0.90]} position={[w / 2 - armW / 2, armY, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.85} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "sectional": {
+            const legH = h * 0.06;
+            const baseH = h * 0.30;
+            const seatH = h * 0.14;
+            const seatTop = legH + baseH + seatH;
+            const backH = h - seatTop;
+            const backD = d * 0.12;
+            const extW = w * 0.35;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR * 0.7} color={dkr} />
+                    {/* Main section base */}
+                    <Box args={[w, baseH, d * 0.45]} position={[0, legH + baseH / 2, -(d / 2 - d * 0.225)]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.8} />
+                    </Box>
+                    {/* Extension base */}
+                    <Box args={[extW, baseH, d]} position={[w / 2 - extW / 2, legH + baseH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.8} />
+                    </Box>
+                    {/* Main seat */}
+                    <Box args={[w - extW, seatH, d * 0.40]} position={[-(extW / 2), legH + baseH + seatH / 2, -(d / 2 - d * 0.20)]} castShadow>
+                        <meshStandardMaterial color={lt} roughness={0.92} />
+                    </Box>
+                    {/* Extension seat */}
+                    <Box args={[extW - 0.02, seatH, d * 0.85]} position={[w / 2 - extW / 2, legH + baseH + seatH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={lt} roughness={0.92} />
+                    </Box>
+                    {/* Back - L shape */}
+                    <Box args={[w, backH * 0.85, backD]} position={[0, seatTop + backH / 2, -(d / 2 - backD / 2)]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.88} />
+                    </Box>
+                    <Box args={[backD, backH * 0.85, d * 0.5]} position={[w / 2 - backD / 2, seatTop + backH / 2, d * 0.25]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.88} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "chair": {
+            const legH = h * 0.47;
+            const seatH = h * 0.06;
+            const seatY = legH + seatH / 2;
+            const backH = h - legH - seatH;
+            const backY = legH + seatH + backH / 2;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR * 0.6} color={dk} inset={0.02} />
+                    <Box args={[w * 0.92, seatH, d * 0.88]} position={[0, seatY, 0]} castShadow>
+                        <meshStandardMaterial color={lt} roughness={0.85} />
+                    </Box>
+                    <Box args={[w * 0.88, backH, d * 0.05]} position={[0, backY, -(d / 2 - d * 0.03)]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.7} />
+                    </Box>
+                    {/* Support posts */}
+                    <Cylinder args={[legR * 0.5, legR * 0.5, backH, 8]} position={[-w * 0.38, backY, -(d / 2 - d * 0.03)]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.4} metalness={0.2} />
+                    </Cylinder>
+                    <Cylinder args={[legR * 0.5, legR * 0.5, backH, 8]} position={[w * 0.38, backY, -(d / 2 - d * 0.03)]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.4} metalness={0.2} />
+                    </Cylinder>
+                </group>
+            );
+        }
+
+        case "lounge": {
+            const baseH = h * 0.35;
+            const seatH = h * 0.15;
+            const seatY = baseH + seatH / 2;
+            const backH = h - baseH - seatH;
+            const backY = baseH + seatH + backH / 2;
+            const armW = w * 0.12;
+            return (
+                <group>
+                    {/* Solid block base */}
+                    <Box args={[w, baseH, d]} position={[0, baseH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.8} />
+                    </Box>
+                    <Box args={[w - armW * 2, seatH, d * 0.75]} position={[0, seatY, d * 0.05]} castShadow>
+                        <meshStandardMaterial color={lt} roughness={0.92} />
+                    </Box>
+                    <Box args={[w - armW * 2 - 0.02, backH * 0.85, d * 0.25]} position={[0, backY, -(d / 2 - d * 0.13)]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.88} />
+                    </Box>
+                    <Box args={[armW, h * 0.35, d * 0.88]} position={[-w / 2 + armW / 2, baseH + h * 0.175, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.85} />
+                    </Box>
+                    <Box args={[armW, h * 0.35, d * 0.88]} position={[w / 2 - armW / 2, baseH + h * 0.175, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.85} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "bed": {
+            const legH = h * 0.05;
+            const frameH = h * 0.18;
+            const frameY = legH + frameH / 2;
+            const mattH = h * 0.14;
+            const mattY = legH + frameH + mattH / 2;
+            const headH = h * 0.6;
+            const headY = legH + headH / 2;
+            const pillowH = mattH * 0.6;
+            const pillowW = w * 0.25;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR} color={dkr} inset={0.04} />
+                    {/* Frame */}
+                    <Box args={[w, frameH, d]} position={[0, frameY, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.7} />
+                    </Box>
+                    {/* Mattress */}
+                    <Box args={[w * 0.95, mattH, d * 0.90]} position={[0, mattY, d * 0.02]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.4)} roughness={0.95} />
+                    </Box>
+                    {/* Headboard */}
+                    <Box args={[w + 0.02, headH, d * 0.04]} position={[0, headY, -(d / 2 - d * 0.02)]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.75} />
+                    </Box>
+                    {/* Footboard */}
+                    <Box args={[w, h * 0.22, d * 0.03]} position={[0, legH + h * 0.11, d / 2 - d * 0.015]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.7} />
+                    </Box>
+                    {/* Pillows */}
+                    <Box args={[pillowW, pillowH, d * 0.15]} position={[-w * 0.2, mattY + mattH / 2 + pillowH / 2, -(d * 0.3)]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.5)} roughness={0.95} />
+                    </Box>
+                    <Box args={[pillowW, pillowH, d * 0.15]} position={[w * 0.2, mattY + mattH / 2 + pillowH / 2, -(d * 0.3)]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.5)} roughness={0.95} />
+                    </Box>
+                    {/* Duvet/blanket */}
+                    <Box args={[w * 0.90, mattH * 0.3, d * 0.55]} position={[0, mattY + mattH / 2 + mattH * 0.15, d * 0.1]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.3)} roughness={0.92} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "coffee-table": {
+            const legH = h * 0.85;
+            const topH = h * 0.08;
+            const topY = h - topH / 2;
+            const shelfY = h * 0.25;
+            const shelfH = h * 0.04;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR} color={dkr} inset={0.04} />
+                    {/* Tabletop */}
+                    <Box args={[w, topH, d]} position={[0, topY, 0]} castShadow receiveShadow>
+                        <meshStandardMaterial color={col} roughness={0.4} metalness={0.05} />
+                    </Box>
+                    {/* Lower shelf */}
+                    <Box args={[w * 0.85, shelfH, d * 0.75]} position={[0, shelfY, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.6} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "table": {
+            const legH = h * 0.88;
+            const topH = h * 0.06;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR} color={dkr} inset={0.05} />
+                    <Box args={[w, topH, d]} position={[0, h - topH / 2, 0]} castShadow receiveShadow>
+                        <meshStandardMaterial color={col} roughness={0.45} metalness={0.05} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "round-table": {
+            const topH = h * 0.06;
+            const radius = Math.min(w, d) / 2;
+            const legH = h - topH;
+            const pedR = radius * 0.12;
+            const baseR = radius * 0.55;
+            return (
+                <group>
+                    {/* Round tabletop */}
+                    <Cylinder args={[radius, radius, topH, 32]} position={[0, h - topH / 2, 0]} castShadow receiveShadow>
+                        <meshStandardMaterial color={col} roughness={0.4} metalness={0.05} />
+                    </Cylinder>
+                    {/* Central pedestal */}
+                    <Cylinder args={[pedR, pedR * 1.3, legH * 0.7, 12]} position={[0, legH * 0.35, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.5} metalness={0.1} />
+                    </Cylinder>
+                    {/* Base */}
+                    <Cylinder args={[baseR, baseR, h * 0.04, 24]} position={[0, h * 0.02, 0]} castShadow>
+                        <meshStandardMaterial color={dkr} roughness={0.4} metalness={0.15} />
+                    </Cylinder>
+                </group>
+            );
+        }
+
+        case "desk": {
+            const topH = h * 0.05;
+            const topY = h - topH / 2;
+            const legH = h - topH;
+            const panelW = w * 0.02;
+            const drawerW = w * 0.35;
+            const drawerH = legH * 0.6;
+            return (
+                <group>
+                    {/* Tabletop */}
+                    <Box args={[w, topH, d]} position={[0, topY, 0]} castShadow receiveShadow>
+                        <meshStandardMaterial color={col} roughness={0.5} />
+                    </Box>
+                    {/* Left leg panel */}
+                    <Box args={[panelW, legH, d * 0.85]} position={[-(w / 2 - panelW), legH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.6} />
+                    </Box>
+                    {/* Right drawer unit */}
+                    <Box args={[drawerW, drawerH, d * 0.85]} position={[w / 2 - drawerW / 2, drawerH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.6} />
+                    </Box>
+                    {/* Drawer fronts */}
+                    {[0.15, 0.45, 0.75].map((frac, i) => (
+                        <Box key={i} args={[drawerW - 0.02, drawerH * 0.28, 0.005]} position={[w / 2 - drawerW / 2, drawerH * frac, d * 0.43]} castShadow>
+                            <meshStandardMaterial color={lighten(dk, 0.08)} roughness={0.5} />
+                        </Box>
+                    ))}
+                    {/* Drawer handles */}
+                    {[0.15, 0.45, 0.75].map((frac, i) => (
+                        <Box key={`h${i}`} args={[drawerW * 0.2, 0.008, 0.012]} position={[w / 2 - drawerW / 2, drawerH * frac, d * 0.44]} castShadow>
+                            <meshStandardMaterial color="#888" roughness={0.2} metalness={0.7} />
+                        </Box>
+                    ))}
+                    {/* Modesty panel */}
+                    <Box args={[w - panelW - drawerW - 0.02, legH * 0.2, 0.01]} position={[-(drawerW / 2 - panelW / 2) / 2, legH * 0.1, -(d * 0.42)]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.7} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "bookshelf": {
+            const sideW = w * 0.04;
+            const shelfH = h * 0.02;
+            const backD = d * 0.03;
+            const shelfCount = Math.max(3, Math.round(h / 0.4));
+            return (
+                <group>
+                    {/* Side panels */}
+                    <Box args={[sideW, h, d]} position={[-(w / 2 - sideW / 2), h / 2, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.65} />
+                    </Box>
+                    <Box args={[sideW, h, d]} position={[w / 2 - sideW / 2, h / 2, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.65} />
+                    </Box>
+                    {/* Back panel */}
+                    <Box args={[w - sideW * 2, h, backD]} position={[0, h / 2, -(d / 2 - backD / 2)]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.7} />
+                    </Box>
+                    {/* Shelves */}
+                    {Array.from({ length: shelfCount + 1 }, (_, i) => {
+                        const sy = (i / shelfCount) * (h - shelfH) + shelfH / 2;
+                        return (
+                            <Box key={i} args={[w - sideW * 2, shelfH, d - backD]} position={[0, sy, backD / 2]} castShadow>
+                                <meshStandardMaterial color={lighten(col, 0.05)} roughness={0.6} />
+                            </Box>
+                        );
+                    })}
+                    {/* Decorative books on middle shelves */}
+                    {Array.from({ length: Math.min(shelfCount - 1, 3) }, (_, i) => {
+                        const sy = ((i + 1) / shelfCount) * (h - shelfH) + shelfH;
+                        const bookH = (h / shelfCount) * 0.7;
+                        return (
+                            <Box key={`b${i}`} args={[w * 0.5, bookH, d * 0.55]} position={[-(w * 0.12), sy + bookH / 2, backD * 0.5]} castShadow>
+                                <meshStandardMaterial color={lighten(col, 0.15 + i * 0.08)} roughness={0.8} />
+                            </Box>
+                        );
+                    })}
+                </group>
+            );
+        }
+
+        case "floor-lamp": {
+            const baseR = Math.min(w, d) * 0.35;
+            const baseH = h * 0.015;
+            const poleR = Math.min(w, d) * 0.03;
+            const poleH = h * 0.72;
+            const shadeH = h * 0.2;
+            const shadeTopR = Math.min(w, d) * 0.12;
+            const shadeBotR = Math.min(w, d) * 0.35;
+            return (
+                <group>
+                    {/* Base */}
+                    <Cylinder args={[baseR, baseR, baseH, 24]} position={[0, baseH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dkr} roughness={0.3} metalness={0.5} />
+                    </Cylinder>
+                    {/* Pole */}
+                    <Cylinder args={[poleR, poleR, poleH, 8]} position={[0, baseH + poleH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={darken(col, 0.3)} roughness={0.25} metalness={0.6} />
+                    </Cylinder>
+                    {/* Shade */}
+                    <Cylinder args={[shadeTopR, shadeBotR, shadeH, 16]} position={[0, baseH + poleH + shadeH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.35)} roughness={0.8} transparent opacity={0.85} side={THREE.DoubleSide} />
+                    </Cylinder>
+                    {/* Bulb glow */}
+                    <Sphere args={[poleR * 2.5, 12, 12]} position={[0, baseH + poleH + shadeH * 0.3, 0]}>
+                        <meshStandardMaterial color="#FFF8E0" emissive="#FFF0B0" emissiveIntensity={0.5} roughness={1} />
+                    </Sphere>
+                </group>
+            );
+        }
+
+        case "pendant": {
+            const cordR = 0.003;
+            const cordH = h * 0.35;
+            const shadeH = h * 0.45;
+            const shadeTopR = Math.min(w, d) * 0.08;
+            const shadeBotR = Math.min(w, d) * 0.42;
+            return (
+                <group>
+                    {/* Cord */}
+                    <Cylinder args={[cordR, cordR, cordH, 6]} position={[0, h - cordH / 2, 0]} castShadow>
+                        <meshStandardMaterial color="#333" roughness={0.5} />
+                    </Cylinder>
+                    {/* Shade */}
+                    <Cylinder args={[shadeTopR, shadeBotR, shadeH, 20]} position={[0, h - cordH - shadeH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.7} transparent opacity={0.8} side={THREE.DoubleSide} />
+                    </Cylinder>
+                    {/* Inner glow */}
+                    <Sphere args={[shadeBotR * 0.3, 12, 12]} position={[0, h - cordH - shadeH * 0.4, 0]}>
+                        <meshStandardMaterial color="#FFF8E0" emissive="#FFF0B0" emissiveIntensity={0.6} roughness={1} />
+                    </Sphere>
+                    {/* Canopy plate */}
+                    <Cylinder args={[0.03, 0.03, 0.01, 12]} position={[0, h - 0.005, 0]}>
+                        <meshStandardMaterial color="#444" roughness={0.3} metalness={0.6} />
+                    </Cylinder>
+                </group>
+            );
+        }
+
+        case "tv-console": {
+            const legH = h * 0.1;
+            const bodyH = h * 0.85;
+            const bodyY = legH + bodyH / 2;
+            const topH = h * 0.04;
+            const openH = bodyH * 0.35;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR * 0.7} color={dkr} inset={0.04} />
+                    {/* Main body */}
+                    <Box args={[w, bodyH, d]} position={[0, bodyY, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.6} />
+                    </Box>
+                    {/* Top surface */}
+                    <Box args={[w + 0.01, topH, d + 0.01]} position={[0, legH + bodyH + topH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.45} />
+                    </Box>
+                    {/* Open shelf area */}
+                    <Box args={[w * 0.45, openH, d * 0.02]} position={[0, bodyY - bodyH * 0.15, d / 2 - 0.01]} castShadow>
+                        <meshStandardMaterial color={darken(col, 0.3)} roughness={0.5} />
+                    </Box>
+                    {/* Cabinet doors (left and right) */}
+                    <Box args={[w * 0.24, bodyH * 0.88, 0.008]} position={[-(w * 0.32), bodyY, d / 2 - 0.004]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.06)} roughness={0.55} />
+                    </Box>
+                    <Box args={[w * 0.24, bodyH * 0.88, 0.008]} position={[w * 0.32, bodyY, d / 2 - 0.004]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.06)} roughness={0.55} />
+                    </Box>
+                    {/* Handles */}
+                    <Cylinder args={[0.004, 0.004, 0.05, 6]} position={[-(w * 0.22), bodyY, d / 2 + 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                        <meshStandardMaterial color="#888" roughness={0.2} metalness={0.7} />
+                    </Cylinder>
+                    <Cylinder args={[0.004, 0.004, 0.05, 6]} position={[w * 0.22, bodyY, d / 2 + 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                        <meshStandardMaterial color="#888" roughness={0.2} metalness={0.7} />
+                    </Cylinder>
+                </group>
+            );
+        }
+
+        case "nightstand": {
+            const legH = h * 0.12;
+            const bodyH = h * 0.80;
+            const bodyY = legH + bodyH / 2;
+            const topH = h * 0.04;
+            const drawerH = bodyH * 0.42;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR * 0.6} color={dkr} inset={0.02} />
+                    <Box args={[w, bodyH, d]} position={[0, bodyY, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.65} />
+                    </Box>
+                    <Box args={[w + 0.005, topH, d + 0.005]} position={[0, legH + bodyH + topH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.5} />
+                    </Box>
+                    {/* Two drawers */}
+                    {[0.30, 0.72].map((frac, i) => (
+                        <group key={i}>
+                            <Box args={[w * 0.88, drawerH * 0.9, 0.006]} position={[0, legH + bodyH * frac, d / 2 - 0.003]} castShadow>
+                                <meshStandardMaterial color={lighten(col, 0.08)} roughness={0.55} />
+                            </Box>
+                            <Cylinder args={[0.006, 0.006, w * 0.18, 6]} position={[0, legH + bodyH * frac, d / 2 + 0.006]} rotation={[0, 0, Math.PI / 2]} castShadow>
+                                <meshStandardMaterial color="#999" roughness={0.2} metalness={0.6} />
+                            </Cylinder>
+                        </group>
+                    ))}
+                </group>
+            );
+        }
+
+        case "rug": {
+            const thick = Math.max(h, 0.008);
+            return (
+                <group>
+                    <Box args={[w, thick, d]} position={[0, thick / 2, 0]} receiveShadow>
+                        <meshStandardMaterial color={col} roughness={1.0} metalness={0} />
+                    </Box>
+                    {/* Border */}
+                    <Box args={[w + 0.01, thick * 0.5, d * 0.04]} position={[0, thick * 0.25, d / 2]} receiveShadow>
+                        <meshStandardMaterial color={dk} roughness={0.95} />
+                    </Box>
+                    <Box args={[w + 0.01, thick * 0.5, d * 0.04]} position={[0, thick * 0.25, -d / 2]} receiveShadow>
+                        <meshStandardMaterial color={dk} roughness={0.95} />
+                    </Box>
+                    <Box args={[w * 0.04, thick * 0.5, d]} position={[w / 2, thick * 0.25, 0]} receiveShadow>
+                        <meshStandardMaterial color={dk} roughness={0.95} />
+                    </Box>
+                    <Box args={[w * 0.04, thick * 0.5, d]} position={[-w / 2, thick * 0.25, 0]} receiveShadow>
+                        <meshStandardMaterial color={dk} roughness={0.95} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "mirror": {
+            const frameW = Math.min(w, d) * 0.08;
+            return (
+                <group>
+                    {/* Frame */}
+                    <Box args={[w, h, d]} position={[0, h / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.5} metalness={0.1} />
+                    </Box>
+                    {/* Glass */}
+                    <Box args={[w - frameW * 2, h - frameW * 2, d * 0.3]} position={[0, h / 2, d * 0.2]} castShadow>
+                        <meshStandardMaterial color="#D8E4F0" roughness={0.05} metalness={0.9} />
+                    </Box>
+                </group>
+            );
+        }
+
+        case "vase": {
+            const bodyR = Math.min(w, d) * 0.4;
+            const neckR = bodyR * 0.45;
+            const bodyH = h * 0.65;
+            const neckH = h * 0.25;
+            const rimH = h * 0.05;
+            return (
+                <group>
+                    {/* Body */}
+                    <Cylinder args={[bodyR * 0.8, bodyR, bodyH, 16]} position={[0, bodyH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.35} metalness={0.1} />
+                    </Cylinder>
+                    {/* Neck */}
+                    <Cylinder args={[neckR, bodyR * 0.8, neckH, 12]} position={[0, bodyH + neckH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.1)} roughness={0.35} metalness={0.1} />
+                    </Cylinder>
+                    {/* Rim */}
+                    <Cylinder args={[neckR * 1.15, neckR, rimH, 12]} position={[0, bodyH + neckH + rimH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.3} metalness={0.15} />
+                    </Cylinder>
+                </group>
+            );
+        }
+
+        case "cabinet": {
+            const legH = h * 0.04;
+            const bodyH = h * 0.90;
+            const bodyY = legH + bodyH / 2;
+            const topH = h * 0.03;
+            return (
+                <group>
+                    <Legs4 w={w} d={d} legH={legH} legR={legR * 0.5} color={dkr} inset={0.03} />
+                    <Box args={[w, bodyH, d]} position={[0, bodyY, 0]} castShadow>
+                        <meshStandardMaterial color={col} roughness={0.65} />
+                    </Box>
+                    <Box args={[w + 0.005, topH, d + 0.005]} position={[0, legH + bodyH + topH / 2, 0]} castShadow>
+                        <meshStandardMaterial color={dk} roughness={0.5} />
+                    </Box>
+                    {/* Two doors */}
+                    <Box args={[w * 0.46, bodyH * 0.92, 0.008]} position={[-w * 0.24, bodyY, d / 2 - 0.004]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.06)} roughness={0.55} />
+                    </Box>
+                    <Box args={[w * 0.46, bodyH * 0.92, 0.008]} position={[w * 0.24, bodyY, d / 2 - 0.004]} castShadow>
+                        <meshStandardMaterial color={lighten(col, 0.06)} roughness={0.55} />
+                    </Box>
+                    {/* Handles */}
+                    <Cylinder args={[0.005, 0.005, 0.06, 6]} position={[-w * 0.03, bodyY, d / 2 + 0.006]} rotation={[Math.PI / 2, 0, 0]}>
+                        <meshStandardMaterial color="#999" roughness={0.2} metalness={0.7} />
+                    </Cylinder>
+                    <Cylinder args={[0.005, 0.005, 0.06, 6]} position={[w * 0.03, bodyY, d / 2 + 0.006]} rotation={[Math.PI / 2, 0, 0]}>
+                        <meshStandardMaterial color="#999" roughness={0.2} metalness={0.7} />
+                    </Cylinder>
+                </group>
+            );
+        }
+
+        default: {
+            return (
+                <Box args={[w, h, d]} position={[0, h / 2, 0]} castShadow receiveShadow>
+                    <meshStandardMaterial color={col} roughness={0.6} metalness={0.1} />
+                </Box>
+            );
+        }
+    }
 }
 
 function createFloorTexture(
@@ -469,11 +1082,11 @@ function FurnitureBox({
     isSelected: boolean;
     onSelect: (id: string) => void;
 }) {
-    const meshRef = useRef<THREE.Mesh>(null);
     const outlineRef = useRef<THREE.Mesh>(null);
     const [hovered, setHovered] = useState(false);
     const color = getCategoryColor(item.product.category);
-    const { width, height, depth } = item.dimensions;
+    const { width: w, height: h, depth: d } = item.dimensions;
+    const modelType = getModelType(item.product.category, item.product.name);
 
     useFrame(() => {
         if (outlineRef.current) {
@@ -483,14 +1096,13 @@ function FurnitureBox({
 
     return (
         <group
-            position={[item.position.x, item.position.y + height / 2, item.position.z]}
+            position={[item.position.x, item.position.y, item.position.z]}
             rotation={[0, (item.rotation * Math.PI) / 180, 0]}
         >
+            {/* Invisible bounding box for click/hover interaction */}
             <Box
-                ref={meshRef}
-                args={[width, height, depth]}
-                castShadow
-                receiveShadow
+                args={[w, h, d]}
+                position={[0, h / 2, 0]}
                 onClick={(e) => {
                     e.stopPropagation();
                     onSelect(item.id);
@@ -505,24 +1117,25 @@ function FurnitureBox({
                     document.body.style.cursor = "auto";
                 }}
             >
-                <meshStandardMaterial
-                    color={hovered ? new THREE.Color(color).lerp(new THREE.Color("#ffffff"), 0.2) : color}
-                    roughness={0.6}
-                    metalness={0.1}
-                />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
             </Box>
 
-            <Box ref={outlineRef} args={[width + 0.02, height + 0.02, depth + 0.02]}>
+            {/* Detailed furniture model */}
+            <FurnitureModel type={modelType} w={w} h={h} d={d} col={hovered ? lighten(color, 0.15) : color} />
+
+            {/* Selection outline */}
+            <Box ref={outlineRef} args={[w + 0.02, h + 0.02, d + 0.02]} position={[0, h / 2, 0]}>
                 <meshBasicMaterial color="#C6A75E" wireframe transparent opacity={0.8} />
             </Box>
 
+            {/* Label */}
             <Text
-                position={[0, height / 2 + 0.15, 0]}
+                position={[0, h + 0.15, 0]}
                 fontSize={0.12}
                 color="#1C1C1C"
                 anchorX="center"
                 anchorY="bottom"
-                maxWidth={width + 0.5}
+                maxWidth={w + 0.5}
             >
                 {item.product.name}
             </Text>
