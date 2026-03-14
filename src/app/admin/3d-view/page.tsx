@@ -13,7 +13,8 @@ import {
     ChevronDown, ChevronUp,
     X, Palette, Ruler, Package, ChevronLeft,
     Eye, Camera, Crosshair, ArrowUp, CornerUpRight,
-    Loader2, AlertCircle
+    Loader2, AlertCircle,
+    PaintBucket, Grid3X3, Paintbrush, Square,
 } from "lucide-react";
 import api from "@/lib/api";
 
@@ -74,6 +75,101 @@ interface SceneFurniture {
 
 type LightingMode = "daylight" | "sunset" | "night" | "studio";
 type CameraPreset = "top" | "front" | "side" | "corner";
+type FloorType = "tiles" | "hardwood" | "marble" | "concrete" | "carpet";
+
+interface WallColors {
+    back: string;
+    front: string;
+    left: string;
+    right: string;
+}
+
+interface FloorSettings {
+    type: FloorType;
+    color: string;
+    groutColor?: string;
+}
+
+const WALL_PRESETS = [
+    { name: "White", color: "#FFFFFF" },
+    { name: "Cream", color: "#FFF8E7" },
+    { name: "Warm Gray", color: "#D6CFC7" },
+    { name: "Sage Green", color: "#B2C9AD" },
+    { name: "Sky Blue", color: "#B8D4E3" },
+    { name: "Blush Pink", color: "#F2D4D7" },
+    { name: "Lavender", color: "#D5CCE6" },
+    { name: "Sand", color: "#E8D5B7" },
+    { name: "Charcoal", color: "#4A4A4A" },
+    { name: "Navy", color: "#2C3E6B" },
+    { name: "Olive", color: "#6B7B3A" },
+    { name: "Terracotta", color: "#C67B5C" },
+];
+
+const FLOOR_PRESETS: { type: FloorType; label: string; icon: string; colors: { name: string; color: string; grout?: string }[] }[] = [
+    {
+        type: "tiles",
+        label: "Tiles",
+        icon: "grid",
+        colors: [
+            { name: "Beige", color: "#D4B896", grout: "#A09080" },
+            { name: "White", color: "#F0EDE8", grout: "#C8C0B8" },
+            { name: "Gray", color: "#A0A0A0", grout: "#707070" },
+            { name: "Terracotta", color: "#C4785A", grout: "#8A5A40" },
+            { name: "Slate", color: "#708090", grout: "#4A5A6A" },
+            { name: "Marble White", color: "#F5F0E8", grout: "#D0C8C0" },
+        ],
+    },
+    {
+        type: "hardwood",
+        label: "Hardwood",
+        icon: "lines",
+        colors: [
+            { name: "Oak", color: "#C49A6C" },
+            { name: "Walnut", color: "#5C4033" },
+            { name: "Cherry", color: "#8B4513" },
+            { name: "Maple", color: "#E8C88A" },
+            { name: "Ebony", color: "#3C2415" },
+            { name: "Ash", color: "#D2B48C" },
+        ],
+    },
+    {
+        type: "marble",
+        label: "Marble",
+        icon: "smooth",
+        colors: [
+            { name: "Carrara", color: "#F0EDE5" },
+            { name: "Calacatta", color: "#F7F3EB" },
+            { name: "Emperador", color: "#6B4226" },
+            { name: "Black", color: "#2C2C2C" },
+            { name: "Green", color: "#4A6B4A" },
+            { name: "Cream", color: "#F5E6D0" },
+        ],
+    },
+    {
+        type: "concrete",
+        label: "Concrete",
+        icon: "rough",
+        colors: [
+            { name: "Natural", color: "#B0A898" },
+            { name: "Light", color: "#D0C8C0" },
+            { name: "Dark", color: "#6A6460" },
+            { name: "Polished", color: "#A8A098" },
+        ],
+    },
+    {
+        type: "carpet",
+        label: "Carpet",
+        icon: "soft",
+        colors: [
+            { name: "Beige", color: "#D2C4A8" },
+            { name: "Gray", color: "#9A9A9A" },
+            { name: "Navy", color: "#2C3E6B" },
+            { name: "Burgundy", color: "#722F37" },
+            { name: "Forest", color: "#3A5A3A" },
+            { name: "Cream", color: "#F5E8D0" },
+        ],
+    },
+];
 
 const CATEGORY_COLORS: Record<string, string> = {
     sofa: "#8B5A2B",
@@ -112,76 +208,247 @@ function cmToMeters(cm: number): number {
     return cm / 100;
 }
 
+function createFloorTexture(
+    type: FloorType,
+    color: string,
+    groutColor: string,
+    size: number
+): THREE.CanvasTexture {
+    const res = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = res;
+    canvas.height = res;
+    const ctx = canvas.getContext("2d")!;
+
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, res, res);
+
+    switch (type) {
+        case "tiles": {
+            const tileCount = 8;
+            const tileSize = res / tileCount;
+            const groutW = 3;
+            ctx.fillStyle = groutColor;
+            for (let i = 0; i <= tileCount; i++) {
+                ctx.fillRect(i * tileSize - groutW / 2, 0, groutW, res);
+                ctx.fillRect(0, i * tileSize - groutW / 2, res, groutW);
+            }
+            // Subtle shade variation per tile
+            for (let r = 0; r < tileCount; r++) {
+                for (let c = 0; c < tileCount; c++) {
+                    const shade = ((r + c) % 3 === 0) ? "rgba(0,0,0,0.03)" : ((r + c) % 3 === 1) ? "rgba(255,255,255,0.03)" : "transparent";
+                    ctx.fillStyle = shade;
+                    ctx.fillRect(c * tileSize + groutW, r * tileSize + groutW, tileSize - groutW * 2, tileSize - groutW * 2);
+                }
+            }
+            break;
+        }
+        case "hardwood": {
+            const plankH = 64;
+            const plankCount = Math.ceil(res / plankH);
+            for (let i = 0; i < plankCount; i++) {
+                const y = i * plankH;
+                // Plank gap
+                ctx.fillStyle = "rgba(0,0,0,0.15)";
+                ctx.fillRect(0, y, res, 1.5);
+                // Stagger: offset every other row
+                const offset = (i % 2 === 0) ? 0 : res / 3;
+                ctx.fillStyle = "rgba(0,0,0,0.08)";
+                ctx.fillRect(offset + res / 3, y, 1.5, plankH);
+                ctx.fillRect(offset + (res * 2) / 3, y, 1.5, plankH);
+                // Wood grain lines
+                ctx.strokeStyle = "rgba(0,0,0,0.04)";
+                ctx.lineWidth = 0.5;
+                for (let g = 0; g < 6; g++) {
+                    ctx.beginPath();
+                    const gy = y + 4 + g * 10 + Math.random() * 3;
+                    ctx.moveTo(0, gy);
+                    ctx.bezierCurveTo(res * 0.3, gy + Math.random() * 4 - 2, res * 0.7, gy + Math.random() * 4 - 2, res, gy);
+                    ctx.stroke();
+                }
+                // Slight color variation per plank
+                const variation = (i % 3 === 0) ? "rgba(0,0,0,0.02)" : (i % 3 === 1) ? "rgba(255,255,255,0.03)" : "transparent";
+                ctx.fillStyle = variation;
+                ctx.fillRect(0, y + 2, res, plankH - 3);
+            }
+            break;
+        }
+        case "marble": {
+            // Subtle veining
+            ctx.globalAlpha = 0.08;
+            for (let v = 0; v < 12; v++) {
+                ctx.strokeStyle = v % 2 === 0 ? "rgba(80,80,80,1)" : "rgba(60,60,60,1)";
+                ctx.lineWidth = 0.5 + Math.random() * 1.5;
+                ctx.beginPath();
+                let x = Math.random() * res;
+                let y = Math.random() * res;
+                ctx.moveTo(x, y);
+                for (let s = 0; s < 8; s++) {
+                    x += (Math.random() - 0.5) * 120;
+                    y += (Math.random() - 0.5) * 120;
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            break;
+        }
+        case "concrete": {
+            // Speckle noise
+            const imageData = ctx.getImageData(0, 0, res, res);
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const noise = (Math.random() - 0.5) * 16;
+                imageData.data[i] = Math.max(0, Math.min(255, imageData.data[i] + noise));
+                imageData.data[i + 1] = Math.max(0, Math.min(255, imageData.data[i + 1] + noise));
+                imageData.data[i + 2] = Math.max(0, Math.min(255, imageData.data[i + 2] + noise));
+            }
+            ctx.putImageData(imageData, 0, 0);
+            break;
+        }
+        case "carpet": {
+            // Fabric-like texture with tiny dots
+            ctx.globalAlpha = 0.06;
+            for (let i = 0; i < 3000; i++) {
+                const x = Math.random() * res;
+                const y = Math.random() * res;
+                ctx.fillStyle = Math.random() > 0.5 ? "rgba(0,0,0,1)" : "rgba(255,255,255,1)";
+                ctx.fillRect(x, y, 1.5, 1.5);
+            }
+            ctx.globalAlpha = 1;
+            break;
+        }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    const repeatFactor = type === "tiles" ? 1 : type === "hardwood" ? 2 : 1;
+    tex.repeat.set(size * repeatFactor * 0.5, size * repeatFactor * 0.5);
+    return tex;
+}
+
+function getFloorMaterialProps(type: FloorType): { roughness: number; metalness: number } {
+    switch (type) {
+        case "tiles": return { roughness: 0.6, metalness: 0.05 };
+        case "hardwood": return { roughness: 0.7, metalness: 0.02 };
+        case "marble": return { roughness: 0.2, metalness: 0.15 };
+        case "concrete": return { roughness: 0.9, metalness: 0.0 };
+        case "carpet": return { roughness: 1.0, metalness: 0.0 };
+        default: return { roughness: 0.8, metalness: 0.1 };
+    }
+}
+
+function FloorPlane({
+    length,
+    width,
+    floorSettings,
+}: {
+    length: number;
+    width: number;
+    floorSettings: FloorSettings;
+}) {
+    const texture = useMemo(() => {
+        if (typeof document === "undefined") return null;
+        return createFloorTexture(
+            floorSettings.type,
+            floorSettings.color,
+            floorSettings.groutColor || "#A09080",
+            Math.max(length, width)
+        );
+    }, [floorSettings.type, floorSettings.color, floorSettings.groutColor, length, width]);
+
+    const matProps = getFloorMaterialProps(floorSettings.type);
+
+    return (
+        <Plane
+            args={[length, width]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            position={[length / 2, 0, width / 2]}
+            receiveShadow
+        >
+            <meshStandardMaterial
+                map={texture}
+                color={texture ? "#ffffff" : floorSettings.color}
+                roughness={matProps.roughness}
+                metalness={matProps.metalness}
+            />
+        </Plane>
+    );
+}
+
 function RoomBox({
     length,
     width,
     height,
+    wallColors,
+    floorSettings,
 }: {
     length: number;
     width: number;
     height: number;
+    wallColors: WallColors;
+    floorSettings: FloorSettings;
 }) {
     const wallThickness = 0.05;
-    const wallOpacity = 0.35;
-    const wallColor = "#F5F1E8";
-    const floorColor = "#D4B896";
+    const wallOpacity = 0.55;
 
     return (
         <group>
-            <Plane
-                args={[length, width]}
-                rotation={[-Math.PI / 2, 0, 0]}
-                position={[length / 2, 0, width / 2]}
-                receiveShadow
-            >
-                <meshStandardMaterial color={floorColor} roughness={0.8} metalness={0.1} />
-            </Plane>
+            <FloorPlane length={length} width={width} floorSettings={floorSettings} />
 
+            {/* Back wall (z=0) */}
             <Box
                 args={[length, height, wallThickness]}
                 position={[length / 2, height / 2, 0]}
             >
                 <meshStandardMaterial
-                    color={wallColor}
+                    color={wallColors.back}
                     transparent
                     opacity={wallOpacity}
                     side={THREE.DoubleSide}
+                    roughness={0.9}
                 />
             </Box>
 
+            {/* Front wall (z=width) */}
             <Box
                 args={[length, height, wallThickness]}
                 position={[length / 2, height / 2, width]}
             >
                 <meshStandardMaterial
-                    color={wallColor}
+                    color={wallColors.front}
                     transparent
                     opacity={wallOpacity}
                     side={THREE.DoubleSide}
+                    roughness={0.9}
                 />
             </Box>
 
+            {/* Left wall (x=0) */}
             <Box
                 args={[wallThickness, height, width]}
                 position={[0, height / 2, width / 2]}
             >
                 <meshStandardMaterial
-                    color={wallColor}
+                    color={wallColors.left}
                     transparent
                     opacity={wallOpacity}
                     side={THREE.DoubleSide}
+                    roughness={0.9}
                 />
             </Box>
 
+            {/* Right wall (x=length) */}
             <Box
                 args={[wallThickness, height, width]}
                 position={[length, height / 2, width / 2]}
             >
                 <meshStandardMaterial
-                    color={wallColor}
+                    color={wallColors.right}
                     transparent
                     opacity={wallOpacity}
                     side={THREE.DoubleSide}
+                    roughness={0.9}
                 />
             </Box>
 
@@ -414,6 +681,8 @@ function ThreeDScene({
     cameraPreset,
     focusTarget,
     onPresetConsumed,
+    wallColors,
+    floorSettings,
 }: {
     furniture: SceneFurniture[];
     roomDimensions: { length: number; width: number; height: number };
@@ -424,6 +693,8 @@ function ThreeDScene({
     cameraPreset: CameraPreset | null;
     focusTarget: THREE.Vector3 | null;
     onPresetConsumed: () => void;
+    wallColors: WallColors;
+    floorSettings: FloorSettings;
 }) {
     const { length, width, height } = roomDimensions;
 
@@ -443,7 +714,7 @@ function ThreeDScene({
                 onPresetConsumed={onPresetConsumed}
             />
 
-            <RoomBox length={length} width={width} height={height} />
+            <RoomBox length={length} width={width} height={height} wallColors={wallColors} floorSettings={floorSettings} />
 
             {furniture.map((item) => (
                 <FurnitureBox
@@ -491,6 +762,10 @@ function ThreeDViewerContent() {
     const [focusTarget, setFocusTarget] = useState<THREE.Vector3 | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [furnitureListOpen, setFurnitureListOpen] = useState(true);
+    const [wallColors, setWallColors] = useState<WallColors>({ back: "#F5F1E8", front: "#F5F1E8", left: "#F5F1E8", right: "#F5F1E8" });
+    const [floorSettings, setFloorSettings] = useState<FloorSettings>({ type: "tiles", color: "#D4B896", groutColor: "#A09080" });
+    const [paintAllWalls, setPaintAllWalls] = useState(true);
+    const [roomCustomOpen, setRoomCustomOpen] = useState(true);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const selectedItem = useMemo(
@@ -739,6 +1014,185 @@ function ThreeDViewerContent() {
                     </div>
                 </div>
 
+                {/* Room Customization Section */}
+                <div className="px-6 py-6 border-b border-[#E5E5E5]">
+                    <button
+                        onClick={() => setRoomCustomOpen(!roomCustomOpen)}
+                        className="flex justify-between items-center mb-4 cursor-pointer w-full"
+                    >
+                        <h2 className="text-[11px] font-bold text-[#A8A8A8] uppercase tracking-wider flex items-center gap-2">
+                            <PaintBucket size={12} />
+                            Room Customization
+                        </h2>
+                        {roomCustomOpen ? (
+                            <ChevronUp size={14} className="text-[#A8A8A8]" />
+                        ) : (
+                            <ChevronDown size={14} className="text-[#A8A8A8]" />
+                        )}
+                    </button>
+
+                    {roomCustomOpen && (
+                        <div className="space-y-5">
+                            {/* Wall Colors */}
+                            <div>
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-xs font-bold text-[#663F23] flex items-center gap-1.5">
+                                        <Paintbrush size={12} />
+                                        Wall Paint
+                                    </span>
+                                    <label className="flex items-center gap-1.5 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={paintAllWalls}
+                                            onChange={(e) => setPaintAllWalls(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded border-[#ccc] text-[#7B4B29] focus:ring-[#7B4B29]"
+                                        />
+                                        <span className="text-[10px] text-[#8C8C8C] font-medium">All walls</span>
+                                    </label>
+                                </div>
+
+                                {/* Color presets grid */}
+                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                    {WALL_PRESETS.map((preset) => (
+                                        <button
+                                            key={preset.color}
+                                            title={preset.name}
+                                            onClick={() => {
+                                                if (paintAllWalls) {
+                                                    setWallColors({ back: preset.color, front: preset.color, left: preset.color, right: preset.color });
+                                                } else {
+                                                    setWallColors((prev) => ({ ...prev, back: preset.color }));
+                                                }
+                                            }}
+                                            className="w-6 h-6 rounded-md border-2 transition-all hover:scale-110"
+                                            style={{
+                                                backgroundColor: preset.color,
+                                                borderColor: wallColors.back === preset.color ? "#7B4B29" : "#E5E5E5",
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+
+                                {/* Custom color picker */}
+                                <div className="flex items-center gap-2 mb-2">
+                                    <label className="text-[10px] text-[#8C8C8C] font-medium w-16">Custom:</label>
+                                    <input
+                                        type="color"
+                                        value={wallColors.back}
+                                        onChange={(e) => {
+                                            if (paintAllWalls) {
+                                                setWallColors({ back: e.target.value, front: e.target.value, left: e.target.value, right: e.target.value });
+                                            } else {
+                                                setWallColors((prev) => ({ ...prev, back: e.target.value }));
+                                            }
+                                        }}
+                                        className="w-8 h-6 rounded border border-[#E5E5E5] cursor-pointer"
+                                    />
+                                    <span className="text-[10px] text-[#8C8C8C] font-mono uppercase">{wallColors.back}</span>
+                                </div>
+
+                                {/* Per-wall controls (when "All walls" is unchecked) */}
+                                {!paintAllWalls && (
+                                    <div className="mt-3 space-y-2 p-3 bg-[#F4F1ED] rounded-lg">
+                                        {(["back", "front", "left", "right"] as const).map((wall) => (
+                                            <div key={wall} className="flex items-center gap-2">
+                                                <span className="text-[10px] font-semibold text-[#8C8C8C] capitalize w-10">{wall}</span>
+                                                <input
+                                                    type="color"
+                                                    value={wallColors[wall]}
+                                                    onChange={(e) => setWallColors((prev) => ({ ...prev, [wall]: e.target.value }))}
+                                                    className="w-7 h-5 rounded border border-[#E5E5E5] cursor-pointer"
+                                                />
+                                                <div className="flex flex-wrap gap-1">
+                                                    {WALL_PRESETS.slice(0, 6).map((p) => (
+                                                        <button
+                                                            key={p.color}
+                                                            title={p.name}
+                                                            onClick={() => setWallColors((prev) => ({ ...prev, [wall]: p.color }))}
+                                                            className="w-4 h-4 rounded border transition-all hover:scale-110"
+                                                            style={{
+                                                                backgroundColor: p.color,
+                                                                borderColor: wallColors[wall] === p.color ? "#7B4B29" : "#ddd",
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Floor Type */}
+                            <div>
+                                <span className="text-xs font-bold text-[#663F23] flex items-center gap-1.5 mb-3">
+                                    <Grid3X3 size={12} />
+                                    Floor Type
+                                </span>
+
+                                {/* Floor type buttons */}
+                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                    {FLOOR_PRESETS.map((fp) => (
+                                        <button
+                                            key={fp.type}
+                                            onClick={() => {
+                                                const firstColor = fp.colors[0];
+                                                setFloorSettings({
+                                                    type: fp.type,
+                                                    color: firstColor.color,
+                                                    groutColor: firstColor.grout,
+                                                });
+                                            }}
+                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
+                                                floorSettings.type === fp.type
+                                                    ? "bg-[#7B4B29] text-white shadow-sm"
+                                                    : "bg-[#F4F1ED] text-[#1C1C1C] hover:bg-[#EBE7DF]"
+                                            }`}
+                                        >
+                                            {fp.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Floor color options for selected type */}
+                                {(() => {
+                                    const currentPreset = FLOOR_PRESETS.find((f) => f.type === floorSettings.type);
+                                    if (!currentPreset) return null;
+                                    return (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {currentPreset.colors.map((c) => (
+                                                <button
+                                                    key={c.color}
+                                                    title={c.name}
+                                                    onClick={() =>
+                                                        setFloorSettings({
+                                                            type: floorSettings.type,
+                                                            color: c.color,
+                                                            groutColor: c.grout,
+                                                        })
+                                                    }
+                                                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium transition-all border"
+                                                    style={{
+                                                        backgroundColor: floorSettings.color === c.color ? c.color + "30" : "#F4F1ED",
+                                                        borderColor: floorSettings.color === c.color ? "#7B4B29" : "#E5E5E5",
+                                                        color: floorSettings.color === c.color ? "#7B4B29" : "#8C8C8C",
+                                                    }}
+                                                >
+                                                    <div
+                                                        className="w-3.5 h-3.5 rounded-sm border border-[#ddd]"
+                                                        style={{ backgroundColor: c.color }}
+                                                    />
+                                                    {c.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 <div className="px-6 py-6">
                     <button
                         onClick={() => setFurnitureListOpen(!furnitureListOpen)}
@@ -858,6 +1312,8 @@ function ThreeDViewerContent() {
                             cameraPreset={cameraPreset}
                             focusTarget={focusTarget}
                             onPresetConsumed={handlePresetConsumed}
+                            wallColors={wallColors}
+                            floorSettings={floorSettings}
                         />
                     </Canvas>
                 </div>
