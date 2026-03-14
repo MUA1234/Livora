@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-    Search, Heart, User, ChevronDown, Star, Loader2, Package
+    Search, ChevronDown, Star, Loader2, Package
 } from "lucide-react";
+import UserNavbar from "@/components/UserNavbar";
 import Image from "next/image";
 import { useWishlist, WishlistItem } from "@/context/WishlistContext";
 import api from "@/lib/api";
@@ -38,18 +39,12 @@ export default function FurnitureCatalogue() {
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-
     const [search, setSearch] = useState('');
     const [searchInput, setSearchInput] = useState('');
     const [category, setCategory] = useState('');
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
     const [sortBy, setSortBy] = useState('newest');
-
-    useEffect(() => {
-        setIsLoggedIn(!!localStorage.getItem('token'));
-    }, []);
 
     const fetchProducts = useCallback(async () => {
         setLoading(true);
@@ -107,67 +102,7 @@ export default function FurnitureCatalogue() {
 
     return (
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
-            {/* Top Navigation */}
-            <header className="bg-white px-8 md:px-16 h-20 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full border border-[#663F23] flex items-center justify-center overflow-hidden">
-                        <img
-                            src="/images/logo.png"
-                            alt="Livora Logo"
-                            className="w-full h-full object-cover"
-                        />
-                    </div>
-                    <span className="text-2xl font-bold text-[#663F23] tracking-tight">
-                        Livora
-                    </span>
-                </div>
-
-                <nav className="hidden md:flex items-center gap-8 font-medium text-[#1C1C1C]/80">
-                    <Link href="/user-panel/furniture-catalogue" className="text-[#663F23] border-b-2 border-[#663F23] pb-1">
-                        Catalogue
-                    </Link>
-                    <Link href="/user-panel/wishlist" className="hover:text-[#663F23] transition-colors relative">
-                        Wishlist
-                        {items.length > 0 && (
-                            <span className="absolute -top-2 -right-3 bg-[#663F23] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                                {items.length}
-                            </span>
-                        )}
-                    </Link>
-                    <Link href="/user-panel/review-and-ratings" className="hover:text-[#663F23] transition-colors">
-                        Review and Ratings
-                    </Link>
-                </nav>
-
-                <div className="flex items-center gap-4">
-                    {/* Wishlist Icon */}
-                    <Link href="/user-panel/wishlist" className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center text-[#1C1C1C] hover:bg-[#E5E5E5] transition-colors relative">
-                        <Heart size={20} className={items.length > 0 ? "fill-[#663F23] text-[#663F23]" : ""} />
-                        {items.length > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-[#663F23] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                                {items.length}
-                            </span>
-                        )}
-                    </Link>
-
-                    {/* Login or My Account */}
-                    {isLoggedIn ? (
-                        <Link href="/user-panel/my-account"
-                            className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center hover:bg-[#E5E5E5] transition-colors">
-                            <User size={20} />
-                        </Link>
-                    ) : (
-                        <Link href="/user-panel/login"
-                            className="px-4 py-2 border border-[#663F23] text-[#663F23] rounded-lg text-sm font-medium hover:bg-[#663F23] hover:text-white transition-colors">
-                            Login
-                        </Link>
-                    )}
-
-                    <Link href="/user-panel/consultation-request" className="px-6 py-2.5 bg-[#663F23] text-white rounded-lg font-medium hover:bg-[#52321A] transition-colors">
-                        Book Consultation
-                    </Link>
-                </div>
-            </header>
+            <UserNavbar />
 
             {/* Main */}
             <main className="max-w-[1400px] mx-auto px-8 md:px-16 py-10 flex flex-col md:flex-row gap-10">

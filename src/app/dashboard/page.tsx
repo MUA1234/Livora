@@ -4,16 +4,10 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { getUser } from "@/lib/auth";
-import { useRouter } from "next/navigation";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import AdminSidebar from "@/components/AdminSidebar";
 import {
-    LayoutDashboard,
-    Monitor,
-    ShoppingBag,
     LayoutTemplate,
     FileText,
-    Users,
-    Settings,
     Search,
     Bell,
     PenTool,
@@ -24,14 +18,10 @@ import {
     ArrowUpRight,
     Clock,
     AlertCircle,
-    ScrollText,
-    LogOut
 } from "lucide-react";
 import Image from "next/image";
 
 export default function Dashboard() {
-    const router = useRouter();
-    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [stats, setStats] = useState({
         totalDesigns: 0,
         totalProducts: 0,
@@ -71,100 +61,9 @@ export default function Dashboard() {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        router.push("/admin/login");
-    };
-
     return (
         <div className="min-h-screen bg-[#F5F1E8] flex overflow-hidden font-sans text-[#1C1C1C]">
-            {/* Sidebar */}
-            <aside className="w-64 bg-[#F5F1E8] border-r border-[#E5E5E5] flex flex-col justify-between shrink-0">
-                <div>
-                    <div className="h-20 flex items-center px-8 border-b border-[#E5E5E5]/50">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full border border-[#663F23] flex items-center justify-center relative overflow-hidden bg-white">
-                                <Image
-                                    src="/logo.png"
-                                    alt="LIVORA"
-                                    width={40}
-                                    height={40}
-                                    className="object-cover"
-                                />
-                            </div>
-                            <span className="text-2xl font-bold text-[#663F23] tracking-tight">Livora</span>
-                        </div>
-                    </div>
-
-                    <nav className="p-4 space-y-1 mt-4">
-                        <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 bg-[#663F23] text-white rounded-lg">
-                            <LayoutDashboard size={20} />
-                            <span className="font-medium text-sm">Dashboard</span>
-                        </Link>
-
-                        <Link href="/admin/room-setup" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <Monitor size={20} />
-                            <span className="font-medium text-sm">Room Setup</span>
-                        </Link>
-
-                        <Link href="/admin/catalogue" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <Sofa size={20} />
-                            <span className="font-medium text-sm">Catalogue</span>
-                        </Link>
-
-                        <Link href="/admin/catalogue-management" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors pl-10">
-                            <Settings size={16} />
-                            <span className="font-medium text-xs">Catalogue Management</span>
-                        </Link>
-
-                        <Link href="/admin/compare-designs" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <LayoutTemplate size={20} />
-                            <span className="font-medium text-sm">Compare Designs</span>
-                        </Link>
-
-                        <Link href="/admin/cost-summary" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <FileText size={20} />
-                            <span className="font-medium text-sm">Cost Summary</span>
-                        </Link>
-
-                        <Link href="/admin/consultations" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <Users size={20} />
-                            <span className="font-medium text-sm">Consultations</span>
-                        </Link>
-
-                        <Link href="/admin/design-history" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <ScrollText size={20} />
-                            <span className="font-medium text-sm">Design History</span>
-                        </Link>
-                    </nav>
-                </div>
-
-                <div className="p-4 border-t border-[#E5E5E5]/50 shrink-0">
-                    <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
-                        <Settings size={20} />
-                        <span className="font-medium text-sm">Settings</span>
-                    </Link>
-
-                    <button
-                        onClick={() => setIsLogoutModalOpen(true)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors mb-4 focus:outline-none"
-                    >
-                        <LogOut size={20} />
-                        <span className="font-medium text-sm">Logout</span>
-                    </button>
-
-                    <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-                        <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center">
-                            <span className="text-xs font-bold text-white">{adminUser?.name?.charAt(0) || "A"}</span>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C] truncate max-w-[120px]">{adminUser?.name || "Admin"}</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50 uppercase tracking-wider">{adminUser?.role || "admin"}</span>
-                        </div>
-                    </div>
-                </div>
-            </aside>
+            <AdminSidebar />
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
@@ -379,14 +278,6 @@ export default function Dashboard() {
                 </div>
             </main>
 
-            {isLogoutModalOpen && (
-                <ConfirmModal
-                    title="Confirm Logout"
-                    message="Are you sure you want to logout from Livora admin panel?"
-                    onConfirm={handleLogout}
-                    onCancel={() => setIsLogoutModalOpen(false)}
-                />
-            )}
         </div>
     );
 }

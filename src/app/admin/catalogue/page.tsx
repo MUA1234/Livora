@@ -1,20 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import api from "@/lib/api";
-import { getUser } from "@/lib/auth";
+import AdminSidebar from "@/components/AdminSidebar";
 import {
-    LayoutDashboard,
-    Monitor,
-    LayoutTemplate,
-    FileText,
-    Users,
-    Settings,
-    Sofa,
-    ScrollText,
     Search,
     ChevronDown,
     ChevronLeft,
@@ -22,10 +11,8 @@ import {
     ArrowLeft,
     Check,
     Plus,
-    LogOut,
     Loader2
 } from "lucide-react";
-import Image from "next/image";
 
 interface ProductImage {
     imageUrl: string;
@@ -50,17 +37,14 @@ interface Product {
 const categories = ["All Items", "Sofas", "Chairs", "Tables", "Beds", "Storage", "Lighting", "Decor", "Rugs"];
 
 export default function CatalogueBrowse() {
-    const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [addedToDesign, setAddedToDesign] = useState<Set<string>>(new Set());
     const [selectedCategory, setSelectedCategory] = useState("All Items");
     const [searchQuery, setSearchQuery] = useState("");
-    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const user = getUser();
 
     const fetchProducts = useCallback(async () => {
         setLoading(true);
@@ -91,12 +75,6 @@ export default function CatalogueBrowse() {
         setPage(1);
     }, [searchQuery, selectedCategory]);
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        router.push("/admin/login");
-    };
-
     const toggleAddToDesign = (productId: string) => {
         setAddedToDesign((prev) => {
             const next = new Set(prev);
@@ -115,85 +93,7 @@ export default function CatalogueBrowse() {
 
     return (
         <div className="min-h-screen bg-white flex overflow-hidden font-sans text-[#1C1C1C]">
-            <aside className="w-64 bg-[#F5F1E8] border-r border-[#E5E5E5] flex flex-col justify-between shrink-0 h-screen sticky top-0">
-                <div>
-                    <div className="h-20 flex items-center px-8 border-b border-[#E5E5E5]/50">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full border border-[#663F23] flex items-center justify-center relative overflow-hidden">
-                                <span className="text-[#663F23] text-xs font-bold">LV</span>
-                            </div>
-                            <span className="text-2xl font-bold text-[#663F23] tracking-tight">Livora</span>
-                        </div>
-                    </div>
-
-                    <nav className="p-4 space-y-1 mt-4">
-                        <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <LayoutDashboard size={20} />
-                            <span className="font-medium text-sm">Dashboard</span>
-                        </Link>
-
-                        <Link href="/admin/room-setup" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <Monitor size={20} />
-                            <span className="font-medium text-sm">Room Setup</span>
-                        </Link>
-
-                        <Link href="/admin/catalogue" className="flex items-center gap-3 px-4 py-3 bg-[#663F23] text-white rounded-lg transition-colors">
-                            <Sofa size={20} />
-                            <span className="font-medium text-sm">Catalogue</span>
-                        </Link>
-
-                        <Link href="/admin/catalogue-management" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors pl-8">
-                            <Settings size={16} />
-                            <span className="font-medium text-sm">Catalogue Management</span>
-                        </Link>
-
-                        <Link href="/admin/compare-designs" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <LayoutTemplate size={20} />
-                            <span className="font-medium text-sm">Compare Designs</span>
-                        </Link>
-
-                        <Link href="/admin/cost-summary" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <FileText size={20} />
-                            <span className="font-medium text-sm">Cost Reports</span>
-                        </Link>
-
-                        <Link href="/admin/consultations" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <Users size={20} />
-                            <span className="font-medium text-sm">Consultations</span>
-                        </Link>
-
-                        <Link href="/admin/design-history" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors">
-                            <ScrollText size={20} />
-                            <span className="font-medium text-sm">Design History</span>
-                        </Link>
-                    </nav>
-                </div>
-
-                <div className="p-4 border-t border-[#E5E5E5]/50 shrink-0">
-                    <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-[#1C1C1C]/70 hover:bg-[#E5E5E5]/50 hover:text-[#1C1C1C] rounded-lg transition-colors mb-2">
-                        <Settings size={20} />
-                        <span className="font-medium text-sm">Settings</span>
-                    </Link>
-
-                    <button
-                        onClick={() => setIsLogoutModalOpen(true)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors mb-4 focus:outline-none cursor-pointer"
-                    >
-                        <LogOut size={20} />
-                        <span className="font-medium text-sm">Logout</span>
-                    </button>
-
-                    <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-[#E5E5E5]/50">
-                        <div className="w-8 h-8 rounded-full bg-[#663F23] flex items-center justify-center text-white text-xs font-bold">
-                            {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-[#1C1C1C]">{user?.name || "Admin User"}</span>
-                            <span className="text-[10px] text-[#1C1C1C]/50">{user?.role === "admin" ? "Lead Designer" : "User"}</span>
-                        </div>
-                    </div>
-                </div>
-            </aside>
+            <AdminSidebar />
 
             <main className="flex-1 overflow-y-auto bg-[#F5F1E8]">
                 <div className="sticky top-0 z-10 bg-[#F5F1E8] px-8 py-4 flex items-center justify-between border-b border-[#E5E5E5]/30">
@@ -391,14 +291,6 @@ export default function CatalogueBrowse() {
                 </div>
             </main>
 
-            {isLogoutModalOpen && (
-                <ConfirmModal
-                    title="Confirm Logout"
-                    message="Are you sure you want to logout from Livora admin panel?"
-                    onConfirm={handleLogout}
-                    onCancel={() => setIsLogoutModalOpen(false)}
-                />
-            )}
         </div>
     );
 }
