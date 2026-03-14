@@ -4,7 +4,7 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Box, Plane, Text, ContactShadows, Cylinder, Sphere } from "@react-three/drei";
+import { OrbitControls, Box, Plane, Text, ContactShadows, Cylinder, Sphere, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import {
     Box as BoxIcon,
@@ -241,13 +241,158 @@ function getModelType(category: string, name: string): string {
     return "box";
 }
 
+/* ── Procedural texture hooks ── */
+
+function useWoodTexture(baseColor: string): THREE.CanvasTexture {
+    return useMemo(() => {
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 40; i++) {
+            ctx.strokeStyle = `rgba(0,0,0,${0.03 + Math.random() * 0.05})`;
+            ctx.lineWidth = 0.5 + Math.random() * 1.5;
+            ctx.beginPath();
+            const y = (i / 40) * size + (Math.random() - 0.5) * 8;
+            ctx.moveTo(0, y);
+            ctx.bezierCurveTo(size * 0.25, y + (Math.random() - 0.5) * 6, size * 0.75, y + (Math.random() - 0.5) * 6, size, y);
+            ctx.stroke();
+        }
+        for (let k = 0; k < 2; k++) {
+            const kx = Math.random() * size;
+            const ky = Math.random() * size;
+            ctx.strokeStyle = "rgba(0,0,0,0.06)";
+            for (let r = 3; r < 12; r += 2) {
+                ctx.beginPath();
+                ctx.ellipse(kx, ky, r * 1.5, r, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 2);
+        return tex;
+    }, [baseColor]);
+}
+
+function useFabricTexture(baseColor: string): THREE.CanvasTexture {
+    return useMemo(() => {
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(0, 0, size, size);
+        const step = 4;
+        for (let x = 0; x < size; x += step) {
+            for (let y = 0; y < size; y += step) {
+                const bright = (Math.random() - 0.5) * 18;
+                ctx.fillStyle = `rgba(${bright > 0 ? 255 : 0},${bright > 0 ? 255 : 0},${bright > 0 ? 255 : 0},${Math.abs(bright) / 255})`;
+                ctx.fillRect(x, y, step / 2, step);
+            }
+        }
+        for (let x = 0; x < size; x += step) {
+            for (let y = 0; y < size; y += step) {
+                const bright = (Math.random() - 0.5) * 14;
+                ctx.fillStyle = `rgba(${bright > 0 ? 255 : 0},${bright > 0 ? 255 : 0},${bright > 0 ? 255 : 0},${Math.abs(bright) / 255})`;
+                ctx.fillRect(x, y, step, step / 2);
+            }
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(4, 4);
+        return tex;
+    }, [baseColor]);
+}
+
+function useLeatherTexture(baseColor: string): THREE.CanvasTexture {
+    return useMemo(() => {
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 600; i++) {
+            const cx = Math.random() * size;
+            const cy = Math.random() * size;
+            const r = 1.5 + Math.random() * 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0,0,0,${0.04 + Math.random() * 0.06})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+        }
+        for (let i = 0; i < 200; i++) {
+            const cx = Math.random() * size;
+            const cy = Math.random() * size;
+            ctx.fillStyle = `rgba(255,255,255,${0.01 + Math.random() * 0.03})`;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 1 + Math.random() * 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(3, 3);
+        return tex;
+    }, [baseColor]);
+}
+
+function useMetalTexture(baseColor: string): THREE.CanvasTexture {
+    return useMemo(() => {
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 300; i++) {
+            const y = Math.random() * size;
+            ctx.strokeStyle = `rgba(255,255,255,${0.02 + Math.random() * 0.04})`;
+            ctx.lineWidth = 0.3 + Math.random() * 0.6;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(size, y + (Math.random() - 0.5) * 2);
+            ctx.stroke();
+        }
+        for (let i = 0; i < 80; i++) {
+            const y = Math.random() * size;
+            ctx.strokeStyle = `rgba(0,0,0,${0.02 + Math.random() * 0.03})`;
+            ctx.lineWidth = 0.2 + Math.random() * 0.4;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(size, y + (Math.random() - 0.5) * 1);
+            ctx.stroke();
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 2);
+        return tex;
+    }, [baseColor]);
+}
+
+/* ── Helper: determine if a colour is dark (for leather vs fabric choice) ── */
+function isColorDark(hex: string): boolean {
+    const c = new THREE.Color(hex);
+    return c.r * 0.299 + c.g * 0.587 + c.b * 0.114 < 0.45;
+}
+
+/* ── Legs4 (photorealistic) ── */
+
 function Legs4({ w, d, legH, legR, color, inset = 0.03 }: { w: number; d: number; legH: number; legR: number; color: string; inset?: number }) {
+    const woodTex = useWoodTexture(color);
     const positions: [number, number][] = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
     return (
         <>
             {positions.map(([sx, sz], i) => (
-                <Cylinder key={i} args={[legR, legR, legH, 8]} position={[sx * (w / 2 - inset), legH / 2, sz * (d / 2 - inset)]} castShadow>
-                    <meshStandardMaterial color={color} roughness={0.3} metalness={0.4} />
+                <Cylinder key={i} args={[legR, legR, legH, 12]} position={[sx * (w / 2 - inset), legH / 2, sz * (d / 2 - inset)]} castShadow>
+                    <meshPhysicalMaterial map={woodTex} roughness={0.35} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} color={color} />
                 </Cylinder>
             ))}
         </>
@@ -259,6 +404,16 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
     const dk = darken(col, 0.18);
     const dkr = darken(col, 0.35);
     const legR = Math.max(0.01, Math.min(w, d) * 0.025);
+
+    /* Procedural textures – memoised per colour */
+    const woodTex = useWoodTexture(dk);
+    const woodTexCol = useWoodTexture(col);
+    const fabricTex = useFabricTexture(col);
+    const fabricTexLt = useFabricTexture(lt);
+    const leatherTex = useLeatherTexture(col);
+    const metalTex = useMetalTexture("#888888");
+    const dark = isColorDark(col);
+    const sheenCol = useMemo(() => new THREE.Color(col), [col]);
 
     switch (type) {
         case "sofa": {
@@ -273,21 +428,23 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
             const backH = h - legH - baseH - seatH;
             const backY = legH + baseH + seatH + backH / 2;
             const backD = d * 0.22;
+            const cushionMap = dark ? leatherTex : fabricTex;
+            const cushionMapLt = dark ? leatherTex : fabricTexLt;
             return (
                 <group>
                     <Legs4 w={w} d={d} legH={legH} legR={legR * 0.8} color={dkr} />
                     <Box args={[w - armW * 2, baseH, d * 0.92]} position={[0, baseY, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.8} />
+                        <meshPhysicalMaterial map={cushionMap} color={dk} roughness={dark ? 0.6 : 0.85} metalness={0.0} sheen={dark ? 0.3 : 0.5} sheenRoughness={dark ? 0.4 : 0.8} sheenColor={sheenCol} />
                     </Box>
-                    {/* Seat cushions - split into 2-3 */}
+                    {/* Seat cushions */}
                     {Array.from({ length: Math.max(2, Math.round(w / 0.8)) }, (_, i) => {
                         const count = Math.max(2, Math.round(w / 0.8));
                         const cw = (w - armW * 2 - 0.02 * count) / count;
                         const cx = -((w - armW * 2) / 2) + cw / 2 + 0.01 + i * (cw + 0.02);
                         return (
-                            <Box key={`seat${i}`} args={[cw, seatH, d * 0.62]} position={[cx, seatY, d * 0.06]} castShadow>
-                                <meshStandardMaterial color={lt} roughness={0.92} />
-                            </Box>
+                            <RoundedBox key={`seat${i}`} args={[cw, seatH, d * 0.62]} position={[cx, seatY, d * 0.06]} radius={0.01} smoothness={4} castShadow>
+                                <meshPhysicalMaterial map={cushionMapLt} color={lt} roughness={dark ? 0.55 : 0.92} metalness={0.0} sheen={dark ? 0.4 : 0.5} sheenRoughness={dark ? 0.3 : 0.8} sheenColor={sheenCol} />
+                            </RoundedBox>
                         );
                     })}
                     {/* Back cushions */}
@@ -296,17 +453,17 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                         const cw = (w - armW * 2 - 0.02 * count) / count;
                         const cx = -((w - armW * 2) / 2) + cw / 2 + 0.01 + i * (cw + 0.02);
                         return (
-                            <Box key={`back${i}`} args={[cw, backH * 0.88, backD]} position={[cx, backY, -(d / 2 - backD / 2 - 0.01)]} castShadow>
-                                <meshStandardMaterial color={col} roughness={0.88} />
-                            </Box>
+                            <RoundedBox key={`back${i}`} args={[cw, backH * 0.88, backD]} position={[cx, backY, -(d / 2 - backD / 2 - 0.01)]} radius={0.01} smoothness={4} castShadow>
+                                <meshPhysicalMaterial map={cushionMap} color={col} roughness={dark ? 0.55 : 0.88} metalness={0.0} sheen={dark ? 0.35 : 0.5} sheenRoughness={dark ? 0.35 : 0.8} sheenColor={sheenCol} />
+                            </RoundedBox>
                         );
                     })}
-                    <Box args={[armW, armH, d * 0.90]} position={[-(w / 2 - armW / 2), armY, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.85} />
-                    </Box>
-                    <Box args={[armW, armH, d * 0.90]} position={[w / 2 - armW / 2, armY, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.85} />
-                    </Box>
+                    <RoundedBox args={[armW, armH, d * 0.90]} position={[-(w / 2 - armW / 2), armY, 0]} radius={0.008} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMap} color={col} roughness={dark ? 0.55 : 0.85} metalness={0.0} sheen={dark ? 0.3 : 0.5} sheenRoughness={0.6} sheenColor={sheenCol} />
+                    </RoundedBox>
+                    <RoundedBox args={[armW, armH, d * 0.90]} position={[w / 2 - armW / 2, armY, 0]} radius={0.008} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMap} color={col} roughness={dark ? 0.55 : 0.85} metalness={0.0} sheen={dark ? 0.3 : 0.5} sheenRoughness={0.6} sheenColor={sheenCol} />
+                    </RoundedBox>
                 </group>
             );
         }
@@ -319,32 +476,34 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
             const backH = h - seatTop;
             const backD = d * 0.12;
             const extW = w * 0.35;
+            const cushionMap = dark ? leatherTex : fabricTex;
+            const cushionMapLt = dark ? leatherTex : fabricTexLt;
             return (
                 <group>
                     <Legs4 w={w} d={d} legH={legH} legR={legR * 0.7} color={dkr} />
                     {/* Main section base */}
                     <Box args={[w, baseH, d * 0.45]} position={[0, legH + baseH / 2, -(d / 2 - d * 0.225)]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.8} />
+                        <meshPhysicalMaterial map={cushionMap} color={dk} roughness={dark ? 0.6 : 0.85} metalness={0.0} sheen={0.4} sheenRoughness={0.7} sheenColor={sheenCol} />
                     </Box>
                     {/* Extension base */}
                     <Box args={[extW, baseH, d]} position={[w / 2 - extW / 2, legH + baseH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.8} />
+                        <meshPhysicalMaterial map={cushionMap} color={dk} roughness={dark ? 0.6 : 0.85} metalness={0.0} sheen={0.4} sheenRoughness={0.7} sheenColor={sheenCol} />
                     </Box>
                     {/* Main seat */}
-                    <Box args={[w - extW, seatH, d * 0.40]} position={[-(extW / 2), legH + baseH + seatH / 2, -(d / 2 - d * 0.20)]} castShadow>
-                        <meshStandardMaterial color={lt} roughness={0.92} />
-                    </Box>
+                    <RoundedBox args={[w - extW, seatH, d * 0.40]} position={[-(extW / 2), legH + baseH + seatH / 2, -(d / 2 - d * 0.20)]} radius={0.01} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMapLt} color={lt} roughness={dark ? 0.55 : 0.92} metalness={0.0} sheen={0.5} sheenRoughness={0.8} sheenColor={sheenCol} />
+                    </RoundedBox>
                     {/* Extension seat */}
-                    <Box args={[extW - 0.02, seatH, d * 0.85]} position={[w / 2 - extW / 2, legH + baseH + seatH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={lt} roughness={0.92} />
-                    </Box>
+                    <RoundedBox args={[extW - 0.02, seatH, d * 0.85]} position={[w / 2 - extW / 2, legH + baseH + seatH / 2, 0]} radius={0.01} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMapLt} color={lt} roughness={dark ? 0.55 : 0.92} metalness={0.0} sheen={0.5} sheenRoughness={0.8} sheenColor={sheenCol} />
+                    </RoundedBox>
                     {/* Back - L shape */}
-                    <Box args={[w, backH * 0.85, backD]} position={[0, seatTop + backH / 2, -(d / 2 - backD / 2)]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.88} />
-                    </Box>
-                    <Box args={[backD, backH * 0.85, d * 0.5]} position={[w / 2 - backD / 2, seatTop + backH / 2, d * 0.25]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.88} />
-                    </Box>
+                    <RoundedBox args={[w, backH * 0.85, backD]} position={[0, seatTop + backH / 2, -(d / 2 - backD / 2)]} radius={0.008} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMap} color={col} roughness={dark ? 0.55 : 0.88} metalness={0.0} sheen={0.45} sheenRoughness={0.7} sheenColor={sheenCol} />
+                    </RoundedBox>
+                    <RoundedBox args={[backD, backH * 0.85, d * 0.5]} position={[w / 2 - backD / 2, seatTop + backH / 2, d * 0.25]} radius={0.008} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMap} color={col} roughness={dark ? 0.55 : 0.88} metalness={0.0} sheen={0.45} sheenRoughness={0.7} sheenColor={sheenCol} />
+                    </RoundedBox>
                 </group>
             );
         }
@@ -358,18 +517,18 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
             return (
                 <group>
                     <Legs4 w={w} d={d} legH={legH} legR={legR * 0.6} color={dk} inset={0.02} />
-                    <Box args={[w * 0.92, seatH, d * 0.88]} position={[0, seatY, 0]} castShadow>
-                        <meshStandardMaterial color={lt} roughness={0.85} />
-                    </Box>
+                    <RoundedBox args={[w * 0.92, seatH, d * 0.88]} position={[0, seatY, 0]} radius={0.005} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={dark ? leatherTex : fabricTexLt} color={lt} roughness={dark ? 0.55 : 0.85} metalness={0.0} sheen={0.4} sheenRoughness={0.7} sheenColor={sheenCol} />
+                    </RoundedBox>
                     <Box args={[w * 0.88, backH, d * 0.05]} position={[0, backY, -(d / 2 - d * 0.03)]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.7} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.4} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.3} />
                     </Box>
                     {/* Support posts */}
-                    <Cylinder args={[legR * 0.5, legR * 0.5, backH, 8]} position={[-w * 0.38, backY, -(d / 2 - d * 0.03)]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.4} metalness={0.2} />
+                    <Cylinder args={[legR * 0.5, legR * 0.5, backH, 12]} position={[-w * 0.38, backY, -(d / 2 - d * 0.03)]} castShadow>
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.35} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} />
                     </Cylinder>
-                    <Cylinder args={[legR * 0.5, legR * 0.5, backH, 8]} position={[w * 0.38, backY, -(d / 2 - d * 0.03)]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.4} metalness={0.2} />
+                    <Cylinder args={[legR * 0.5, legR * 0.5, backH, 12]} position={[w * 0.38, backY, -(d / 2 - d * 0.03)]} castShadow>
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.35} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} />
                     </Cylinder>
                 </group>
             );
@@ -382,24 +541,26 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
             const backH = h - baseH - seatH;
             const backY = baseH + seatH + backH / 2;
             const armW = w * 0.12;
+            const cushionMap = dark ? leatherTex : fabricTex;
+            const cushionMapLt = dark ? leatherTex : fabricTexLt;
             return (
                 <group>
                     {/* Solid block base */}
                     <Box args={[w, baseH, d]} position={[0, baseH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.8} />
+                        <meshPhysicalMaterial map={cushionMap} color={dk} roughness={dark ? 0.6 : 0.85} metalness={0.0} sheen={0.4} sheenRoughness={0.7} sheenColor={sheenCol} />
                     </Box>
-                    <Box args={[w - armW * 2, seatH, d * 0.75]} position={[0, seatY, d * 0.05]} castShadow>
-                        <meshStandardMaterial color={lt} roughness={0.92} />
-                    </Box>
-                    <Box args={[w - armW * 2 - 0.02, backH * 0.85, d * 0.25]} position={[0, backY, -(d / 2 - d * 0.13)]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.88} />
-                    </Box>
-                    <Box args={[armW, h * 0.35, d * 0.88]} position={[-w / 2 + armW / 2, baseH + h * 0.175, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.85} />
-                    </Box>
-                    <Box args={[armW, h * 0.35, d * 0.88]} position={[w / 2 - armW / 2, baseH + h * 0.175, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.85} />
-                    </Box>
+                    <RoundedBox args={[w - armW * 2, seatH, d * 0.75]} position={[0, seatY, d * 0.05]} radius={0.01} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMapLt} color={lt} roughness={dark ? 0.55 : 0.92} metalness={0.0} sheen={0.5} sheenRoughness={0.8} sheenColor={sheenCol} />
+                    </RoundedBox>
+                    <RoundedBox args={[w - armW * 2 - 0.02, backH * 0.85, d * 0.25]} position={[0, backY, -(d / 2 - d * 0.13)]} radius={0.008} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMap} color={col} roughness={dark ? 0.55 : 0.88} metalness={0.0} sheen={0.45} sheenRoughness={0.7} sheenColor={sheenCol} />
+                    </RoundedBox>
+                    <RoundedBox args={[armW, h * 0.35, d * 0.88]} position={[-w / 2 + armW / 2, baseH + h * 0.175, 0]} radius={0.008} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMap} color={col} roughness={dark ? 0.55 : 0.85} metalness={0.0} sheen={0.4} sheenRoughness={0.7} sheenColor={sheenCol} />
+                    </RoundedBox>
+                    <RoundedBox args={[armW, h * 0.35, d * 0.88]} position={[w / 2 - armW / 2, baseH + h * 0.175, 0]} radius={0.008} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={cushionMap} color={col} roughness={dark ? 0.55 : 0.85} metalness={0.0} sheen={0.4} sheenRoughness={0.7} sheenColor={sheenCol} />
+                    </RoundedBox>
                 </group>
             );
         }
@@ -419,31 +580,31 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                     <Legs4 w={w} d={d} legH={legH} legR={legR} color={dkr} inset={0.04} />
                     {/* Frame */}
                     <Box args={[w, frameH, d]} position={[0, frameY, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.7} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.4} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                     </Box>
                     {/* Mattress */}
-                    <Box args={[w * 0.95, mattH, d * 0.90]} position={[0, mattY, d * 0.02]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.4)} roughness={0.95} />
-                    </Box>
+                    <RoundedBox args={[w * 0.95, mattH, d * 0.90]} position={[0, mattY, d * 0.02]} radius={0.01} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={fabricTexLt} color={lighten(col, 0.4)} roughness={0.95} metalness={0.0} sheen={0.3} sheenRoughness={0.9} sheenColor={sheenCol} />
+                    </RoundedBox>
                     {/* Headboard */}
                     <Box args={[w + 0.02, headH, d * 0.04]} position={[0, headY, -(d / 2 - d * 0.02)]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.75} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.4} metalness={0.0} clearcoat={0.25} clearcoatRoughness={0.2} />
                     </Box>
                     {/* Footboard */}
                     <Box args={[w, h * 0.22, d * 0.03]} position={[0, legH + h * 0.11, d / 2 - d * 0.015]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.7} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.4} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                     </Box>
                     {/* Pillows */}
-                    <Box args={[pillowW, pillowH, d * 0.15]} position={[-w * 0.2, mattY + mattH / 2 + pillowH / 2, -(d * 0.3)]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.5)} roughness={0.95} />
-                    </Box>
-                    <Box args={[pillowW, pillowH, d * 0.15]} position={[w * 0.2, mattY + mattH / 2 + pillowH / 2, -(d * 0.3)]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.5)} roughness={0.95} />
-                    </Box>
+                    <RoundedBox args={[pillowW, pillowH, d * 0.15]} position={[-w * 0.2, mattY + mattH / 2 + pillowH / 2, -(d * 0.3)]} radius={0.015} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={fabricTexLt} color={lighten(col, 0.5)} roughness={0.95} metalness={0.0} sheen={0.4} sheenRoughness={0.9} sheenColor={new THREE.Color(lighten(col, 0.5))} />
+                    </RoundedBox>
+                    <RoundedBox args={[pillowW, pillowH, d * 0.15]} position={[w * 0.2, mattY + mattH / 2 + pillowH / 2, -(d * 0.3)]} radius={0.015} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={fabricTexLt} color={lighten(col, 0.5)} roughness={0.95} metalness={0.0} sheen={0.4} sheenRoughness={0.9} sheenColor={new THREE.Color(lighten(col, 0.5))} />
+                    </RoundedBox>
                     {/* Duvet/blanket */}
-                    <Box args={[w * 0.90, mattH * 0.3, d * 0.55]} position={[0, mattY + mattH / 2 + mattH * 0.15, d * 0.1]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.3)} roughness={0.92} />
-                    </Box>
+                    <RoundedBox args={[w * 0.90, mattH * 0.3, d * 0.55]} position={[0, mattY + mattH / 2 + mattH * 0.15, d * 0.1]} radius={0.008} smoothness={4} castShadow>
+                        <meshPhysicalMaterial map={fabricTex} color={lighten(col, 0.3)} roughness={0.92} metalness={0.0} sheen={0.35} sheenRoughness={0.85} sheenColor={sheenCol} />
+                    </RoundedBox>
                 </group>
             );
         }
@@ -459,11 +620,11 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                     <Legs4 w={w} d={d} legH={legH} legR={legR} color={dkr} inset={0.04} />
                     {/* Tabletop */}
                     <Box args={[w, topH, d]} position={[0, topY, 0]} castShadow receiveShadow>
-                        <meshStandardMaterial color={col} roughness={0.4} metalness={0.05} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.35} metalness={0.0} clearcoat={0.4} clearcoatRoughness={0.15} />
                     </Box>
                     {/* Lower shelf */}
                     <Box args={[w * 0.85, shelfH, d * 0.75]} position={[0, shelfY, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.6} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.45} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.3} />
                     </Box>
                 </group>
             );
@@ -476,7 +637,7 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     <Legs4 w={w} d={d} legH={legH} legR={legR} color={dkr} inset={0.05} />
                     <Box args={[w, topH, d]} position={[0, h - topH / 2, 0]} castShadow receiveShadow>
-                        <meshStandardMaterial color={col} roughness={0.45} metalness={0.05} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.35} metalness={0.0} clearcoat={0.4} clearcoatRoughness={0.15} />
                     </Box>
                 </group>
             );
@@ -492,15 +653,15 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     {/* Round tabletop */}
                     <Cylinder args={[radius, radius, topH, 32]} position={[0, h - topH / 2, 0]} castShadow receiveShadow>
-                        <meshStandardMaterial color={col} roughness={0.4} metalness={0.05} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.35} metalness={0.0} clearcoat={0.4} clearcoatRoughness={0.15} />
                     </Cylinder>
                     {/* Central pedestal */}
                     <Cylinder args={[pedR, pedR * 1.3, legH * 0.7, 12]} position={[0, legH * 0.35, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.5} metalness={0.1} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.4} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.3} />
                     </Cylinder>
                     {/* Base */}
                     <Cylinder args={[baseR, baseR, h * 0.04, 24]} position={[0, h * 0.02, 0]} castShadow>
-                        <meshStandardMaterial color={dkr} roughness={0.4} metalness={0.15} />
+                        <meshPhysicalMaterial map={metalTex} color={dkr} roughness={0.25} metalness={0.7} />
                     </Cylinder>
                 </group>
             );
@@ -517,31 +678,31 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     {/* Tabletop */}
                     <Box args={[w, topH, d]} position={[0, topY, 0]} castShadow receiveShadow>
-                        <meshStandardMaterial color={col} roughness={0.5} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.35} metalness={0.0} clearcoat={0.35} clearcoatRoughness={0.18} />
                     </Box>
                     {/* Left leg panel */}
                     <Box args={[panelW, legH, d * 0.85]} position={[-(w / 2 - panelW), legH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.6} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.4} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} />
                     </Box>
                     {/* Right drawer unit */}
                     <Box args={[drawerW, drawerH, d * 0.85]} position={[w / 2 - drawerW / 2, drawerH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.6} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.4} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} />
                     </Box>
                     {/* Drawer fronts */}
                     {[0.15, 0.45, 0.75].map((frac, i) => (
                         <Box key={i} args={[drawerW - 0.02, drawerH * 0.28, 0.005]} position={[w / 2 - drawerW / 2, drawerH * frac, d * 0.43]} castShadow>
-                            <meshStandardMaterial color={lighten(dk, 0.08)} roughness={0.5} />
+                            <meshPhysicalMaterial map={woodTexCol} color={lighten(dk, 0.08)} roughness={0.38} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                         </Box>
                     ))}
                     {/* Drawer handles */}
                     {[0.15, 0.45, 0.75].map((frac, i) => (
                         <Box key={`h${i}`} args={[drawerW * 0.2, 0.008, 0.012]} position={[w / 2 - drawerW / 2, drawerH * frac, d * 0.44]} castShadow>
-                            <meshStandardMaterial color="#888" roughness={0.2} metalness={0.7} />
+                            <meshPhysicalMaterial map={metalTex} color="#888" roughness={0.15} metalness={0.8} />
                         </Box>
                     ))}
                     {/* Modesty panel */}
                     <Box args={[w - panelW - drawerW - 0.02, legH * 0.2, 0.01]} position={[-(drawerW / 2 - panelW / 2) / 2, legH * 0.1, -(d * 0.42)]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.7} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.45} metalness={0.0} clearcoat={0.1} clearcoatRoughness={0.4} />
                     </Box>
                 </group>
             );
@@ -556,21 +717,21 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     {/* Side panels */}
                     <Box args={[sideW, h, d]} position={[-(w / 2 - sideW / 2), h / 2, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.65} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.4} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.3} />
                     </Box>
                     <Box args={[sideW, h, d]} position={[w / 2 - sideW / 2, h / 2, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.65} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.4} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.3} />
                     </Box>
                     {/* Back panel */}
                     <Box args={[w - sideW * 2, h, backD]} position={[0, h / 2, -(d / 2 - backD / 2)]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.7} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.5} metalness={0.0} clearcoat={0.1} clearcoatRoughness={0.4} />
                     </Box>
                     {/* Shelves */}
                     {Array.from({ length: shelfCount + 1 }, (_, i) => {
                         const sy = (i / shelfCount) * (h - shelfH) + shelfH / 2;
                         return (
                             <Box key={i} args={[w - sideW * 2, shelfH, d - backD]} position={[0, sy, backD / 2]} castShadow>
-                                <meshStandardMaterial color={lighten(col, 0.05)} roughness={0.6} />
+                                <meshPhysicalMaterial map={woodTexCol} color={lighten(col, 0.05)} roughness={0.38} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                             </Box>
                         );
                     })}
@@ -580,7 +741,7 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                         const bookH = (h / shelfCount) * 0.7;
                         return (
                             <Box key={`b${i}`} args={[w * 0.5, bookH, d * 0.55]} position={[-(w * 0.12), sy + bookH / 2, backD * 0.5]} castShadow>
-                                <meshStandardMaterial color={lighten(col, 0.15 + i * 0.08)} roughness={0.8} />
+                                <meshPhysicalMaterial color={lighten(col, 0.15 + i * 0.08)} roughness={0.7} metalness={0.0} />
                             </Box>
                         );
                     })}
@@ -600,19 +761,19 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     {/* Base */}
                     <Cylinder args={[baseR, baseR, baseH, 24]} position={[0, baseH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dkr} roughness={0.3} metalness={0.5} />
+                        <meshPhysicalMaterial map={metalTex} color={dkr} roughness={0.2} metalness={0.75} />
                     </Cylinder>
                     {/* Pole */}
-                    <Cylinder args={[poleR, poleR, poleH, 8]} position={[0, baseH + poleH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={darken(col, 0.3)} roughness={0.25} metalness={0.6} />
+                    <Cylinder args={[poleR, poleR, poleH, 12]} position={[0, baseH + poleH / 2, 0]} castShadow>
+                        <meshPhysicalMaterial map={metalTex} color={darken(col, 0.3)} roughness={0.18} metalness={0.8} />
                     </Cylinder>
                     {/* Shade */}
-                    <Cylinder args={[shadeTopR, shadeBotR, shadeH, 16]} position={[0, baseH + poleH + shadeH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.35)} roughness={0.8} transparent opacity={0.85} side={THREE.DoubleSide} />
+                    <Cylinder args={[shadeTopR, shadeBotR, shadeH, 20]} position={[0, baseH + poleH + shadeH / 2, 0]} castShadow>
+                        <meshPhysicalMaterial color={lighten(col, 0.35)} roughness={0.7} transmission={0.3} transparent opacity={0.85} side={THREE.DoubleSide} thickness={0.02} />
                     </Cylinder>
                     {/* Bulb glow */}
                     <Sphere args={[poleR * 2.5, 12, 12]} position={[0, baseH + poleH + shadeH * 0.3, 0]}>
-                        <meshStandardMaterial color="#FFF8E0" emissive="#FFF0B0" emissiveIntensity={0.5} roughness={1} />
+                        <meshPhysicalMaterial color="#FFF8E0" emissive="#FFF0B0" emissiveIntensity={0.6} roughness={1} />
                     </Sphere>
                 </group>
             );
@@ -628,19 +789,19 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     {/* Cord */}
                     <Cylinder args={[cordR, cordR, cordH, 6]} position={[0, h - cordH / 2, 0]} castShadow>
-                        <meshStandardMaterial color="#333" roughness={0.5} />
+                        <meshPhysicalMaterial color="#333" roughness={0.4} metalness={0.3} />
                     </Cylinder>
                     {/* Shade */}
-                    <Cylinder args={[shadeTopR, shadeBotR, shadeH, 20]} position={[0, h - cordH - shadeH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.7} transparent opacity={0.8} side={THREE.DoubleSide} />
+                    <Cylinder args={[shadeTopR, shadeBotR, shadeH, 24]} position={[0, h - cordH - shadeH / 2, 0]} castShadow>
+                        <meshPhysicalMaterial color={col} roughness={0.6} transmission={0.35} transparent opacity={0.8} side={THREE.DoubleSide} thickness={0.02} />
                     </Cylinder>
                     {/* Inner glow */}
                     <Sphere args={[shadeBotR * 0.3, 12, 12]} position={[0, h - cordH - shadeH * 0.4, 0]}>
-                        <meshStandardMaterial color="#FFF8E0" emissive="#FFF0B0" emissiveIntensity={0.6} roughness={1} />
+                        <meshPhysicalMaterial color="#FFF8E0" emissive="#FFF0B0" emissiveIntensity={0.7} roughness={1} />
                     </Sphere>
                     {/* Canopy plate */}
                     <Cylinder args={[0.03, 0.03, 0.01, 12]} position={[0, h - 0.005, 0]}>
-                        <meshStandardMaterial color="#444" roughness={0.3} metalness={0.6} />
+                        <meshPhysicalMaterial map={metalTex} color="#444" roughness={0.2} metalness={0.7} />
                     </Cylinder>
                 </group>
             );
@@ -657,29 +818,29 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                     <Legs4 w={w} d={d} legH={legH} legR={legR * 0.7} color={dkr} inset={0.04} />
                     {/* Main body */}
                     <Box args={[w, bodyH, d]} position={[0, bodyY, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.6} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.4} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} />
                     </Box>
                     {/* Top surface */}
                     <Box args={[w + 0.01, topH, d + 0.01]} position={[0, legH + bodyH + topH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.45} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.35} metalness={0.0} clearcoat={0.3} clearcoatRoughness={0.2} />
                     </Box>
                     {/* Open shelf area */}
                     <Box args={[w * 0.45, openH, d * 0.02]} position={[0, bodyY - bodyH * 0.15, d / 2 - 0.01]} castShadow>
-                        <meshStandardMaterial color={darken(col, 0.3)} roughness={0.5} />
+                        <meshPhysicalMaterial color={darken(col, 0.3)} roughness={0.5} metalness={0.0} />
                     </Box>
                     {/* Cabinet doors (left and right) */}
                     <Box args={[w * 0.24, bodyH * 0.88, 0.008]} position={[-(w * 0.32), bodyY, d / 2 - 0.004]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.06)} roughness={0.55} />
+                        <meshPhysicalMaterial map={woodTexCol} color={lighten(col, 0.06)} roughness={0.38} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                     </Box>
                     <Box args={[w * 0.24, bodyH * 0.88, 0.008]} position={[w * 0.32, bodyY, d / 2 - 0.004]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.06)} roughness={0.55} />
+                        <meshPhysicalMaterial map={woodTexCol} color={lighten(col, 0.06)} roughness={0.38} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                     </Box>
                     {/* Handles */}
-                    <Cylinder args={[0.004, 0.004, 0.05, 6]} position={[-(w * 0.22), bodyY, d / 2 + 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                        <meshStandardMaterial color="#888" roughness={0.2} metalness={0.7} />
+                    <Cylinder args={[0.004, 0.004, 0.05, 8]} position={[-(w * 0.22), bodyY, d / 2 + 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                        <meshPhysicalMaterial map={metalTex} color="#888" roughness={0.15} metalness={0.8} />
                     </Cylinder>
-                    <Cylinder args={[0.004, 0.004, 0.05, 6]} position={[w * 0.22, bodyY, d / 2 + 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                        <meshStandardMaterial color="#888" roughness={0.2} metalness={0.7} />
+                    <Cylinder args={[0.004, 0.004, 0.05, 8]} position={[w * 0.22, bodyY, d / 2 + 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                        <meshPhysicalMaterial map={metalTex} color="#888" roughness={0.15} metalness={0.8} />
                     </Cylinder>
                 </group>
             );
@@ -695,19 +856,19 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     <Legs4 w={w} d={d} legH={legH} legR={legR * 0.6} color={dkr} inset={0.02} />
                     <Box args={[w, bodyH, d]} position={[0, bodyY, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.65} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.4} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} />
                     </Box>
                     <Box args={[w + 0.005, topH, d + 0.005]} position={[0, legH + bodyH + topH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.5} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.35} metalness={0.0} clearcoat={0.3} clearcoatRoughness={0.2} />
                     </Box>
                     {/* Two drawers */}
                     {[0.30, 0.72].map((frac, i) => (
                         <group key={i}>
                             <Box args={[w * 0.88, drawerH * 0.9, 0.006]} position={[0, legH + bodyH * frac, d / 2 - 0.003]} castShadow>
-                                <meshStandardMaterial color={lighten(col, 0.08)} roughness={0.55} />
+                                <meshPhysicalMaterial map={woodTexCol} color={lighten(col, 0.08)} roughness={0.38} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                             </Box>
-                            <Cylinder args={[0.006, 0.006, w * 0.18, 6]} position={[0, legH + bodyH * frac, d / 2 + 0.006]} rotation={[0, 0, Math.PI / 2]} castShadow>
-                                <meshStandardMaterial color="#999" roughness={0.2} metalness={0.6} />
+                            <Cylinder args={[0.006, 0.006, w * 0.18, 8]} position={[0, legH + bodyH * frac, d / 2 + 0.006]} rotation={[0, 0, Math.PI / 2]} castShadow>
+                                <meshPhysicalMaterial map={metalTex} color="#999" roughness={0.15} metalness={0.75} />
                             </Cylinder>
                         </group>
                     ))}
@@ -720,20 +881,20 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
             return (
                 <group>
                     <Box args={[w, thick, d]} position={[0, thick / 2, 0]} receiveShadow>
-                        <meshStandardMaterial color={col} roughness={1.0} metalness={0} />
+                        <meshPhysicalMaterial map={fabricTex} color={col} roughness={1.0} metalness={0.0} sheen={0.3} sheenRoughness={1.0} sheenColor={sheenCol} />
                     </Box>
                     {/* Border */}
                     <Box args={[w + 0.01, thick * 0.5, d * 0.04]} position={[0, thick * 0.25, d / 2]} receiveShadow>
-                        <meshStandardMaterial color={dk} roughness={0.95} />
+                        <meshPhysicalMaterial map={fabricTex} color={dk} roughness={1.0} metalness={0.0} sheen={0.2} sheenRoughness={1.0} sheenColor={sheenCol} />
                     </Box>
                     <Box args={[w + 0.01, thick * 0.5, d * 0.04]} position={[0, thick * 0.25, -d / 2]} receiveShadow>
-                        <meshStandardMaterial color={dk} roughness={0.95} />
+                        <meshPhysicalMaterial map={fabricTex} color={dk} roughness={1.0} metalness={0.0} sheen={0.2} sheenRoughness={1.0} sheenColor={sheenCol} />
                     </Box>
                     <Box args={[w * 0.04, thick * 0.5, d]} position={[w / 2, thick * 0.25, 0]} receiveShadow>
-                        <meshStandardMaterial color={dk} roughness={0.95} />
+                        <meshPhysicalMaterial map={fabricTex} color={dk} roughness={1.0} metalness={0.0} sheen={0.2} sheenRoughness={1.0} sheenColor={sheenCol} />
                     </Box>
                     <Box args={[w * 0.04, thick * 0.5, d]} position={[-w / 2, thick * 0.25, 0]} receiveShadow>
-                        <meshStandardMaterial color={dk} roughness={0.95} />
+                        <meshPhysicalMaterial map={fabricTex} color={dk} roughness={1.0} metalness={0.0} sheen={0.2} sheenRoughness={1.0} sheenColor={sheenCol} />
                     </Box>
                 </group>
             );
@@ -745,11 +906,11 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     {/* Frame */}
                     <Box args={[w, h, d]} position={[0, h / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.5} metalness={0.1} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.4} metalness={0.0} clearcoat={0.25} clearcoatRoughness={0.2} />
                     </Box>
                     {/* Glass */}
                     <Box args={[w - frameW * 2, h - frameW * 2, d * 0.3]} position={[0, h / 2, d * 0.2]} castShadow>
-                        <meshStandardMaterial color="#D8E4F0" roughness={0.05} metalness={0.9} />
+                        <meshPhysicalMaterial color="#D8E4F0" roughness={0.02} metalness={0.95} envMapIntensity={1.5} />
                     </Box>
                 </group>
             );
@@ -764,16 +925,16 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
             return (
                 <group>
                     {/* Body */}
-                    <Cylinder args={[bodyR * 0.8, bodyR, bodyH, 16]} position={[0, bodyH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.35} metalness={0.1} />
+                    <Cylinder args={[bodyR * 0.8, bodyR, bodyH, 24]} position={[0, bodyH / 2, 0]} castShadow>
+                        <meshPhysicalMaterial color={col} roughness={0.25} metalness={0.0} clearcoat={0.6} clearcoatRoughness={0.1} />
                     </Cylinder>
                     {/* Neck */}
-                    <Cylinder args={[neckR, bodyR * 0.8, neckH, 12]} position={[0, bodyH + neckH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.1)} roughness={0.35} metalness={0.1} />
+                    <Cylinder args={[neckR, bodyR * 0.8, neckH, 20]} position={[0, bodyH + neckH / 2, 0]} castShadow>
+                        <meshPhysicalMaterial color={lighten(col, 0.1)} roughness={0.25} metalness={0.0} clearcoat={0.6} clearcoatRoughness={0.1} />
                     </Cylinder>
                     {/* Rim */}
-                    <Cylinder args={[neckR * 1.15, neckR, rimH, 12]} position={[0, bodyH + neckH + rimH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.3} metalness={0.15} />
+                    <Cylinder args={[neckR * 1.15, neckR, rimH, 20]} position={[0, bodyH + neckH + rimH / 2, 0]} castShadow>
+                        <meshPhysicalMaterial color={col} roughness={0.2} metalness={0.0} clearcoat={0.7} clearcoatRoughness={0.08} />
                     </Cylinder>
                 </group>
             );
@@ -788,24 +949,24 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
                 <group>
                     <Legs4 w={w} d={d} legH={legH} legR={legR * 0.5} color={dkr} inset={0.03} />
                     <Box args={[w, bodyH, d]} position={[0, bodyY, 0]} castShadow>
-                        <meshStandardMaterial color={col} roughness={0.65} />
+                        <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.4} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} />
                     </Box>
                     <Box args={[w + 0.005, topH, d + 0.005]} position={[0, legH + bodyH + topH / 2, 0]} castShadow>
-                        <meshStandardMaterial color={dk} roughness={0.5} />
+                        <meshPhysicalMaterial map={woodTex} color={dk} roughness={0.35} metalness={0.0} clearcoat={0.3} clearcoatRoughness={0.2} />
                     </Box>
                     {/* Two doors */}
                     <Box args={[w * 0.46, bodyH * 0.92, 0.008]} position={[-w * 0.24, bodyY, d / 2 - 0.004]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.06)} roughness={0.55} />
+                        <meshPhysicalMaterial map={woodTexCol} color={lighten(col, 0.06)} roughness={0.38} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                     </Box>
                     <Box args={[w * 0.46, bodyH * 0.92, 0.008]} position={[w * 0.24, bodyY, d / 2 - 0.004]} castShadow>
-                        <meshStandardMaterial color={lighten(col, 0.06)} roughness={0.55} />
+                        <meshPhysicalMaterial map={woodTexCol} color={lighten(col, 0.06)} roughness={0.38} metalness={0.0} clearcoat={0.2} clearcoatRoughness={0.25} />
                     </Box>
                     {/* Handles */}
-                    <Cylinder args={[0.005, 0.005, 0.06, 6]} position={[-w * 0.03, bodyY, d / 2 + 0.006]} rotation={[Math.PI / 2, 0, 0]}>
-                        <meshStandardMaterial color="#999" roughness={0.2} metalness={0.7} />
+                    <Cylinder args={[0.005, 0.005, 0.06, 8]} position={[-w * 0.03, bodyY, d / 2 + 0.006]} rotation={[Math.PI / 2, 0, 0]}>
+                        <meshPhysicalMaterial map={metalTex} color="#999" roughness={0.15} metalness={0.8} />
                     </Cylinder>
-                    <Cylinder args={[0.005, 0.005, 0.06, 6]} position={[w * 0.03, bodyY, d / 2 + 0.006]} rotation={[Math.PI / 2, 0, 0]}>
-                        <meshStandardMaterial color="#999" roughness={0.2} metalness={0.7} />
+                    <Cylinder args={[0.005, 0.005, 0.06, 8]} position={[w * 0.03, bodyY, d / 2 + 0.006]} rotation={[Math.PI / 2, 0, 0]}>
+                        <meshPhysicalMaterial map={metalTex} color="#999" roughness={0.15} metalness={0.8} />
                     </Cylinder>
                 </group>
             );
@@ -814,7 +975,7 @@ function FurnitureModel({ type, w, h, d, col }: { type: string; w: number; h: nu
         default: {
             return (
                 <Box args={[w, h, d]} position={[0, h / 2, 0]} castShadow receiveShadow>
-                    <meshStandardMaterial color={col} roughness={0.6} metalness={0.1} />
+                    <meshPhysicalMaterial map={woodTexCol} color={col} roughness={0.45} metalness={0.0} clearcoat={0.15} clearcoatRoughness={0.3} />
                 </Box>
             );
         }

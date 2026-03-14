@@ -85,7 +85,14 @@
       "Bash(ls:*)",
       "Bash(grep:*)",
       "Bash(wc:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "WebFetch(domain:livora-backend-2bswlve8n-malith-adikarams-projects.vercel.app)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:livora-omega.vercel.app)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//d/MUA/New folder \\(5\\)/Livora/**)",
+      "Bash(done)"
     ]
   }
 }
