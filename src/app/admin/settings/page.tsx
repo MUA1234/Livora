@@ -53,6 +53,40 @@ export default function SettingsPage() {
     ];
     const themeNames = ["default", "cream", "gold", "silver"];
 
+    // Apply accessibility settings to the document
+    useEffect(() => {
+        document.documentElement.style.fontSize = increaseFontSize ? "18px" : "";
+    }, [increaseFontSize]);
+
+    useEffect(() => {
+        if (highContrast) {
+            document.documentElement.classList.add("high-contrast");
+            document.documentElement.style.filter = "contrast(1.4)";
+        } else {
+            document.documentElement.classList.remove("high-contrast");
+            document.documentElement.style.filter = "";
+        }
+    }, [highContrast]);
+
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add("dark-mode");
+            document.documentElement.style.colorScheme = "dark";
+            document.body.style.backgroundColor = "#1a1a1a";
+            document.body.style.color = "#e5e5e5";
+        } else {
+            document.documentElement.classList.remove("dark-mode");
+            document.documentElement.style.colorScheme = "";
+            document.body.style.backgroundColor = "";
+            document.body.style.color = "";
+        }
+        return () => {
+            document.documentElement.style.colorScheme = "";
+            document.body.style.backgroundColor = "";
+            document.body.style.color = "";
+        };
+    }, [darkMode]);
+
     // ---------- Fetch Profile on Mount ----------
     useEffect(() => {
         (async () => {

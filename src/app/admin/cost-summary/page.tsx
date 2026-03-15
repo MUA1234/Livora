@@ -336,7 +336,7 @@ function CostSummary() {
                                     {isPdfLoading ? "Generating..." : "Export PDF"}
                                 </button>
                                 <button
-                                    onClick={() => window.history.back()}
+                                    onClick={() => router.push(designId ? `/admin/2d-layout?designId=${designId}` : "/admin/2d-layout")}
                                     className="flex items-center gap-2 px-8 py-3.5 bg-white text-[#2A2A2A] font-semibold rounded-xl border border-[#E0E0E0] hover:bg-gray-50 transition-colors shadow-sm"
                                 >
                                     <ArrowLeft className="w-5 h-5" />

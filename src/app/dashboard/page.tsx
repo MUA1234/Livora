@@ -32,6 +32,8 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [adminUser, setAdminUser] = useState<any>(null);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         const user = getUser();
@@ -71,9 +73,34 @@ export default function Dashboard() {
                 <header className="h-20 bg-[#F5F1E8] px-10 flex items-center justify-between sticky top-0 z-10">
                     <h1 className="text-2xl font-bold text-[#1C1C1C]">Overview</h1>
                     <div className="flex items-center gap-4">
-                        <button className="w-10 h-10 rounded-full bg-white border border-[#E5E5E5] flex items-center justify-center text-[#1C1C1C]/70 hover:text-[#1C1C1C] transition-colors">
-                            <Search size={18} />
-                        </button>
+                        {searchOpen ? (
+                            <div className="flex items-center gap-2">
+                                <div className="relative">
+                                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search designs, products..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        autoFocus
+                                        className="w-64 pl-9 pr-4 py-2 bg-white rounded-lg border border-[#E5E5E5] text-sm focus:outline-none focus:border-[#663F23] transition-colors"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+                                    className="w-10 h-10 rounded-full bg-white border border-[#E5E5E5] flex items-center justify-center text-[#1C1C1C]/70 hover:text-[#1C1C1C] transition-colors text-sm font-medium"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setSearchOpen(true)}
+                                className="w-10 h-10 rounded-full bg-white border border-[#E5E5E5] flex items-center justify-center text-[#1C1C1C]/70 hover:text-[#1C1C1C] transition-colors"
+                            >
+                                <Search size={18} />
+                            </button>
+                        )}
                         <button className="w-10 h-10 rounded-full bg-white border border-[#E5E5E5] flex items-center justify-center text-[#1C1C1C]/70 hover:text-[#1C1C1C] transition-colors relative">
                             <Bell size={18} />
                             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -221,7 +248,7 @@ export default function Dashboard() {
                     {/* Recent Designs */}
                     <div className="flex items-center justify-between mt-10 mb-4">
                         <h2 className="text-xl font-bold text-[#1C1C1C]">Recent Designs</h2>
-                        <Link href="#" className="text-sm font-medium text-[#663F23] hover:underline">View all</Link>
+                        <Link href="/admin/design-history" className="text-sm font-medium text-[#663F23] hover:underline">View all</Link>
                     </div>
                     <div className="grid grid-cols-3 gap-6">
                         {loading ? (
@@ -234,13 +261,13 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             ))
-                        ) : recentDesigns.length > 0 ? (
-                            recentDesigns.map((design: any) => (
-                                <div key={design.id} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group">
+                        ) : recentDesigns.filter((d: any) => !searchQuery || d.name?.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
+                            recentDesigns.filter((d: any) => !searchQuery || d.name?.toLowerCase().includes(searchQuery.toLowerCase())).map((design: any) => (
+                                <Link key={design._id || design.id} href={`/admin/2d-layout?designId=${design._id || design.id}`} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm group hover:shadow-md transition-shadow cursor-pointer">
                                     <div className="relative h-48 w-full bg-gray-200">
                                         <Image
                                             src={design.thumbnail && design.thumbnail !== "placeholder_thumbnail_url" ? design.thumbnail : "/logo.png"}
-                                            alt={design.name}
+                                            alt={design.name || "Design"}
                                             fill
                                             className="object-cover group-hover:scale-105 transition-transform duration-500"
                                         />
@@ -249,7 +276,7 @@ export default function Dashboard() {
                                         <div className="flex justify-between items-start mb-3">
                                             <h3 className="font-bold text-[#1C1C1C] text-lg leading-tight truncate">{design.name}</h3>
                                             <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                                                design.status === 'published' ? 'bg-green-50 text-green-600' : 
+                                                design.status === 'published' ? 'bg-green-50 text-green-600' :
                                                 design.status === 'draft' ? 'bg-blue-50 text-blue-600' : 'bg-yellow-50 text-yellow-600'
                                             }`}>
                                                 {design.status}
@@ -258,7 +285,7 @@ export default function Dashboard() {
                                         <div className="flex items-center gap-4 text-xs font-medium text-[#1C1C1C]/40">
                                             <div className="flex items-center gap-1.5 cursor-default">
                                                 <Calendar size={12} />
-                                                <span>{new Date(design.createdAt).toLocaleDateString()}</span>
+                                                <span>{design.createdAt ? new Date(design.createdAt).toLocaleDateString() : "N/A"}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5 cursor-default">
                                                 <Users2 size={12} />
@@ -266,12 +293,12 @@ export default function Dashboard() {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             ))
                         ) : (
                             <div className="col-span-3 text-center py-10 bg-white rounded-2xl border border-dashed border-[#E5E5E5]">
-                                <p className="text-[#1C1C1C]/40">No recent designs found.</p>
-                                <Link href="/admin/room-setup" className="text-[#663F23] font-semibold mt-2 inline-block">Create your first design</Link>
+                                <p className="text-[#1C1C1C]/40">{searchQuery ? "No designs match your search." : "No recent designs found."}</p>
+                                {!searchQuery && <Link href="/admin/room-setup" className="text-[#663F23] font-semibold mt-2 inline-block">Create your first design</Link>}
                             </div>
                         )}
                     </div>

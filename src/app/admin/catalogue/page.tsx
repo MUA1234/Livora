@@ -45,6 +45,10 @@ export default function CatalogueBrowse() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
+    const [priceFilter, setPriceFilter] = useState("any");
+    const [materialFilter, setMaterialFilter] = useState("any");
+    const [colorFilter, setColorFilter] = useState("any");
+    const [sortBy, setSortBy] = useState("popular");
 
     const fetchProducts = useCallback(async () => {
         setLoading(true);
@@ -56,6 +60,12 @@ export default function CatalogueBrowse() {
             if (selectedCategory !== "All Items") {
                 params.category = selectedCategory;
             }
+            if (priceFilter === "under50k") { params.maxPrice = 50000; }
+            else if (priceFilter === "50k-200k") { params.minPrice = 50000; params.maxPrice = 200000; }
+            else if (priceFilter === "over200k") { params.minPrice = 200000; }
+            if (materialFilter !== "any") params.material = materialFilter;
+            if (colorFilter !== "any") params.color = colorFilter;
+            if (sortBy !== "popular") params.sortBy = sortBy;
             const res = await api.get("/api/products", { params });
             setProducts(res.data.products);
             setTotalPages(res.data.pages);
@@ -65,7 +75,7 @@ export default function CatalogueBrowse() {
         } finally {
             setLoading(false);
         }
-    }, [page, searchQuery, selectedCategory]);
+    }, [page, searchQuery, selectedCategory, priceFilter, materialFilter, colorFilter, sortBy]);
 
     useEffect(() => {
         fetchProducts();
@@ -73,7 +83,7 @@ export default function CatalogueBrowse() {
 
     useEffect(() => {
         setPage(1);
-    }, [searchQuery, selectedCategory]);
+    }, [searchQuery, selectedCategory, priceFilter, materialFilter, colorFilter, sortBy]);
 
     const toggleAddToDesign = (productId: string) => {
         setAddedToDesign((prev) => {
@@ -142,41 +152,57 @@ export default function CatalogueBrowse() {
 
                         <div className="flex gap-3 ml-auto">
                             <div className="relative">
-                                <select className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
-                                    <option>Price: Any</option>
-                                    <option>Under Rs.50,000</option>
-                                    <option>Rs.50,000 - Rs.200,000</option>
-                                    <option>Over Rs.200,000</option>
+                                <select
+                                    value={priceFilter}
+                                    onChange={(e) => setPriceFilter(e.target.value)}
+                                    className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]"
+                                >
+                                    <option value="any">Price: Any</option>
+                                    <option value="under50k">Under Rs.50,000</option>
+                                    <option value="50k-200k">Rs.50,000 - Rs.200,000</option>
+                                    <option value="over200k">Over Rs.200,000</option>
                                 </select>
                                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
                             </div>
                             <div className="relative">
-                                <select className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
-                                    <option>Material: Any</option>
-                                    <option>Wood</option>
-                                    <option>Fabric</option>
-                                    <option>Metal</option>
-                                    <option>Leather</option>
-                                    <option>Marble</option>
+                                <select
+                                    value={materialFilter}
+                                    onChange={(e) => setMaterialFilter(e.target.value)}
+                                    className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]"
+                                >
+                                    <option value="any">Material: Any</option>
+                                    <option value="Wood">Wood</option>
+                                    <option value="Fabric">Fabric</option>
+                                    <option value="Metal">Metal</option>
+                                    <option value="Leather">Leather</option>
+                                    <option value="Marble">Marble</option>
                                 </select>
                                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
                             </div>
                             <div className="relative">
-                                <select className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
-                                    <option>Color: Any</option>
-                                    <option>Black</option>
-                                    <option>White</option>
-                                    <option>Brown</option>
-                                    <option>Gold</option>
+                                <select
+                                    value={colorFilter}
+                                    onChange={(e) => setColorFilter(e.target.value)}
+                                    className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]"
+                                >
+                                    <option value="any">Color: Any</option>
+                                    <option value="Black">Black</option>
+                                    <option value="White">White</option>
+                                    <option value="Brown">Brown</option>
+                                    <option value="Gold">Gold</option>
                                 </select>
                                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
                             </div>
                             <div className="relative">
-                                <select className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]">
-                                    <option>Sort by: Most Popular</option>
-                                    <option>Sort by: Newest</option>
-                                    <option>Sort by: Price Low</option>
-                                    <option>Sort by: Price High</option>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="appearance-none px-4 py-2.5 pr-9 bg-white rounded-lg border border-[#E5E5E5] text-sm font-medium cursor-pointer focus:outline-none focus:border-[#663F23]"
+                                >
+                                    <option value="popular">Sort by: Most Popular</option>
+                                    <option value="newest">Sort by: Newest</option>
+                                    <option value="price-asc">Sort by: Price Low</option>
+                                    <option value="price-desc">Sort by: Price High</option>
                                 </select>
                                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1C1C]/40 pointer-events-none" />
                             </div>

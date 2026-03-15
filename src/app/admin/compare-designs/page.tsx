@@ -27,7 +27,8 @@ interface CostItem {
 }
 
 interface DesignSide {
-    id: string;
+    _id?: string;
+    id?: string;
     name: string;
     status: string;
     roomId: any;
@@ -236,7 +237,7 @@ export default function CompareDesigns() {
                             const diff = Math.abs(side.costSummary.grandTotal - otherSide.costSummary.grandTotal);
 
                             return (
-                                <div key={side.id} className="bg-white rounded-[2rem] p-8 shadow-sm border border-[#E5E5E5]/50 relative">
+                                <div key={side._id || side.id || colIdx} className="bg-white rounded-[2rem] p-8 shadow-sm border border-[#E5E5E5]/50 relative">
                                     <div className="absolute top-8 left-8 bg-[#C6A75E] text-white text-xs font-bold px-4 py-1.5 rounded-full">
                                         {label}
                                     </div>
@@ -251,17 +252,29 @@ export default function CompareDesigns() {
                                     {/* Layout Data Preview */}
                                     <div className="mb-8">
                                         <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-sm font-semibold">Layout Data</h3>
+                                            <h3 className="text-sm font-semibold">Layout Overview</h3>
                                             {side.layoutData && otherSide.layoutData && JSON.stringify(side.layoutData) !== JSON.stringify(otherSide.layoutData) ? (
                                                 <span className="bg-[#C6A75E] text-white text-[10px] font-bold px-3 py-1 rounded-full">≠ Different</span>
                                             ) : (
                                                 <span className="bg-green-100 text-green-700 text-[10px] font-bold px-3 py-1 rounded-full">= Same</span>
                                             )}
                                         </div>
-                                        <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 max-h-40 overflow-auto">
-                                            <pre className="text-[11px] text-[#6C6C6C] whitespace-pre-wrap break-all font-mono">
-                                                {side.layoutData ? JSON.stringify(side.layoutData, null, 2) : "No layout data"}
-                                            </pre>
+                                        <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 max-h-48 overflow-auto">
+                                            {side.layoutData?.furniture && side.layoutData.furniture.length > 0 ? (
+                                                <div className="space-y-2">
+                                                    <p className="text-xs text-[#6C6C6C] font-medium mb-2">{side.layoutData.furniture.length} furniture item(s) placed</p>
+                                                    {side.layoutData.furniture.map((item: any, idx: number) => (
+                                                        <div key={idx} className="flex justify-between items-center text-xs bg-white rounded-lg px-3 py-2 border border-gray-100">
+                                                            <span className="text-[#1C1C1C] font-medium">{item.name || `Item ${idx + 1}`}</span>
+                                                            <span className="text-[#6C6C6C]">
+                                                                {item.position ? `(${Number(item.position.x).toFixed(1)}, ${Number(item.position.z ?? item.position.y).toFixed(1)})` : ""}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-[11px] text-[#6C6C6C] italic text-center py-4">No layout data available</p>
+                                            )}
                                         </div>
                                     </div>
 

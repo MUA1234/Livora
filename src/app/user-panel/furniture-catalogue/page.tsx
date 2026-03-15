@@ -54,6 +54,7 @@ export default function FurnitureCatalogue() {
             if (category) params.category = category;
             if (minPrice) params.minPrice = minPrice;
             if (maxPrice) params.maxPrice = maxPrice;
+            if (sortBy) params.sortBy = sortBy;
 
             const query = new URLSearchParams(params).toString();
             const res = await api.get(`/api/products?${query}`);
@@ -65,7 +66,7 @@ export default function FurnitureCatalogue() {
         } finally {
             setLoading(false);
         }
-    }, [search, category, minPrice, maxPrice, page]);
+    }, [search, category, minPrice, maxPrice, sortBy, page]);
 
     useEffect(() => {
         fetchProducts();

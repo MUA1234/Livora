@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, User } from "lucide-react";
+import { Heart, User, ShoppingCart } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 import { useEffect, useState } from "react";
 
 const NAV_LINKS = [
     { href: "/user-panel/furniture-catalogue", label: "Catalogue" },
+    { href: "/user-panel/cart", label: "Cart" },
     { href: "/user-panel/wishlist", label: "Wishlist" },
     { href: "/user-panel/review-and-ratings", label: "Review and Ratings" },
 ];
@@ -15,6 +17,7 @@ const NAV_LINKS = [
 export default function UserNavbar() {
     const pathname = usePathname();
     const { items } = useWishlist();
+    const { totalItems: cartCount } = useCart();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
@@ -45,6 +48,8 @@ export default function UserNavbar() {
                     const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
                     const isWishlist = link.href === "/user-panel/wishlist";
 
+                    const isCart = link.href === "/user-panel/cart";
+
                     return (
                         <div key={link.href} className="relative">
                             <Link
@@ -62,6 +67,11 @@ export default function UserNavbar() {
                                     {items.length}
                                 </span>
                             )}
+                            {isCart && cartCount > 0 && (
+                                <span className="absolute -top-2 -right-3 bg-[#663F23] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                    {cartCount}
+                                </span>
+                            )}
                         </div>
                     );
                 })}
@@ -69,6 +79,19 @@ export default function UserNavbar() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-4">
+                {/* Cart Icon */}
+                <Link
+                    href="/user-panel/cart"
+                    className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center text-[#1C1C1C] hover:bg-[#E5E5E5] transition-colors relative"
+                >
+                    <ShoppingCart size={20} className={cartCount > 0 ? "text-[#663F23]" : ""} />
+                    {cartCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-[#663F23] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                            {cartCount}
+                        </span>
+                    )}
+                </Link>
+
                 {/* Wishlist Icon */}
                 <Link
                     href="/user-panel/wishlist"

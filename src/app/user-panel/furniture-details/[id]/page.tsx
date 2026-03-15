@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import UserNavbar from "@/components/UserNavbar";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 import api from "@/lib/api";
 
 interface ProductImage {
@@ -46,6 +47,7 @@ interface ReviewStats {
 export default function FurnitureDetails() {
     const { id } = useParams<{ id: string }>();
     const { items, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+    const { addToCart } = useCart();
 
     const [product, setProduct] = useState<Product | null>(null);
     const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
@@ -277,7 +279,18 @@ export default function FurnitureDetails() {
 
                         <div className="flex flex-col gap-4 mt-auto">
                             <div className="flex gap-4">
-                                <button className="flex-1 py-4 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors flex items-center justify-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        if (!product) return;
+                                        addToCart({
+                                            id: product._id,
+                                            name: product.name,
+                                            price: product.price,
+                                            image: sortedImages[0]?.imageUrl || "",
+                                        });
+                                    }}
+                                    className="flex-1 py-4 bg-[#663F23] text-white rounded-xl font-medium hover:bg-[#52321A] transition-colors flex items-center justify-center gap-2"
+                                >
                                     <ShoppingCart size={18} /> Add to Cart
                                 </button>
                                 <button

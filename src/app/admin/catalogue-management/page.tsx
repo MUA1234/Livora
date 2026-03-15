@@ -217,7 +217,37 @@ export default function CatalogueManagement() {
                                 <p className="text-sm text-[#1C1C1C]/50">Add, edit and organise products for every design project.</p>
                             </div>
                             <div className="flex gap-3">
-                                <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm font-medium text-[#1C1C1C] hover:bg-gray-50 transition-colors">
+                                <button
+                                    onClick={() => {
+                                        if (filteredProducts.length === 0) return;
+                                        const headers = ["Name", "SKU", "Category", "Price", "Materials", "Colors", "Width", "Height", "Depth", "Description"];
+                                        const rows = filteredProducts.map((p) => [
+                                            `"${p.name.replace(/"/g, '""')}"`,
+                                            p.sku,
+                                            p.category,
+                                            p.price,
+                                            `"${p.materials.join(', ')}"`,
+                                            `"${p.colors.join(', ')}"`,
+                                            p.width,
+                                            p.height,
+                                            p.depth,
+                                            `"${(p.description || '').replace(/"/g, '""')}"`,
+                                        ].join(","));
+                                        const csv = [headers.join(","), ...rows].join("\n");
+                                        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                                        const url = URL.createObjectURL(blob);
+                                        const link = document.createElement("a");
+                                        link.href = url;
+                                        link.download = "furniture-catalogue.csv";
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        URL.revokeObjectURL(url);
+                                        setToastType("success");
+                                        setToastMessage("CSV exported successfully");
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#E5E5E5] rounded-lg text-sm font-medium text-[#1C1C1C] hover:bg-gray-50 transition-colors"
+                                >
                                     <Download size={16} />
                                     Export CSV
                                 </button>

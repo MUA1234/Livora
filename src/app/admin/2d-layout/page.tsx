@@ -999,7 +999,7 @@ function TwoDLayoutEditorInner() {
                 <header className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5E5] bg-white z-10">
                     <div className="flex items-center gap-4">
                         <Link
-                            href="/admin"
+                            href="/admin/room-setup"
                             className="text-[#663F23] hover:text-[#52321c] transition-colors text-sm font-medium"
                         >
                             &larr; Back

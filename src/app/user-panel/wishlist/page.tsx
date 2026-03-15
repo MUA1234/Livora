@@ -7,9 +7,11 @@ import {
 import UserNavbar from "@/components/UserNavbar";
 import Image from "next/image";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 
 export default function WishlistPage() {
     const { items, removeFromWishlist } = useWishlist();
+    const { addToCart } = useCart();
 
     return (
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
@@ -55,7 +57,12 @@ export default function WishlistPage() {
                                     <div className="flex flex-wrap gap-4 mt-auto">
                                         <button
                                             onClick={() => {
-                                                alert(`${item.name} has been added to your cart.`);
+                                                addToCart({
+                                                    id: item.id,
+                                                    name: item.name,
+                                                    price: item.price,
+                                                    image: item.image,
+                                                });
                                                 removeFromWishlist(item.id);
                                             }}
                                             className="px-8 py-3 bg-[#663F23] text-white rounded-lg font-medium hover:bg-[#52321A] transition-colors shadow-sm flex-1 sm:flex-none min-w-[160px]"
