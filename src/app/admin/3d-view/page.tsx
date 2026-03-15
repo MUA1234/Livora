@@ -15,6 +15,7 @@ import {
     Eye, Camera, Crosshair, ArrowUp, CornerUpRight,
     Loader2, AlertCircle,
     PaintBucket, Grid3X3, Paintbrush, Square,
+    Menu, Settings2,
 } from "lucide-react";
 import api from "@/lib/api";
 
@@ -1536,6 +1537,8 @@ function ThreeDViewerContent() {
     const [focusTarget, setFocusTarget] = useState<THREE.Vector3 | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [furnitureListOpen, setFurnitureListOpen] = useState(true);
+    const [mobileLeftOpen, setMobileLeftOpen] = useState(false);
+    const [mobileRightOpen, setMobileRightOpen] = useState(false);
     const [wallColors, setWallColors] = useState<WallColors>({ back: "#F5F1E8", front: "#F5F1E8", left: "#F5F1E8", right: "#F5F1E8" });
     const [floorSettings, setFloorSettings] = useState<FloorSettings>({ type: "tiles", color: "#D4B896", groutColor: "#A09080" });
     const [paintAllWalls, setPaintAllWalls] = useState(true);
@@ -1655,6 +1658,8 @@ function ThreeDViewerContent() {
                 item.position.z
             )
         );
+        setMobileLeftOpen(false);
+        setMobileRightOpen(true);
     }, []);
 
     const handlePresetConsumed = useCallback(() => {
@@ -1663,7 +1668,8 @@ function ThreeDViewerContent() {
 
     const handleSelect = useCallback((id: string | null) => {
         setSelectedId(id);
-        if (!id) setFocusTarget(null);
+        if (!id) { setFocusTarget(null); setMobileRightOpen(false); }
+        else { setMobileRightOpen(true); }
     }, []);
 
     if (loading) {
@@ -1715,15 +1721,24 @@ function ThreeDViewerContent() {
 
     return (
         <div ref={containerRef} className="flex h-screen w-full bg-[#f8f6f0] font-sans text-[#1C1C1C] overflow-hidden">
-            <div className="w-[300px] bg-[#fdfbf6] border-r border-[#E5E5E5] flex flex-col shrink-0 z-10 shadow-[4px_0_15px_rgba(0,0,0,0.02)] h-full overflow-y-auto hidden-scrollbar">
-                <div className="px-6 py-5 border-b border-[#E5E5E5] flex items-center gap-3">
+            {mobileLeftOpen && (
+                <div className="fixed inset-0 bg-black/30 z-20 lg:hidden" onClick={() => setMobileLeftOpen(false)} />
+            )}
+            <div className={`fixed top-0 left-0 h-full w-[280px] sm:w-[300px] bg-[#fdfbf6] border-r border-[#E5E5E5] flex flex-col z-30 shadow-[4px_0_15px_rgba(0,0,0,0.02)] overflow-y-auto hidden-scrollbar transition-transform duration-300 lg:relative lg:translate-x-0 lg:z-10 lg:shrink-0 ${mobileLeftOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+                <div className="px-4 sm:px-6 py-5 border-b border-[#E5E5E5] flex items-center gap-3">
                     <div className="w-10 h-10 bg-[#7B4B29] rounded-lg flex items-center justify-center text-white shrink-0">
                         <BoxIcon size={20} />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                         <h1 className="text-lg font-bold text-[#1C1C1C] leading-none">3D Viewer</h1>
                         <p className="text-xs text-[#8C8C8C] mt-1 font-medium">Livora Studio</p>
                     </div>
+                    <button
+                        onClick={() => setMobileLeftOpen(false)}
+                        className="lg:hidden flex items-center justify-center w-8 h-8 rounded-full text-[#1C1C1C]/50 hover:text-[#1C1C1C] hover:bg-gray-100 transition-colors"
+                    >
+                        <X size={18} />
+                    </button>
                 </div>
 
                 <div className="px-6 py-6 border-b border-[#E5E5E5]">
@@ -2027,30 +2042,46 @@ function ThreeDViewerContent() {
             </div>
 
             <div className="flex-1 flex flex-col min-w-0 bg-[#EFEBE0] relative">
-                <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-8 py-5 z-10">
-                    <div className="flex items-center gap-4">
+                <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 sm:px-8 py-3 sm:py-5 z-10">
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <button
+                            onClick={() => setMobileLeftOpen(true)}
+                            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-full bg-white text-[#1C1C1C] hover:bg-gray-100 shadow-sm transition-colors"
+                        >
+                            <Menu size={18} />
+                        </button>
                         <Link
                             href={designId ? `/admin/2d-layout?designId=${designId}` : "/admin/2d-layout"}
                             className="flex items-center justify-center w-8 h-8 rounded-full bg-white text-[#1C1C1C] hover:bg-gray-100 shadow-sm transition-colors"
                         >
                             <ChevronLeft size={18} />
                         </Link>
-                        <h1 className="text-[17px] font-bold text-[#1C1C1C]">
+                        <h1 className="text-sm sm:text-[17px] font-bold text-[#1C1C1C] truncate max-w-[120px] sm:max-w-none">
                             {design?.name || "3D Viewer"}
                         </h1>
-                        <span className="px-2.5 py-1 text-[10px] font-bold text-[#663F23] bg-[#663F23]/10 rounded-full capitalize">
+                        <span className="px-2 sm:px-2.5 py-1 text-[10px] font-bold text-[#663F23] bg-[#663F23]/10 rounded-full capitalize hidden sm:inline">
                             {design?.status || "draft"}
                         </span>
                     </div>
-                    <button
-                        onClick={handleToggleFullscreen}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-[#A8A8A8] hover:text-[#1C1C1C] shadow-sm transition-colors"
-                    >
-                        {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {selectedItem && (
+                            <button
+                                onClick={() => setMobileRightOpen(true)}
+                                className="lg:hidden flex items-center justify-center w-8 h-8 rounded-full bg-white text-[#A8A8A8] hover:text-[#1C1C1C] shadow-sm transition-colors"
+                            >
+                                <Settings2 size={16} />
+                            </button>
+                        )}
+                        <button
+                            onClick={handleToggleFullscreen}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-[#A8A8A8] hover:text-[#1C1C1C] shadow-sm transition-colors"
+                        >
+                            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                        </button>
+                    </div>
                 </header>
 
-                <div className="absolute top-20 left-8 flex flex-col gap-2 z-10">
+                <div className="absolute top-16 sm:top-20 left-3 sm:left-8 flex flex-col gap-2 z-10">
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
                         <span className="text-[10px] font-bold text-[#A8A8A8] uppercase">Light:</span>
                         <span className="text-[11px] font-bold text-[#1C1C1C] capitalize">{lightingMode}</span>
@@ -2094,7 +2125,11 @@ function ThreeDViewerContent() {
             </div>
 
             {selectedItem && (
-                <div className="w-[320px] bg-[#fdfbf6] border-l border-[#E5E5E5] flex flex-col shrink-0 z-10 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] h-full overflow-y-auto hidden-scrollbar">
+                <>
+                {mobileRightOpen && (
+                    <div className="fixed inset-0 bg-black/30 z-20 lg:hidden" onClick={() => setMobileRightOpen(false)} />
+                )}
+                <div className={`fixed top-0 right-0 h-full w-[280px] sm:w-[320px] bg-[#fdfbf6] border-l border-[#E5E5E5] flex flex-col z-30 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] overflow-y-auto hidden-scrollbar transition-transform duration-300 lg:relative lg:translate-x-0 lg:z-10 lg:shrink-0 ${mobileRightOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"}`}>
                     <div className="px-6 py-5 border-b border-[#E5E5E5] flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div
@@ -2116,7 +2151,7 @@ function ThreeDViewerContent() {
                             </div>
                         </div>
                         <button
-                            onClick={() => setSelectedId(null)}
+                            onClick={() => { setSelectedId(null); setMobileRightOpen(false); }}
                             className="text-[#A8A8A8] hover:text-[#1C1C1C] transition-colors"
                         >
                             <X size={16} />
@@ -2225,6 +2260,7 @@ function ThreeDViewerContent() {
                             </div>
                         )}
                 </div>
+                </>
             )}
 
             <style jsx global>{`

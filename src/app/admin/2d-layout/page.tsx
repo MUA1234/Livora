@@ -15,6 +15,8 @@ import {
     Minus,
     Move,
     Loader2,
+    PanelRight,
+    X,
 } from "lucide-react";
 import api from "@/lib/api";
 import { Toast } from "@/components/ui/Toast";
@@ -541,6 +543,7 @@ function TwoDLayoutEditorInner() {
     const [snapToGrid, setSnapToGrid] = useState(true);
 
     const [sidebarTab, setSidebarTab] = useState<"furniture" | "properties">("furniture");
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     const [dragState, setDragState] = useState<{
         itemId: string;
@@ -996,49 +999,55 @@ function TwoDLayoutEditorInner() {
             )}
 
             <div className="flex-1 flex flex-col min-w-0">
-                <header className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5E5] bg-white z-10">
-                    <div className="flex items-center gap-4">
+                <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-[#E5E5E5] bg-white z-10 gap-2">
+                    <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                         <Link
                             href="/admin/room-setup"
-                            className="text-[#663F23] hover:text-[#52321c] transition-colors text-sm font-medium"
+                            className="text-[#663F23] hover:text-[#52321c] transition-colors text-sm font-medium shrink-0"
                         >
-                            &larr; Back
+                            &larr; <span className="hidden sm:inline">Back</span>
                         </Link>
-                        <h1 className="text-2xl font-semibold text-[#1C1C1C]">
-                            2D Layout Editor
+                        <h1 className="text-base sm:text-2xl font-semibold text-[#1C1C1C] truncate">
+                            2D Layout
                         </h1>
                         {room && (
-                            <span className="text-sm text-[#1C1C1C]/50">
+                            <span className="text-xs sm:text-sm text-[#1C1C1C]/50 hidden md:inline">
                                 {room.name} ({room.dimensions.length}m &times; {room.dimensions.width}m)
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 bg-white border border-[#663F23] text-[#663F23] font-semibold rounded-lg hover:bg-[#F5F1E8] transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 bg-white border border-[#663F23] text-[#663F23] font-semibold rounded-lg hover:bg-[#F5F1E8] transition-colors disabled:opacity-50 text-sm"
                         >
                             {saving ? (
                                 <Loader2 size={16} className="animate-spin" />
                             ) : (
                                 <Save size={16} />
                             )}
-                            Save
+                            <span className="hidden sm:inline">Save</span>
                         </button>
                         {designId && (
                             <Link
                                 href={`/admin/3d-view?designId=${designId}`}
-                                className="flex items-center gap-2 px-5 py-2 bg-[#663F23] text-white font-semibold rounded-lg hover:bg-[#52321c] transition-colors"
+                                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 bg-[#663F23] text-white font-semibold rounded-lg hover:bg-[#52321c] transition-colors text-sm"
                             >
                                 <Box size={16} />
-                                3D View
+                                <span className="hidden sm:inline">3D View</span>
                             </Link>
                         )}
+                        <button
+                            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-[#E5E5E5] bg-white hover:bg-gray-50 transition-colors"
+                        >
+                            <PanelRight size={18} className="text-[#663F23]" />
+                        </button>
                     </div>
                 </header>
 
-                <div className="bg-[#C6A75E] px-6 py-2 flex items-center gap-2 z-10">
+                <div className="bg-[#C6A75E] px-2 sm:px-6 py-2 flex items-center gap-1 sm:gap-2 z-10 overflow-x-auto">
                     <button
                         onClick={undo}
                         disabled={historyIndex <= 0}
@@ -1046,7 +1055,7 @@ function TwoDLayoutEditorInner() {
                         title="Undo (Ctrl+Z)"
                     >
                         <Undo2 size={16} />
-                        <span className="text-xs font-medium">Undo</span>
+                        <span className="text-xs font-medium hidden sm:inline">Undo</span>
                     </button>
                     <button
                         onClick={redo}
@@ -1055,7 +1064,7 @@ function TwoDLayoutEditorInner() {
                         title="Redo (Ctrl+Y)"
                     >
                         <Redo2 size={16} />
-                        <span className="text-xs font-medium">Redo</span>
+                        <span className="text-xs font-medium hidden sm:inline">Redo</span>
                     </button>
                     <div className="w-px h-5 bg-[#663F23]/30 mx-1" />
                     <button
@@ -1065,7 +1074,7 @@ function TwoDLayoutEditorInner() {
                         title="Rotate (R)"
                     >
                         <RotateCw size={16} />
-                        <span className="text-xs font-medium">Rotate</span>
+                        <span className="text-xs font-medium hidden sm:inline">Rotate</span>
                     </button>
                     <button
                         onClick={deleteSelected}
@@ -1074,7 +1083,7 @@ function TwoDLayoutEditorInner() {
                         title="Delete (Del)"
                     >
                         <Trash2 size={16} />
-                        <span className="text-xs font-medium">Delete</span>
+                        <span className="text-xs font-medium hidden sm:inline">Delete</span>
                     </button>
                     <div className="w-px h-5 bg-[#663F23]/30 mx-1" />
                     <button
@@ -1087,7 +1096,7 @@ function TwoDLayoutEditorInner() {
                         title="Snap to Grid"
                     >
                         <Grid3X3 size={16} />
-                        <span className="text-xs font-medium">Snap</span>
+                        <span className="text-xs font-medium hidden sm:inline">Snap</span>
                     </button>
                     <div className="flex-1" />
                     <div className="flex items-center gap-2 text-[#663F23]">
@@ -1354,14 +1363,23 @@ function TwoDLayoutEditorInner() {
                             </g>
                         </svg>
 
-                        <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-sm rounded px-2 py-1 text-xs text-[#663F23] font-medium border border-[#E5E5E5]">
+                        <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-sm rounded px-2 py-1 text-xs text-[#663F23] font-medium border border-[#E5E5E5] hidden sm:block">
                             <Move size={10} className="inline mr-1" />
                             Scroll: Zoom | Middle-click: Pan | Ctrl+Drag: Pan
                         </div>
                     </div>
 
-                    <div className="w-[340px] bg-white border-l border-[#E5E5E5] flex flex-col shrink-0 z-10 shadow-[-4px_0_15px_rgba(0,0,0,0.05)]">
+                    {mobileSidebarOpen && (
+                        <div className="fixed inset-0 bg-black/30 z-20 lg:hidden" onClick={() => setMobileSidebarOpen(false)} />
+                    )}
+                    <div className={`fixed top-0 right-0 h-full w-[300px] sm:w-[340px] bg-white border-l border-[#E5E5E5] flex flex-col z-30 shadow-[-4px_0_15px_rgba(0,0,0,0.05)] transition-transform duration-300 lg:relative lg:translate-x-0 lg:z-10 lg:shrink-0 ${mobileSidebarOpen ? "translate-x-0" : "translate-x-full"}`}>
                         <div className="flex border-b border-[#E5E5E5]">
+                            <button
+                                onClick={() => setMobileSidebarOpen(false)}
+                                className="lg:hidden flex items-center justify-center w-10 h-10 text-[#1C1C1C]/50 hover:text-[#1C1C1C] shrink-0"
+                            >
+                                <X size={18} />
+                            </button>
                             <button
                                 onClick={() => setSidebarTab("furniture")}
                                 className={`flex-1 py-3 text-center text-sm font-semibold transition-colors ${
@@ -1586,7 +1604,7 @@ function TwoDLayoutEditorInner() {
                             )}
                         </div>
 
-                        <div className="border-t border-[#E5E5E5] p-3">
+                        <div className="border-t border-[#E5E5E5] p-3 hidden sm:block">
                             <div className="text-xs text-[#1C1C1C]/40 space-y-0.5">
                                 <p>
                                     <span className="font-medium text-[#1C1C1C]/60">R</span> Rotate
