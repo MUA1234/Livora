@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 
 export interface CartItem {
     id: string;
@@ -27,6 +27,7 @@ const STORAGE_KEY = "livora_cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([]);
+    const isInitialMount = useRef(true);
 
     useEffect(() => {
         try {
@@ -36,6 +37,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     }, [items]);
 

@@ -19,6 +19,7 @@ import {
     Shield
 } from "lucide-react";
 import UserNavbar from "@/components/UserNavbar";
+import api from "@/lib/api";
 
 export default function ConsultationRequest() {
     const [formData, setFormData] = useState({
@@ -50,9 +51,16 @@ export default function ConsultationRequest() {
         e.preventDefault();
         if (validate()) {
             setIsSubmitting(true);
-            // Simulate API call
-            setTimeout(() => {
-                setIsSubmitting(false);
+            try {
+                await api.post("/api/consultation-requests", {
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    phone: formData.phone,
+                    roomType: formData.roomType,
+                    roomSize: formData.roomSize,
+                    visitDate: formData.visitDate,
+                    notes: formData.notes,
+                });
                 setIsSuccess(true);
                 setFormData({
                     fullName: "",
@@ -64,7 +72,11 @@ export default function ConsultationRequest() {
                     notes: ""
                 });
                 setTimeout(() => setIsSuccess(false), 5000);
-            }, 1500);
+            } catch {
+                // Optionally handle error
+            } finally {
+                setIsSubmitting(false);
+            }
         }
     };
 

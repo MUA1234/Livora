@@ -251,10 +251,10 @@ export default function FurnitureCatalogue() {
                                         <div className="flex items-center gap-1 mb-2">
                                             <div className="flex text-[#D4AF37]">
                                                 {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} size={12} className={i < 4 ? "fill-current" : "text-[#E5E5E5]"} />
+                                                    <Star key={i} size={12} className="text-[#E5E5E5]" />
                                                 ))}
                                             </div>
-                                            <span className="text-xs text-[#1C1C1C]/40 ml-1">(0)</span>
+                                            <span className="text-xs text-[#1C1C1C]/40 ml-1">No reviews</span>
                                         </div>
 
                                         <h3 className="font-bold text-lg mb-1">{product.name}</h3>

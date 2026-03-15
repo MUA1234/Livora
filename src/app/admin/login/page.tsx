@@ -12,7 +12,7 @@ import GoogleSignInButton from '@/components/ui/GoogleSignInButton';
 export default function AdminLogin() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const [email, setEmail] = useState('admin@livora.com');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 

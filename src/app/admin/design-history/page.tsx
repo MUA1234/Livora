@@ -369,7 +369,7 @@ function DesignHistory() {
 
                             {/* Auto-Save History Log */}
                             <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 p-6 shadow-sm">
-                                <h2 className="text-lg font-bold text-[#1C1C1C] mb-6">Full Historcial Log</h2>
+                                <h2 className="text-lg font-bold text-[#1C1C1C] mb-6">Full Historical Log</h2>
 
                                 <div className="overflow-x-auto">
                                     <table className="w-full">

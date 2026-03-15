@@ -159,7 +159,7 @@ export default function MyAccountPage() {
                     <section className="bg-white rounded-3xl p-8 mb-8 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-lg font-bold text-[#663F23]">Saved Consultation Requests</h2>
-                            <Link href="/consultation-request" className="text-[#D4AF37] text-sm font-medium">Book New</Link>
+                            <Link href="/user-panel/consultation-request" className="text-[#D4AF37] text-sm font-medium">Book New</Link>
                         </div>
                         <div className="w-full text-sm">
                             <div className="flex justify-between font-bold mb-4 px-2">
@@ -171,7 +171,7 @@ export default function MyAccountPage() {
                             {consultations.length === 0 ? (
                                 <div className="text-center py-8 text-[#1C1C1C]/40">
                                     No consultation requests yet.{" "}
-                                    <Link href="/consultation-request" className="text-[#D4AF37] font-medium">Book one now</Link>
+                                    <Link href="/user-panel/consultation-request" className="text-[#D4AF37] font-medium">Book one now</Link>
                                 </div>
                             ) : (
                                 consultations.slice(0, 5).map((c: any) => (
