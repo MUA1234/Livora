@@ -3,6 +3,7 @@ import { User } from "../models/User.model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import { notifyAllAdmins } from "../utils/createNotification";
 
 const generateToken = (id: string, role: string) => {
     return jwt.sign(
@@ -39,6 +40,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         });
 
         if (user) {
+            // Notify admins about new user registration
+            await notifyAllAdmins(
+                "new_user_registered",
+                "New User Registered",
+                `${name} (${email}) has created an account.`,
+                user._id?.toString(),
+                "User"
+            );
+
             res.status(201).json({
                 _id: user._id,
                 name: user.name,
@@ -172,6 +182,15 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
                 avatarUrl: picture || "",
                 role: "user",
             });
+
+            // Notify admins about new Google user
+            await notifyAllAdmins(
+                "new_user_registered",
+                "New User Registered",
+                `${user.name} (${email}) signed up via Google.`,
+                user._id?.toString(),
+                "User"
+            );
         }
 
         res.json({

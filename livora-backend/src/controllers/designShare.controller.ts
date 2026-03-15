@@ -3,6 +3,8 @@ import crypto from "crypto";
 import Design from "../models/design.model";
 import Room from "../models/room.model";
 import { Product } from "../models/Product.model";
+import Consultation from "../models/consultation.model";
+import { createNotification } from "../utils/createNotification";
 
 const generateShareToken = (): string => {
   return crypto.randomBytes(16).toString("hex");
@@ -34,6 +36,22 @@ export const generateShareLink = async (req: Request, res: Response): Promise<vo
 
     const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     const shareUrl = `${baseUrl}/preview/${token}`;
+
+    // Notify users linked to this design via consultations
+    const consultations = await Consultation.find({ designId: id });
+    for (const consultation of consultations) {
+      if (consultation.userId) {
+        await createNotification({
+          recipientId: consultation.userId.toString(),
+          recipientRole: "user",
+          type: "design_shared",
+          title: "Design Preview Available",
+          message: `A 3D design preview for "${design.name}" has been shared with you.`,
+          relatedId: token,
+          relatedModel: "Design",
+        });
+      }
+    }
 
     res.status(200).json({
       shareToken: token,

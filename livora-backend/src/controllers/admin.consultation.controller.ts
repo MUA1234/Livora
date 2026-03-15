@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Consultation from "../models/consultation.model";
+import { createNotification } from "../utils/createNotification";
 
 // GET /api/admin/consultations - List all consultations, filterable by status, paginated
 export const getAdminConsultations = async (req: Request, res: Response): Promise<void> => {
@@ -77,6 +78,25 @@ export const updateAdminConsultationStatus = async (req: Request, res: Response)
       return;
     }
 
+    // Notify the user about the status change
+    if (updatedConsultation.userId) {
+      const statusLabels: Record<string, string> = {
+        accepted: "accepted",
+        rejected: "declined",
+        completed: "marked as completed",
+        pending: "set back to pending",
+      };
+      await createNotification({
+        recipientId: updatedConsultation.userId.toString(),
+        recipientRole: "user",
+        type: "consultation_status_update",
+        title: "Consultation Updated",
+        message: `Your consultation has been ${statusLabels[status] || status}.`,
+        relatedId: updatedConsultation._id?.toString(),
+        relatedModel: "Consultation",
+      });
+    }
+
     res.status(200).json(updatedConsultation);
   } catch (error: any) {
     res.status(500).json({ message: "Error updating consultation status", error: error.message });
@@ -107,6 +127,19 @@ export const respondToConsultation = async (req: Request, res: Response): Promis
     });
 
     const savedConsultation = await consultation.save();
+
+    // Notify the user about the admin response
+    if (consultation.userId) {
+      await createNotification({
+        recipientId: consultation.userId.toString(),
+        recipientRole: "user",
+        type: "consultation_response",
+        title: "New Message from Admin",
+        message: message.length > 80 ? message.substring(0, 80) + "..." : message,
+        relatedId: consultation._id?.toString(),
+        relatedModel: "Consultation",
+      });
+    }
 
     res.status(201).json(savedConsultation);
   } catch (error: any) {

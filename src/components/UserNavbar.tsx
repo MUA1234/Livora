@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, User, ShoppingCart, Menu, X } from "lucide-react";
+import { Heart, User, ShoppingCart, Menu, X, Bell } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
+import { useNotifications } from "@/context/NotificationContext";
 import { useEffect, useState } from "react";
+import NotificationBell from "@/components/NotificationBell";
 
 const NAV_LINKS = [
     { href: "/user-panel/furniture-catalogue", label: "Catalogue" },
@@ -18,6 +20,7 @@ export default function UserNavbar() {
     const pathname = usePathname();
     const { items } = useWishlist();
     const { totalItems: cartCount } = useCart();
+    const { unreadCount } = useNotifications();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -111,6 +114,14 @@ export default function UserNavbar() {
                         )}
                     </Link>
 
+                    {/* Notifications */}
+                    {isLoggedIn && (
+                        <NotificationBell
+                            isAdmin={false}
+                            allNotificationsHref="/user-panel/notifications"
+                        />
+                    )}
+
                     {/* Login or My Account */}
                     {isLoggedIn ? (
                         <Link
@@ -181,6 +192,26 @@ export default function UserNavbar() {
                                 </Link>
                             );
                         })}
+
+                        {isLoggedIn && (
+                            <Link
+                                href="/user-panel/notifications"
+                                className={`flex items-center justify-between px-4 py-4 rounded-xl text-lg font-medium transition-colors ${
+                                    pathname === "/user-panel/notifications"
+                                        ? "bg-[#663F23] text-white"
+                                        : "text-[#1C1C1C] hover:bg-[#FAF8F5]"
+                                }`}
+                            >
+                                <span>Notifications</span>
+                                {unreadCount > 0 && (
+                                    <span className={`text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold ${
+                                        pathname === "/user-panel/notifications" ? "bg-white text-[#663F23]" : "bg-red-500 text-white"
+                                    }`}>
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
 
                         <div className="border-t border-[#E5E5E5] my-4" />
 

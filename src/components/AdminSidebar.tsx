@@ -15,9 +15,11 @@ import {
     LogOut,
     Menu,
     X,
+    Bell,
 } from "lucide-react";
 import { getUser, AuthUser } from "@/lib/auth";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useNotifications } from "@/context/NotificationContext";
 
 const NAV_ITEMS = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -27,6 +29,7 @@ const NAV_ITEMS = [
     { href: "/admin/compare-designs", label: "Compare Designs", icon: LayoutTemplate },
     { href: "/admin/cost-summary", label: "Cost Summary", icon: FileText },
     { href: "/admin/consultations", label: "Consultations", icon: Users },
+    { href: "/admin/notifications", label: "Notifications", icon: Bell },
     { href: "/admin/design-history", label: "Design History", icon: ScrollText },
 ];
 
@@ -36,6 +39,7 @@ export default function AdminSidebar() {
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [adminUser, setAdminUser] = useState<AuthUser | null>(null);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { unreadCount } = useNotifications();
 
     useEffect(() => {
         setAdminUser(getUser());
@@ -92,6 +96,7 @@ export default function AdminSidebar() {
                         const active = item.href === "/admin/room-setup"
                             ? isRoomSetupActive()
                             : isActive(item.href);
+                        const isNotif = item.href === "/admin/notifications";
 
                         return (
                             <Link
@@ -106,9 +111,16 @@ export default function AdminSidebar() {
                                 }`}
                             >
                                 <Icon size={item.nested ? 16 : 20} />
-                                <span className={`font-medium ${item.nested ? "text-xs" : "text-sm"}`}>
+                                <span className={`font-medium ${item.nested ? "text-xs" : "text-sm"} flex-1`}>
                                     {item.label}
                                 </span>
+                                {isNotif && unreadCount > 0 && (
+                                    <span className={`text-[10px] min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center font-bold ${
+                                        active ? "bg-white text-[#663F23]" : "bg-red-500 text-white"
+                                    }`}>
+                                        {unreadCount > 99 ? "99+" : unreadCount}
+                                    </span>
+                                )}
                             </Link>
                         );
                     })}

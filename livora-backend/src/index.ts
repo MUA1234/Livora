@@ -14,6 +14,7 @@ import consultationRequestRoutes from "./routes/consultationRequest.routes";
 import userRoutes from "./routes/user.routes";
 import reviewRoutes from "./routes/review.routes";
 import wishlistRoutes from "./routes/wishlist.routes";
+import notificationRoutes from "./routes/notification.routes";
 import { getPublicPreview } from "./controllers/designShare.controller";
 
 dotenv.config();
@@ -62,6 +63,7 @@ app.use("/api/consultation-requests", consultationRequestRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.get("/api/public/preview/:token", getPublicPreview);
 
 // Only listen when running locally (not on Vercel)

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Review } from "../models/Review.model";
 import { Product } from "../models/Product.model";
 import mongoose from "mongoose";
+import { notifyAllAdmins } from "../utils/createNotification";
 
 export const getProductReviews = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -176,6 +177,15 @@ export const createReview = async (req: Request, res: Response): Promise<void> =
         await review.save();
 
         const populated = await Review.findById(review._id).populate("userId", "name email");
+
+        // Notify admins about the new review
+        await notifyAllAdmins(
+            "new_review",
+            "New Product Review",
+            `A ${rating}-star review was submitted for "${product.name}".`,
+            review._id?.toString(),
+            "Review"
+        );
 
         res.status(201).json({ success: true, message: "Review submitted successfully", data: populated });
     } catch (error: any) {

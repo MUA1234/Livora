@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ConsultationRequest } from "../models/ConsultationRequest.model";
+import { notifyAllAdmins } from "../utils/createNotification";
 
 export const createConsultationRequest = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -26,6 +27,15 @@ export const createConsultationRequest = async (req: Request, res: Response): Pr
             notes: notes ? notes.trim() : undefined,
             userId: req.user?.id || undefined,
         });
+
+        // Notify all admins about the new consultation request
+        await notifyAllAdmins(
+            "consultation_request",
+            "New Consultation Request",
+            `${fullName.trim()} has requested a consultation for a ${roomType.trim()} room.`,
+            consultation._id?.toString(),
+            "ConsultationRequest"
+        );
 
         res.status(201).json({
             success: true,
