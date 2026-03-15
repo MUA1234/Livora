@@ -161,8 +161,8 @@ export default function FurnitureDetails() {
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
             <UserNavbar />
 
-            <main className="max-w-[1400px] mx-auto px-8 md:px-16 py-8">
-                <div className="flex items-center gap-2 text-sm text-[#1C1C1C]/60 mb-8">
+            <main className="max-w-[1400px] mx-auto px-4 sm:px-8 md:px-16 py-4 sm:py-8">
+                <div className="hidden sm:flex items-center gap-2 text-sm text-[#1C1C1C]/60 mb-8">
                     <Link href="/" className="hover:text-[#1C1C1C] transition-colors">Home</Link>
                     <ChevronRight size={14} />
                     <Link href="/user-panel/furniture-catalogue" className="hover:text-[#1C1C1C] transition-colors">Catalogue</Link>
@@ -209,7 +209,7 @@ export default function FurnitureDetails() {
                     </div>
 
                     <div className="w-full lg:w-[45%] flex flex-col">
-                        <h1 className="text-4xl font-extrabold text-[#1C1C1C] mb-3">{product.name}</h1>
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1C] mb-3">{product.name}</h1>
 
                         <div className="flex items-center gap-2 mb-6 text-sm">
                             {renderStars(averageRating)}
@@ -218,7 +218,7 @@ export default function FurnitureDetails() {
                             </span>
                         </div>
 
-                        <div className="text-4xl font-bold text-[#1C1C1C] mb-6">
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1C1C1C] mb-6">
                             Rs.{product.price.toLocaleString("en-LK", { minimumFractionDigits: 2 })}
                         </div>
 

@@ -123,14 +123,14 @@ export default function CompareDesigns() {
         <div className="min-h-screen bg-[#F5F1E8] flex overflow-hidden font-sans text-[#1C1C1C]">
             <AdminSidebar />
 
-            <main className="flex-1 overflow-y-auto p-8">
+            <main className="flex-1 overflow-y-auto p-4 pt-16 md:pt-4 sm:p-6 md:p-8">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold mb-2">Design Comparison</h1>
                 <p className="text-[#1C1C1C]/60 text-sm">Compare layouts, furniture lists &amp; costs side-by-side.</p>
             </div>
 
             {/* Selectors */}
-            <div className="flex items-center justify-between bg-white rounded-xl p-2 mb-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-white rounded-xl p-2 mb-8 shadow-sm gap-2 sm:gap-0">
                 {/* Design A Dropdown */}
                 <div className="flex-1 relative">
                     <button
@@ -228,7 +228,7 @@ export default function CompareDesigns() {
             {/* Comparison Grid */}
             {!isCompareLoading && !error && comparison && dA && dB && (
                 <>
-                    <div className={`grid grid-cols-2 gap-8 mb-12`}>
+                    <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-12`}>
                         {/* Design A Card */}
                         {[dA, dB].map((side, colIdx) => {
                             const label = colIdx === 0 ? "Design A" : "Design B";

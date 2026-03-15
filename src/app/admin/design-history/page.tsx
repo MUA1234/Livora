@@ -185,7 +185,7 @@ function DesignHistory() {
             <AdminSidebar />
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-[#F5F1E8] p-8 md:p-12">
+            <main className="flex-1 overflow-y-auto bg-[#F5F1E8] p-4 pt-16 md:pt-8 sm:p-6 md:p-8 lg:p-12">
                 <div className="max-w-5xl">
                     {/* Header */}
                     <div className="mb-8">
@@ -292,7 +292,7 @@ function DesignHistory() {
                     ) : (
                         <>
                             {/* Version Timeline + Preview */}
-                            <div className="grid grid-cols-2 gap-6 mb-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                                 {/* Version Timeline */}
                                 <div className="bg-white rounded-2xl border border-[#E5E5E5]/50 p-6 shadow-sm overflow-y-auto max-h-[600px]">
                                     <h2 className="text-lg font-bold text-[#1C1C1C] mb-6">Version Timeline</h2>

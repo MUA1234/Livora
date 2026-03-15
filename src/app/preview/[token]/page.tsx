@@ -126,7 +126,7 @@ export default function PublicPreviewPage() {
     return (
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
             <header className="bg-white border-b border-[#E5E5E5]/60 sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full border border-[#663F23] flex items-center justify-center">
                             <span className="text-[#663F23] text-xs font-bold">LV</span>
@@ -140,13 +140,13 @@ export default function PublicPreviewPage() {
                 </div>
             </header>
 
-            <div className="max-w-6xl mx-auto px-8 py-10">
+            <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
                 <div className="mb-10">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#663F23]/10 rounded-full mb-4">
                         <Sofa className="w-3.5 h-3.5 text-[#663F23]" />
                         <span className="text-xs font-semibold text-[#663F23]">Room Design Preview</span>
                     </div>
-                    <h1 className="text-4xl font-bold text-[#1C1C1C] mb-2">{data.designName}</h1>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1C1C1C] mb-2">{data.designName}</h1>
                     <p className="text-[#1C1C1C]/50">
                         Your personalized room design from Livora.
                         {data.shareExpires && (
@@ -158,7 +158,7 @@ export default function PublicPreviewPage() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-10">
                     <div className="bg-white rounded-2xl border border-[#E5E5E5] p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 bg-[#663F23]/10 rounded-xl flex items-center justify-center">
@@ -234,7 +234,7 @@ export default function PublicPreviewPage() {
 
                 <section className="mb-10">
                     <h2 className="text-2xl font-bold text-[#1C1C1C] mb-6">Furniture in Your Design</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         {data.furniture.map((item, index) => {
                             const product = item.product;
                             if (!product) return null;
@@ -292,8 +292,8 @@ export default function PublicPreviewPage() {
                 </section>
 
                 {totalCost > 0 && (
-                    <section className="bg-white rounded-2xl border border-[#E5E5E5] p-8 mb-10">
-                        <h2 className="text-xl font-bold text-[#1C1C1C] mb-6">Cost Breakdown</h2>
+                    <section className="bg-white rounded-2xl border border-[#E5E5E5] p-4 sm:p-6 lg:p-8 mb-10">
+                        <h2 className="text-lg sm:text-xl font-bold text-[#1C1C1C] mb-4 sm:mb-6">Cost Breakdown</h2>
                         <div className="space-y-3">
                             {data.furniture.map((item, index) => {
                                 if (!item.product) return null;
@@ -313,9 +313,9 @@ export default function PublicPreviewPage() {
                                 );
                             })}
                         </div>
-                        <div className="flex items-center justify-between pt-6 mt-4 border-t-2 border-[#663F23]/10">
-                            <span className="text-lg font-bold">Estimated Total</span>
-                            <span className="text-2xl font-bold text-[#663F23]">Rs.{totalCost.toLocaleString("en-LK", { minimumFractionDigits: 2 })}</span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-4 sm:pt-6 mt-4 border-t-2 border-[#663F23]/10">
+                            <span className="text-base sm:text-lg font-bold">Estimated Total</span>
+                            <span className="text-xl sm:text-2xl font-bold text-[#663F23]">Rs.{totalCost.toLocaleString("en-LK", { minimumFractionDigits: 2 })}</span>
                         </div>
                     </section>
                 )}

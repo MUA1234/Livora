@@ -152,7 +152,7 @@ function CostSummary() {
             <AdminSidebar />
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-[#F5F1E8] p-8 md:p-12">
+            <main className="flex-1 overflow-y-auto bg-[#F5F1E8] p-4 pt-16 md:pt-8 sm:p-6 md:p-8 lg:p-12">
                 <div className="max-w-4xl ml-0 h-full">
 
                     {/* Page Header */}
@@ -322,7 +322,7 @@ function CostSummary() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex justify-center gap-4">
+                            <div className="flex flex-col sm:flex-row justify-center gap-4">
                                 <button
                                     onClick={handleExportPdf}
                                     disabled={isPdfLoading}

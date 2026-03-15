@@ -70,8 +70,8 @@ export default function Dashboard() {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
                 {/* Header */}
-                <header className="h-20 bg-[#F5F1E8] px-10 flex items-center justify-between sticky top-0 z-10">
-                    <h1 className="text-2xl font-bold text-[#1C1C1C]">Overview</h1>
+                <header className="h-16 md:h-20 bg-[#F5F1E8] px-4 sm:px-6 md:px-10 flex items-center justify-between sticky top-0 z-10">
+                    <h1 className="text-lg md:text-2xl font-bold text-[#1C1C1C] pl-12 md:pl-0">Overview</h1>
                     <div className="flex items-center gap-4">
                         {searchOpen ? (
                             <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                <div className="px-10 pb-10">
+                <div className="px-4 sm:px-6 md:px-10 pb-10">
                     {/* Error State */}
                     {error && (
                         <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 flex items-center gap-3">
@@ -123,7 +123,7 @@ export default function Dashboard() {
                         </div>
                     )}
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-4 gap-6 mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mt-4">
                         {/* Stat Card 1 */}
                         <div className="bg-white p-6 rounded-2xl border border-[#E5E5E5]/50 shadow-sm flex flex-col justify-between h-36">
                             <div className="flex justify-between items-start">
@@ -203,8 +203,8 @@ export default function Dashboard() {
 
                     {/* Quick Actions */}
                     <h2 className="text-xl font-bold text-[#1C1C1C] mt-10 mb-4">Quick Actions</h2>
-                    <div className="grid grid-cols-4 gap-6">
-                        <Link href="/admin/room-setup" className="bg-[#663F23] rounded-2xl p-6 text-white hover:bg-[#4A2D19] transition-colors flex flex-col justify-between h-40">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+                        <Link href="/admin/room-setup" className="bg-[#663F23] rounded-2xl p-6 text-white hover:bg-[#4A2D19] transition-colors flex flex-col justify-between h-36 sm:h-40">
                             <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                                 <Plus size={20} className="text-white" />
                             </div>
@@ -250,7 +250,7 @@ export default function Dashboard() {
                         <h2 className="text-xl font-bold text-[#1C1C1C]">Recent Designs</h2>
                         <Link href="/admin/design-history" className="text-sm font-medium text-[#663F23] hover:underline">View all</Link>
                     </div>
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                         {loading ? (
                             Array(3).fill(0).map((_, i) => (
                                 <div key={i} className="bg-white rounded-2xl border border-[#E5E5E5]/50 overflow-hidden shadow-sm animate-pulse">
@@ -296,7 +296,7 @@ export default function Dashboard() {
                                 </Link>
                             ))
                         ) : (
-                            <div className="col-span-3 text-center py-10 bg-white rounded-2xl border border-dashed border-[#E5E5E5]">
+                            <div className="col-span-full text-center py-10 bg-white rounded-2xl border border-dashed border-[#E5E5E5]">
                                 <p className="text-[#1C1C1C]/40">{searchQuery ? "No designs match your search." : "No recent designs found."}</p>
                                 {!searchQuery && <Link href="/admin/room-setup" className="text-[#663F23] font-semibold mt-2 inline-block">Create your first design</Link>}
                             </div>

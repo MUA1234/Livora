@@ -13,11 +13,11 @@ export default function CartPage() {
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
             <UserNavbar />
 
-            <main className="max-w-[1000px] mx-auto px-8 md:px-16 py-12">
-                <div className="flex items-end justify-between mb-10">
+            <main className="max-w-[1000px] mx-auto px-4 sm:px-8 md:px-16 py-6 sm:py-12">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6 sm:mb-10">
                     <div className="flex items-end gap-3">
-                        <h1 className="text-3xl font-bold text-[#1C1C1C]">Shopping Cart</h1>
-                        <span className="text-xl text-[#1C1C1C]/70 pb-0.5">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-[#1C1C1C]">Shopping Cart</h1>
+                        <span className="text-lg sm:text-xl text-[#1C1C1C]/70 pb-0.5">
                             ({totalItems} {totalItems === 1 ? "item" : "items"})
                         </span>
                     </div>
@@ -52,9 +52,9 @@ export default function CartPage() {
                             {items.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="bg-white rounded-2xl p-5 flex gap-5 items-center border border-[#E5E5E5] shadow-sm"
+                                    className="bg-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-5 items-start sm:items-center border border-[#E5E5E5] shadow-sm"
                                 >
-                                    <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-[#F5F5F5]">
+                                    <div className="relative w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-[#F5F5F5]">
                                         {item.image ? (
                                             <Image
                                                 src={item.image}
@@ -76,34 +76,36 @@ export default function CartPage() {
                                         </p>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-3 sm:gap-5 w-full sm:w-auto justify-between sm:justify-end">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                className="w-8 h-8 rounded-lg border border-[#E5E5E5] flex items-center justify-center hover:bg-gray-50 transition-colors"
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+                                            <span className="w-8 text-center font-semibold text-sm">{item.quantity}</span>
+                                            <button
+                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                className="w-8 h-8 rounded-lg border border-[#E5E5E5] flex items-center justify-center hover:bg-gray-50 transition-colors"
+                                            >
+                                                <Plus size={14} />
+                                            </button>
+                                        </div>
+
+                                        <div className="text-right min-w-[80px] sm:min-w-[100px]">
+                                            <p className="font-bold text-[#1C1C1C] text-sm sm:text-base">
+                                                Rs.{(item.price * item.quantity).toLocaleString("en-IN")}.00
+                                            </p>
+                                        </div>
+
                                         <button
-                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                            className="w-8 h-8 rounded-lg border border-[#E5E5E5] flex items-center justify-center hover:bg-gray-50 transition-colors"
+                                            onClick={() => removeFromCart(item.id)}
+                                            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#1C1C1C]/30 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                                         >
-                                            <Minus size={14} />
-                                        </button>
-                                        <span className="w-8 text-center font-semibold text-sm">{item.quantity}</span>
-                                        <button
-                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                            className="w-8 h-8 rounded-lg border border-[#E5E5E5] flex items-center justify-center hover:bg-gray-50 transition-colors"
-                                        >
-                                            <Plus size={14} />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
-
-                                    <div className="text-right min-w-[100px]">
-                                        <p className="font-bold text-[#1C1C1C]">
-                                            Rs.{(item.price * item.quantity).toLocaleString("en-IN")}.00
-                                        </p>
-                                    </div>
-
-                                    <button
-                                        onClick={() => removeFromCart(item.id)}
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[#1C1C1C]/30 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
                                 </div>
                             ))}
                         </div>

@@ -75,9 +75,9 @@ export default function MyAccountPage() {
         logout();
     };
     return (
-        <div className="min-h-screen bg-[#F5F2EC] flex text-[#1C1C1C] font-sans">
+        <div className="min-h-screen bg-[#F5F2EC] flex flex-col lg:flex-row text-[#1C1C1C] font-sans">
             {/* Left Sidebar */}
-            <aside className="w-80 bg-white m-6 rounded-[32px] flex flex-col p-8 shadow-sm">
+            <aside className="w-full lg:w-80 bg-white m-4 lg:m-6 rounded-2xl lg:rounded-[32px] flex flex-col p-6 lg:p-8 shadow-sm">
                 <div className="text-center mb-12">
                     <h1 className="text-3xl font-bold text-[#1C1C1C]">Livora</h1>
                     <p className="text-[#1C1C1C]/60 mt-2">Luxury Living</p>
@@ -114,10 +114,10 @@ export default function MyAccountPage() {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 p-6 pl-0">
+            <main className="flex-1 p-4 lg:p-6 lg:pl-0">
                 <div className="max-w-[800px]">
-                    <div className="flex items-center justify-between mb-8">
-                        <h1 className="text-4xl font-bold text-[#663F23]">My Account</h1>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#663F23]">My Account</h1>
                         <button onClick={handleLogout} className="flex items-center gap-2 px-6 py-2 border border-[#1C1C1C]/20 rounded-full hover:bg-white transition-colors text-sm font-medium">
                             <LogOut size={16} /> Logout
                         </button>
@@ -131,7 +131,7 @@ export default function MyAccountPage() {
                                 <label className="block text-sm mb-2">Full Name</label>
                                 <input type="text" className="w-full bg-[#F5F2EC] rounded-xl px-4 py-3 outline-none" value={name} onChange={(e) => setName(e.target.value)} />
                             </div>
-                            <div className="flex gap-6">
+                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                                 <div className="flex-1">
                                     <label className="block text-sm mb-2">Email Address</label>
                                     <input type="email" className="w-full bg-[#F5F2EC] rounded-xl px-4 py-3 outline-none" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -208,9 +208,9 @@ export default function MyAccountPage() {
                                 <p className="text-sm">Your wishlist is empty. Browse our catalogue to add items.</p>
                             </div>
                         ) : (
-                            <div className="flex gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                 {wishlistItems.slice(0, 3).map((item) => (
-                                    <Link key={item.id} href={`/user-panel/furniture-details/${item.id}`} className="border border-[#1C1C1C]/10 rounded-2xl p-4 w-1/3 text-center hover:border-[#D4AF37] transition-colors">
+                                    <Link key={item.id} href={`/user-panel/furniture-details/${item.id}`} className="border border-[#1C1C1C]/10 rounded-2xl p-3 sm:p-4 text-center hover:border-[#D4AF37] transition-colors">
                                         <div className="h-32 relative mb-4 bg-[#F5F5F5] rounded-xl overflow-hidden">
                                             {item.image ? (
                                                 <Image src={item.image} alt={item.name} fill className="object-cover rounded-xl" />

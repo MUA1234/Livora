@@ -260,7 +260,7 @@ export default function ConsultationManagementPage() {
 
       <div className="flex-1 overflow-y-auto flex flex-col">
       <div className="bg-white">
-        <div className="flex items-center justify-between px-10 py-6 border-b border-[#E5E5E5]/60 w-full">
+        <div className="flex items-center justify-between px-4 sm:px-6 md:px-10 py-4 sm:py-6 border-b border-[#E5E5E5]/60 w-full pl-14 md:pl-10">
           <div className="flex items-center gap-4">
             <div>
               <h1 className="text-[22px] font-bold text-[#1C1C1C] leading-snug">Consultation Management</h1>
@@ -269,7 +269,7 @@ export default function ConsultationManagementPage() {
           </div>
         </div>
 
-        <div className="px-10 py-5 flex items-center gap-3 w-full border-b border-[#E5E5E5]/60 shadow-[0_4px_10px_rgba(0,0,0,0.02)]">
+        <div className="px-4 sm:px-6 md:px-10 py-4 sm:py-5 flex items-center gap-2 sm:gap-3 w-full border-b border-[#E5E5E5]/60 shadow-[0_4px_10px_rgba(0,0,0,0.02)] overflow-x-auto">
           {(["all", "pending", "confirmed", "completed", "rejected"] as const).map((status) => (
             <button
               key={status}
@@ -289,7 +289,7 @@ export default function ConsultationManagementPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-10 py-8 w-full max-w-[1400px] mx-auto">
+      <div className="flex-1 px-4 sm:px-6 md:px-10 py-6 md:py-8 w-full max-w-[1400px] mx-auto">
         <div className="flex items-center justify-between mb-6 gap-4">
           <div className="relative flex-1 max-w-[800px]">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

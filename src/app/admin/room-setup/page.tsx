@@ -142,7 +142,7 @@ export default function RoomSetup() {
         <div className="min-h-screen bg-[#F5F1E8] flex overflow-hidden font-sans text-[#1C1C1C]">
             <AdminSidebar />
 
-            <main className="flex-1 overflow-y-auto p-10">
+            <main className="flex-1 overflow-y-auto p-4 pt-16 md:pt-4 sm:p-6 md:p-10">
             {toast && (
                 <Toast
                     message={toast.message}
@@ -196,9 +196,9 @@ export default function RoomSetup() {
                 </div>
             </div>
 
-            <header className="flex items-center justify-between mb-8">
+            <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-[#1C1C1C]">Room Setup</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold text-[#1C1C1C]">Room Setup</h1>
                     <p className="text-[#1C1C1C]/50 mt-1">Configure your room before entering the 2D layout editor.</p>
                 </div>
                 <button 

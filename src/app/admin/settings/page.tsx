@@ -187,7 +187,7 @@ export default function SettingsPage() {
             <AdminSidebar />
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-[#F5F1E8] p-8 md:p-12">
+            <main className="flex-1 overflow-y-auto bg-[#F5F1E8] p-4 pt-16 md:pt-8 sm:p-6 md:p-8 lg:p-12">
                 <div className="max-w-3xl">
                     {/* Header */}
                     <div className="mb-8">

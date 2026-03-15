@@ -106,7 +106,7 @@ export default function CatalogueBrowse() {
             <AdminSidebar />
 
             <main className="flex-1 overflow-y-auto bg-[#F5F1E8]">
-                <div className="sticky top-0 z-10 bg-[#F5F1E8] px-8 py-4 flex items-center justify-between border-b border-[#E5E5E5]/30">
+                <div className="sticky top-0 z-10 bg-[#F5F1E8] px-4 sm:px-6 md:px-8 py-4 flex items-center justify-between border-b border-[#E5E5E5]/30 pl-14 md:pl-8">
                     <div className="flex items-center gap-3">
                         <button onClick={() => window.history.back()} className="w-9 h-9 flex items-center justify-center rounded-full border border-[#E5E5E5] bg-white hover:bg-gray-50 transition-colors">
                             <ArrowLeft size={18} className="text-[#1C1C1C]" />

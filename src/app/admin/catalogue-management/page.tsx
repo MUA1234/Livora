@@ -209,9 +209,9 @@ export default function CatalogueManagement() {
             <AdminSidebar />
 
             <main className="flex-1 overflow-y-auto bg-[#F5F1E8]">
-                <div className="flex h-screen">
-                    <div className={`${editingProduct ? "flex-1" : "flex-1"} p-8 overflow-y-auto`}>
-                        <div className="flex justify-between items-start mb-6">
+                <div className="flex flex-col lg:flex-row h-auto lg:h-screen">
+                    <div className={`${editingProduct ? "flex-1" : "flex-1"} p-4 pt-16 md:pt-4 sm:p-6 md:p-8 overflow-y-auto`}>
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                             <div>
                                 <h1 className="text-2xl font-bold text-[#1C1C1C] mb-1">Furniture Catalogue Management</h1>
                                 <p className="text-sm text-[#1C1C1C]/50">Add, edit and organise products for every design project.</p>

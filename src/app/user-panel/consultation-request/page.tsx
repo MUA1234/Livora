@@ -95,13 +95,13 @@ export default function ConsultationRequest() {
             <UserNavbar />
 
             {/* Hero Section */}
-            <section className="bg-[#4A3219] text-white pt-16 pb-40 px-8 md:px-16 relative">
+            <section className="bg-[#4A3219] text-white pt-10 sm:pt-16 pb-28 sm:pb-40 px-4 sm:px-8 md:px-16 relative">
                 <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row items-center gap-12">
                     <div className="lg:w-1/2">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm font-medium mb-6">
                             <span className="text-[#E8DCC4]">✦</span> Free Design Consultation
                         </div>
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-serif mb-6 leading-tight">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold font-serif mb-6 leading-tight">
                             Book Your Design<br />Consultation
                         </h1>
                         <p className="text-white/80 text-lg mb-10 max-w-lg leading-relaxed">
@@ -147,8 +147,8 @@ export default function ConsultationRequest() {
             </section>
 
             {/* Form Section */}
-            <section className="relative -mt-24 px-8 md:px-16 z-10 pb-20">
-                <div className="max-w-[800px] mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-[#E5E5E5]">
+            <section className="relative -mt-20 sm:-mt-24 px-4 sm:px-8 md:px-16 z-10 pb-12 sm:pb-20">
+                <div className="max-w-[800px] mx-auto bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-12 shadow-xl border border-[#E5E5E5]">
                     {isSuccess ? (
                         <div className="text-center py-16">
                             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -316,8 +316,8 @@ export default function ConsultationRequest() {
             </section>
 
             {/* Bottom Features */}
-            <section className="px-8 md:px-16 pb-20">
-                <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+            <section className="px-4 sm:px-8 md:px-16 pb-12 sm:pb-20">
+                <div className="max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                     <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E5E5E5]">
                         <div className="w-12 h-12 bg-[#F5EBE1] rounded-xl flex items-center justify-center text-[#663F23] mb-6">
                             <MessageSquare size={24} />

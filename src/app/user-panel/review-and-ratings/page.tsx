@@ -276,17 +276,17 @@ export default function ReviewAndRatingsPage() {
         <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#1C1C1C]">
             <UserNavbar />
 
-            <main className="max-w-[1100px] mx-auto px-6 md:px-10 py-12">
+            <main className="max-w-[1100px] mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-12">
 
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-[#1C1C1C]">Reviews &amp; Ratings</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[#1C1C1C]">Reviews &amp; Ratings</h1>
                     <p className="text-[#1C1C1C]/60 mt-1 text-sm">
                         Real experiences from our community — helping you choose with confidence.
                     </p>
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-sm border border-[#EDE8E3] flex flex-col md:flex-row overflow-hidden mb-6">
-                    <div className="flex flex-col items-center justify-center px-12 py-10 border-r border-[#EDE8E3] min-w-[220px]">
+                    <div className="flex flex-col items-center justify-center px-8 sm:px-12 py-8 sm:py-10 border-b md:border-b-0 md:border-r border-[#EDE8E3] min-w-0 md:min-w-[220px]">
                         <div className="text-7xl font-bold text-[#1C1C1C] tracking-tight leading-none mb-3">
                             {stats ? stats.averageRating.toFixed(1) : "—"}
                         </div>

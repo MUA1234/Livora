@@ -18,10 +18,10 @@ export default function WishlistPage() {
             <UserNavbar />
 
             {/* Main Content */}
-            <main className="max-w-[1000px] mx-auto px-8 md:px-16 py-12">
-                <div className="flex items-end gap-3 mb-10">
-                    <h1 className="text-3xl font-bold text-[#1C1C1C]">Wishlist</h1>
-                    <span className="text-xl text-[#1C1C1C]/70 pb-0.5">({items.length} {items.length === 1 ? 'item' : 'items'})</span>
+            <main className="max-w-[1000px] mx-auto px-4 sm:px-8 md:px-16 py-6 sm:py-12">
+                <div className="flex items-end gap-3 mb-6 sm:mb-10">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[#1C1C1C]">Wishlist</h1>
+                    <span className="text-lg sm:text-xl text-[#1C1C1C]/70 pb-0.5">({items.length} {items.length === 1 ? 'item' : 'items'})</span>
                 </div>
 
                 <div className="space-y-6">
@@ -36,9 +36,9 @@ export default function WishlistPage() {
                         </div>
                     ) : (
                         items.map((item) => (
-                            <div key={item.id} className="bg-[#EBE5DE] rounded-[32px] p-6 flex flex-col sm:flex-row gap-8 items-center sm:items-stretch shadow-sm hover:shadow-md transition-shadow">
+                            <div key={item.id} className="bg-[#EBE5DE] rounded-2xl sm:rounded-[32px] p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-8 items-center sm:items-stretch shadow-sm hover:shadow-md transition-shadow">
                                 {/* Product Image */}
-                                <div className="relative w-full sm:w-64 h-64 rounded-2xl overflow-hidden shrink-0 bg-white">
+                                <div className="relative w-full sm:w-48 md:w-64 h-48 sm:h-48 md:h-64 rounded-xl sm:rounded-2xl overflow-hidden shrink-0 bg-white">
                                     <Image
                                         src={item.image}
                                         alt={item.name}
@@ -48,10 +48,10 @@ export default function WishlistPage() {
                                 </div>
 
                                 {/* Product Info & Actions */}
-                                <div className="flex flex-col flex-1 py-4 justify-between w-full">
+                                <div className="flex flex-col flex-1 py-2 sm:py-4 justify-between w-full">
                                     <div>
-                                        <h2 className="text-2xl font-medium text-[#1C1C1C] mb-4">{item.name}</h2>
-                                        <div className="text-2xl text-[#1C1C1C] mb-6">{item.price.toLocaleString("en-IN")}/=</div>
+                                        <h2 className="text-xl sm:text-2xl font-medium text-[#1C1C1C] mb-2 sm:mb-4">{item.name}</h2>
+                                        <div className="text-xl sm:text-2xl text-[#1C1C1C] mb-4 sm:mb-6">{item.price.toLocaleString("en-IN")}/=</div>
                                     </div>
 
                                     <div className="flex flex-wrap gap-4 mt-auto">

@@ -106,7 +106,7 @@ export default function FurnitureCatalogue() {
             <UserNavbar />
 
             {/* Main */}
-            <main className="max-w-[1400px] mx-auto px-8 md:px-16 py-10 flex flex-col md:flex-row gap-10">
+            <main className="max-w-[1400px] mx-auto px-4 sm:px-8 md:px-16 py-6 sm:py-10 flex flex-col md:flex-row gap-6 md:gap-10">
                 {/* Sidebar Filters */}
                 <aside className="w-full md:w-64 shrink-0">
                     <form onSubmit={handleSearch} className="relative mb-8">
@@ -179,7 +179,7 @@ export default function FurnitureCatalogue() {
                 <div className="flex-1">
                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
                         <div>
-                            <h1 className="text-4xl font-bold text-[#1C1C1C] mb-2">Furniture Catalogue</h1>
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1C1C1C] mb-2">Furniture Catalogue</h1>
                             <p className="text-sm text-[#1C1C1C]/50">
                                 {loading ? 'Loading...' : `Showing ${products.length} of ${total} results`}
                             </p>
@@ -220,7 +220,7 @@ export default function FurnitureCatalogue() {
                     )}
 
                     {!loading && products.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             {products.map((product) => {
                                 const isLiked = isInWishlist(product._id);
                                 const imageUrl = product.images?.[0]?.imageUrl ||
