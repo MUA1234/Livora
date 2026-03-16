@@ -13,6 +13,7 @@ const NAV_LINKS = [
     { href: "/user-panel/furniture-catalogue", label: "Catalogue" },
     { href: "/user-panel/cart", label: "Cart" },
     { href: "/user-panel/wishlist", label: "Wishlist" },
+    { href: "/user-panel/orders", label: "Orders" },
     { href: "/user-panel/review-and-ratings", label: "Reviews" },
 ];
 

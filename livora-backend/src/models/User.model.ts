@@ -6,6 +6,8 @@ export interface IUser extends Document {
     passwordHash: string;
     phone?: string;
     role: "admin" | "user";
+    adminRole?: "lead_designer" | "designer" | "manager" | "viewer";
+    permissions?: string[];
     avatarUrl?: string;
     googleId?: string;
     authProvider: "local" | "google";
@@ -26,6 +28,8 @@ const UserSchema = new Schema<IUser>(
         passwordHash: { type: String, default: "" },
         phone: { type: String },
         role: { type: String, enum: ["admin", "user"], default: "user" },
+        adminRole: { type: String, enum: ["lead_designer", "designer", "manager", "viewer"] },
+        permissions: [{ type: String }],
         avatarUrl: { type: String },
         googleId: { type: String, sparse: true },
         authProvider: { type: String, enum: ["local", "google"], default: "local" },

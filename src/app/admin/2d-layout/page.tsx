@@ -17,6 +17,9 @@ import {
     Loader2,
     PanelRight,
     X,
+    Ruler,
+    Download,
+    FileImage,
 } from "lucide-react";
 import api from "@/lib/api";
 import { Toast } from "@/components/ui/Toast";
@@ -545,6 +548,13 @@ function TwoDLayoutEditorInner() {
     const [sidebarTab, setSidebarTab] = useState<"furniture" | "properties">("furniture");
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+    // Measurement tool state
+    const [measureMode, setMeasureMode] = useState(false);
+    const [measureStart, setMeasureStart] = useState<{ x: number; y: number } | null>(null);
+    const [measureEnd, setMeasureEnd] = useState<{ x: number; y: number } | null>(null);
+    const [measurements, setMeasurements] = useState<{ start: { x: number; y: number }; end: { x: number; y: number }; distance: number }[]>([]);
+    const [measurePreview, setMeasurePreview] = useState<{ x: number; y: number } | null>(null);
+
     const [dragState, setDragState] = useState<{
         itemId: string;
         startX: number;
@@ -732,6 +742,78 @@ function TwoDLayoutEditorInner() {
             setSaving(false);
         }
     }, [items, designId, designName, roomIdParam, room, router]);
+
+    // Export as PDF
+    const handleExportPdf = useCallback(async () => {
+        const svg = svgRef.current;
+        if (!svg) return;
+        try {
+            setToast({ message: "Generating PDF...", type: "info" });
+            const { default: html2canvas } = await import("html2canvas");
+            const { default: jsPDF } = await import("jspdf");
+            const container = containerRef.current;
+            if (!container) return;
+            const canvas = await html2canvas(container, { backgroundColor: "#FAF8F5", scale: 2 });
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: [canvas.width, canvas.height] });
+            pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+            pdf.save(`${designName || "layout"}-2d-blueprint.pdf`);
+            setToast({ message: "PDF exported successfully", type: "success" });
+        } catch {
+            setToast({ message: "Failed to export PDF", type: "error" });
+        }
+    }, [designName]);
+
+    // Export as Image
+    const handleExportImage = useCallback(async () => {
+        const container = containerRef.current;
+        if (!container) return;
+        try {
+            setToast({ message: "Generating image...", type: "info" });
+            const { default: html2canvas } = await import("html2canvas");
+            const canvas = await html2canvas(container, { backgroundColor: "#FAF8F5", scale: 2 });
+            const link = document.createElement("a");
+            link.download = `${designName || "layout"}-2d-blueprint.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            setToast({ message: "Image exported successfully", type: "success" });
+        } catch {
+            setToast({ message: "Failed to export image", type: "error" });
+        }
+    }, [designName]);
+
+    // Measurement tool helpers
+    const svgPointFromEvent = useCallback((e: React.MouseEvent) => {
+        const svg = svgRef.current;
+        if (!svg) return null;
+        const rect = svg.getBoundingClientRect();
+        const x = (e.clientX - rect.left - panX) / scale;
+        const y = (e.clientY - rect.top - panY) / scale;
+        return { x, y };
+    }, [panX, panY, scale]);
+
+    const handleMeasureClick = useCallback((e: React.MouseEvent) => {
+        if (!measureMode) return;
+        const pt = svgPointFromEvent(e);
+        if (!pt) return;
+
+        if (!measureStart) {
+            setMeasureStart(pt);
+            setMeasureEnd(null);
+        } else {
+            const dist = Math.sqrt(Math.pow(pt.x - measureStart.x, 2) + Math.pow(pt.y - measureStart.y, 2));
+            setMeasurements(prev => [...prev, { start: measureStart, end: pt, distance: dist }]);
+            setMeasureStart(null);
+            setMeasureEnd(null);
+            setMeasurePreview(null);
+        }
+    }, [measureMode, measureStart, svgPointFromEvent]);
+
+    const handleMeasureMouseMove = useCallback((e: React.MouseEvent) => {
+        if (!measureMode || !measureStart) return;
+        const pt = svgPointFromEvent(e);
+        if (pt) setMeasurePreview(pt);
+    }, [measureMode, measureStart, svgPointFromEvent]);
 
     const addProduct = useCallback(
         (product: Product) => {
@@ -1098,6 +1180,51 @@ function TwoDLayoutEditorInner() {
                         <Grid3X3 size={16} />
                         <span className="text-xs font-medium hidden sm:inline">Snap</span>
                     </button>
+                    <button
+                        onClick={() => {
+                            setMeasureMode(!measureMode);
+                            if (measureMode) {
+                                setMeasureStart(null);
+                                setMeasurePreview(null);
+                            }
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
+                            measureMode
+                                ? "bg-[#663F23] text-white"
+                                : "text-[#663F23] hover:bg-[#D4AF37]/30"
+                        }`}
+                        title="Measure Distance"
+                    >
+                        <Ruler size={16} />
+                        <span className="text-xs font-medium hidden sm:inline">Measure</span>
+                    </button>
+                    {measurements.length > 0 && (
+                        <button
+                            onClick={() => setMeasurements([])}
+                            className="flex items-center gap-1.5 px-2 py-1.5 text-[#663F23] hover:bg-[#D4AF37]/30 rounded transition-colors text-xs"
+                            title="Clear Measurements"
+                        >
+                            <X size={14} />
+                            <span className="hidden sm:inline">Clear</span>
+                        </button>
+                    )}
+                    <div className="w-px h-5 bg-[#663F23]/30 mx-1" />
+                    <button
+                        onClick={handleExportPdf}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[#663F23] hover:bg-[#D4AF37]/30 rounded transition-colors"
+                        title="Export as PDF"
+                    >
+                        <Download size={16} />
+                        <span className="text-xs font-medium hidden sm:inline">PDF</span>
+                    </button>
+                    <button
+                        onClick={handleExportImage}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[#663F23] hover:bg-[#D4AF37]/30 rounded transition-colors"
+                        title="Export as Image"
+                    >
+                        <FileImage size={16} />
+                        <span className="text-xs font-medium hidden sm:inline">Image</span>
+                    </button>
                     <div className="flex-1" />
                     <div className="flex items-center gap-2 text-[#663F23]">
                         <button
@@ -1128,9 +1255,13 @@ function TwoDLayoutEditorInner() {
                             ref={svgRef}
                             width="100%"
                             height="100%"
-                            onMouseDown={handleCanvasMouseDown}
+                            onMouseDown={(e) => {
+                                if (measureMode) { handleMeasureClick(e); return; }
+                                handleCanvasMouseDown(e);
+                            }}
+                            onMouseMove={(e) => { handleMeasureMouseMove(e); }}
                             onWheel={handleWheel}
-                            className="select-none"
+                            className={`select-none ${measureMode ? "cursor-crosshair" : ""}`}
                         >
                             <g transform={`translate(${panX}, ${panY}) scale(${scale})`}>
                                 <rect
@@ -1331,6 +1462,39 @@ function TwoDLayoutEditorInner() {
                                     );
                                 })}
                             </g>
+
+                                {/* Measurement lines */}
+                                {measurements.map((m, i) => {
+                                    const midX = (m.start.x + m.end.x) / 2;
+                                    const midY = (m.start.y + m.end.y) / 2;
+                                    const distCm = m.distance;
+                                    const label = distCm >= 100 ? `${(distCm / 100).toFixed(2)}m` : `${distCm.toFixed(1)}cm`;
+                                    return (
+                                        <g key={`measure-${i}`}>
+                                            <line x1={m.start.x} y1={m.start.y} x2={m.end.x} y2={m.end.y} stroke="#E11D48" strokeWidth={2 / scale} strokeDasharray={`${6 / scale} ${4 / scale}`} />
+                                            <circle cx={m.start.x} cy={m.start.y} r={4 / scale} fill="#E11D48" />
+                                            <circle cx={m.end.x} cy={m.end.y} r={4 / scale} fill="#E11D48" />
+                                            <rect x={midX - 30 / scale} y={midY - 10 / scale} width={60 / scale} height={20 / scale} rx={4 / scale} fill="white" stroke="#E11D48" strokeWidth={1 / scale} />
+                                            <text x={midX} y={midY + 4 / scale} textAnchor="middle" fontSize={11 / scale} fill="#E11D48" fontWeight="600">{label}</text>
+                                        </g>
+                                    );
+                                })}
+                                {/* Measurement preview line */}
+                                {measureMode && measureStart && measurePreview && (
+                                    <g>
+                                        <line x1={measureStart.x} y1={measureStart.y} x2={measurePreview.x} y2={measurePreview.y} stroke="#E11D48" strokeWidth={1.5 / scale} strokeDasharray={`${4 / scale} ${3 / scale}`} opacity={0.6} />
+                                        <circle cx={measureStart.x} cy={measureStart.y} r={4 / scale} fill="#E11D48" opacity={0.6} />
+                                        {(() => {
+                                            const dist = Math.sqrt(Math.pow(measurePreview.x - measureStart.x, 2) + Math.pow(measurePreview.y - measureStart.y, 2));
+                                            const label = dist >= 100 ? `${(dist / 100).toFixed(2)}m` : `${dist.toFixed(1)}cm`;
+                                            const mx = (measureStart.x + measurePreview.x) / 2;
+                                            const my = (measureStart.y + measurePreview.y) / 2;
+                                            return (
+                                                <text x={mx} y={my - 8 / scale} textAnchor="middle" fontSize={10 / scale} fill="#E11D48" fontWeight="500" opacity={0.8}>{label}</text>
+                                            );
+                                        })()}
+                                    </g>
+                                )}
 
                             <g transform={`translate(20, ${(containerRef.current?.clientHeight || 600) - 40})`}>
                                 <line

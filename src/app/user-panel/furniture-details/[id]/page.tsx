@@ -319,7 +319,77 @@ export default function FurnitureDetails() {
                         </div>
                     </div>
                 </div>
+
+                {/* Recommendations Section */}
+                {product && <RecommendationsSection productId={product._id} />}
             </main>
+        </div>
+    );
+}
+
+function RecommendationsSection({ productId }: { productId: string }) {
+    const [recommendations, setRecommendations] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true);
+                const res = await api.get(`/api/recommendations/product/${productId}`);
+                setRecommendations(res.data.data || []);
+            } catch {
+                setRecommendations([]);
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [productId]);
+
+    if (loading) {
+        return (
+            <div className="mt-12 pb-8">
+                <h2 className="text-xl font-bold text-[#1C1C1C] mb-6">You May Also Like</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="bg-white rounded-xl border border-[#E5E5E5] p-3 animate-pulse">
+                            <div className="aspect-square bg-[#F5F1E8] rounded-lg mb-3" />
+                            <div className="h-3 bg-[#F5F1E8] rounded mb-2 w-3/4" />
+                            <div className="h-3 bg-[#F5F1E8] rounded w-1/2" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (recommendations.length === 0) return null;
+
+    return (
+        <div className="mt-12 pb-8">
+            <h2 className="text-xl font-bold text-[#1C1C1C] mb-6">You May Also Like</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {recommendations.map((item: any) => {
+                    const img = item.images?.[0]?.imageUrl || item.images?.[0] || "/images/placeholder.png";
+                    return (
+                        <Link
+                            key={item._id}
+                            href={`/user-panel/furniture-details/${item._id}`}
+                            className="bg-white rounded-xl border border-[#E5E5E5] p-3 hover:shadow-md transition-shadow group"
+                        >
+                            <div className="aspect-square rounded-lg overflow-hidden bg-[#F5F1E8] mb-3">
+                                <img
+                                    src={img}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                            </div>
+                            <h3 className="text-sm font-medium text-[#1C1C1C] truncate">{item.name}</h3>
+                            <p className="text-sm font-bold text-[#663F23] mt-1">${item.price?.toFixed(2)}</p>
+                            <p className="text-xs text-[#1C1C1C]/40 capitalize mt-0.5">{item.category}</p>
+                        </Link>
+                    );
+                })}
+            </div>
         </div>
     );
 }

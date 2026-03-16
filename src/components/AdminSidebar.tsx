@@ -16,6 +16,15 @@ import {
     Menu,
     X,
     Bell,
+    ShoppingCart,
+    Package,
+    Tag,
+    BarChart3,
+    Shield,
+    ClipboardList,
+    Palette,
+    DollarSign,
+    Grid3X3,
 } from "lucide-react";
 import { getUser, AuthUser } from "@/lib/auth";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -28,9 +37,18 @@ const NAV_ITEMS = [
     { href: "/admin/catalogue-management", label: "Catalogue Management", icon: Settings, nested: true },
     { href: "/admin/compare-designs", label: "Compare Designs", icon: LayoutTemplate },
     { href: "/admin/cost-summary", label: "Cost Summary", icon: FileText },
+    { href: "/admin/budget-planner", label: "Budget Planner", icon: DollarSign },
+    { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+    { href: "/admin/inventory", label: "Inventory", icon: Package },
+    { href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
     { href: "/admin/consultations", label: "Consultations", icon: Users },
     { href: "/admin/notifications", label: "Notifications", icon: Bell },
+    { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+    { href: "/admin/mood-boards", label: "Mood Boards", icon: Palette },
+    { href: "/admin/room-templates", label: "Room Templates", icon: Grid3X3 },
     { href: "/admin/design-history", label: "Design History", icon: ScrollText },
+    { href: "/admin/audit-log", label: "Audit Log", icon: ClipboardList },
+    { href: "/admin/role-management", label: "Role Management", icon: Shield },
 ];
 
 export default function AdminSidebar() {

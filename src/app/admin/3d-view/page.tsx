@@ -1643,6 +1643,37 @@ function ThreeDViewerContent() {
         }
     }, []);
 
+    const handleExportScreenshot = useCallback(async () => {
+        const container = containerRef.current;
+        if (!container) return;
+        try {
+            const { default: html2canvas } = await import("html2canvas");
+            const canvas = await html2canvas(container, { backgroundColor: null, scale: 2 });
+            const link = document.createElement("a");
+            link.download = `${design?.name || "3d-view"}-screenshot.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        } catch (err) {
+            console.error("Screenshot failed:", err);
+        }
+    }, [design]);
+
+    const handleExport3dPdf = useCallback(async () => {
+        const container = containerRef.current;
+        if (!container) return;
+        try {
+            const { default: html2canvas } = await import("html2canvas");
+            const { default: jsPDF } = await import("jspdf");
+            const canvas = await html2canvas(container, { backgroundColor: "#FAF8F5", scale: 2 });
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: [canvas.width, canvas.height] });
+            pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+            pdf.save(`${design?.name || "3d-view"}-render.pdf`);
+        } catch (err) {
+            console.error("PDF export failed:", err);
+        }
+    }, [design]);
+
     useEffect(() => {
         const handler = () => setIsFullscreen(!!document.fullscreenElement);
         document.addEventListener("fullscreenchange", handler);
@@ -2072,6 +2103,20 @@ function ThreeDViewerContent() {
                                 <Settings2 size={16} />
                             </button>
                         )}
+                        <button
+                            onClick={handleExportScreenshot}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-[#A8A8A8] hover:text-[#1C1C1C] shadow-sm transition-colors"
+                            title="Export as Image"
+                        >
+                            <Camera size={16} />
+                        </button>
+                        <button
+                            onClick={handleExport3dPdf}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-[#A8A8A8] hover:text-[#1C1C1C] shadow-sm transition-colors"
+                            title="Export as PDF"
+                        >
+                            <BoxIcon size={16} />
+                        </button>
                         <button
                             onClick={handleToggleFullscreen}
                             className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-[#A8A8A8] hover:text-[#1C1C1C] shadow-sm transition-colors"

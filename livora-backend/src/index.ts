@@ -15,6 +15,15 @@ import userRoutes from "./routes/user.routes";
 import reviewRoutes from "./routes/review.routes";
 import wishlistRoutes from "./routes/wishlist.routes";
 import notificationRoutes from "./routes/notification.routes";
+import orderRoutes from "./routes/order.routes";
+import promoCodeRoutes from "./routes/promoCode.routes";
+import inventoryRoutes from "./routes/inventory.routes";
+import auditLogRoutes from "./routes/auditLog.routes";
+import analyticsRoutes from "./routes/analytics.routes";
+import roomTemplateRoutes from "./routes/roomTemplate.routes";
+import moodBoardRoutes from "./routes/moodBoard.routes";
+import recommendationsRoutes from "./routes/recommendations.routes";
+import roleManagementRoutes from "./routes/roleManagement.routes";
 import { getPublicPreview } from "./controllers/designShare.controller";
 
 dotenv.config();
@@ -24,7 +33,7 @@ const app = express();
 // Middleware
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000").split(",");
 app.use(cors({ origin: allowedOrigins, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 // MongoDB connection (cached for serverless warm starts)
 let isConnected = false;
@@ -59,11 +68,20 @@ app.use("/api/designs", designRoutes);
 app.use("/api/admin/consultations", adminConsultationRoutes);
 app.use("/api/admin/dashboard", adminDashboardRoutes);
 app.use("/api/admin/profile", adminProfileRoutes);
+app.use("/api/admin/roles", roleManagementRoutes);
 app.use("/api/consultation-requests", consultationRequestRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/promo-codes", promoCodeRoutes);
+app.use("/api/inventory", inventoryRoutes);
+app.use("/api/audit-logs", auditLogRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/room-templates", roomTemplateRoutes);
+app.use("/api/mood-boards", moodBoardRoutes);
+app.use("/api/recommendations", recommendationsRoutes);
 app.get("/api/public/preview/:token", getPublicPreview);
 
 // Only listen when running locally (not on Vercel)

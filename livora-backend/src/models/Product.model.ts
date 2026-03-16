@@ -12,6 +12,9 @@ export interface IProduct extends Document {
     colors: string[];
     materials: string[];
     images: { imageUrl: string; sortOrder: number }[];
+    stock: number;
+    lowStockThreshold: number;
+    isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -34,6 +37,9 @@ const ProductSchema = new Schema<IProduct>(
                 sortOrder: { type: Number, default: 0 },
             },
         ],
+        stock: { type: Number, default: 100 },
+        lowStockThreshold: { type: Number, default: 10 },
+        isActive: { type: Boolean, default: true },
     },
     { timestamps: true }
 );
