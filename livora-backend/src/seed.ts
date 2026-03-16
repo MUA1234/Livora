@@ -272,7 +272,7 @@ const products = [
         colors: ["#C6A75E", "#E5E5E5", "#663F23"],
         materials: ["Ceramic"],
         images: [
-            { imageUrl: "https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?auto=format&fit=crop&q=80&w=800", sortOrder: 0 }
+            { imageUrl: "https://images.unsplash.com/photo-1581783898377-1c85bf937427?auto=format&fit=crop&q=80&w=800", sortOrder: 0 }
         ]
     },
     {
