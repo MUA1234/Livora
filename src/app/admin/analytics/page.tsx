@@ -45,6 +45,20 @@ interface OverviewData {
   userGrowth: number;
 }
 
+function normalizeOverview(raw: any): OverviewData {
+  if (raw?.totalRevenue !== undefined) return raw;
+  return {
+    totalRevenue: raw?.revenue?.amount ?? 0,
+    totalOrders: raw?.revenue?.orders ?? raw?.orders?.thisMonth ?? 0,
+    totalUsers: raw?.users?.total ?? 0,
+    totalConsultations: raw?.consultations?.total ?? 0,
+    totalProducts: raw?.products?.total ?? 0,
+    revenueGrowth: raw?.revenue?.growth ?? 0,
+    orderGrowth: 0,
+    userGrowth: raw?.users?.growth ?? 0,
+  };
+}
+
 interface RevenuePoint {
   date: string;
   revenue: number;
@@ -105,7 +119,7 @@ export default function AnalyticsPage() {
     try {
       setIsOverviewLoading(true);
       const res = await api.get("/api/analytics/overview");
-      setOverview(res.data.data);
+      setOverview(normalizeOverview(res.data.data));
     } catch {
       setError("Failed to load overview data");
     } finally {
@@ -117,7 +131,8 @@ export default function AnalyticsPage() {
     try {
       setIsRevenueLoading(true);
       const res = await api.get(`/api/analytics/revenue-chart?days=${days}`);
-      setRevenueData(res.data.data);
+      const raw = res.data.data || [];
+      setRevenueData(raw.map((d: any) => ({ date: d._id || d.date, revenue: d.revenue || 0 })));
     } catch {
       console.error("Failed to load revenue chart");
     } finally {
@@ -129,7 +144,8 @@ export default function AnalyticsPage() {
     try {
       setIsProductsLoading(true);
       const res = await api.get("/api/analytics/popular-products");
-      setPopularProducts(res.data.data);
+      const raw = res.data.data || [];
+      setPopularProducts(raw.map((d: any) => ({ _id: d._id, name: d.name, totalSold: d.totalQuantity || d.totalSold || 0, revenue: d.totalRevenue || d.revenue || 0 })));
     } catch {
       console.error("Failed to load popular products");
     } finally {
@@ -141,7 +157,8 @@ export default function AnalyticsPage() {
     try {
       setIsUserGrowthLoading(true);
       const res = await api.get(`/api/analytics/user-growth?days=${days}`);
-      setUserGrowthData(res.data.data);
+      const raw = res.data.data || [];
+      setUserGrowthData(raw.map((d: any) => ({ date: d._id || d.date, count: d.count || 0 })));
     } catch {
       console.error("Failed to load user growth");
     } finally {
@@ -153,7 +170,8 @@ export default function AnalyticsPage() {
     try {
       setIsCategoryLoading(true);
       const res = await api.get("/api/analytics/category-breakdown");
-      setCategoryData(res.data.data);
+      const raw = res.data.data || [];
+      setCategoryData(raw.map((d: any) => ({ _id: d._id || "Unknown", revenue: d.revenue || 0, count: d.quantity || d.count || 0 })));
     } catch {
       console.error("Failed to load category breakdown");
     } finally {

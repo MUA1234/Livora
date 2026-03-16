@@ -104,9 +104,12 @@ export default function InventoryManagementPage() {
         if (searchQuery.trim()) params.search = searchQuery.trim();
 
         const response = await api.get("/api/inventory", { params });
-        const { data, stats: apiStats, pagination } = response.data;
+        const resData = response.data.data || response.data;
+        const products = resData?.products || resData || [];
+        const apiStats = resData?.stats || response.data.stats;
+        const pagination = resData?.pagination || response.data.pagination;
 
-        setProducts(data || []);
+        setProducts(Array.isArray(products) ? products : []);
         if (apiStats) setStats(apiStats);
         setCurrentPage(pagination?.page || 1);
         setTotalPages(pagination?.pages || 1);

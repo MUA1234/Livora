@@ -116,13 +116,21 @@ export default function RoleManagementPage() {
         api.get("/api/admin/roles/users"),
         api.get("/api/admin/roles/permissions"),
       ]);
-      setUsers(usersRes.data.data || []);
-      const permData = permissionsRes.data.data;
+      const usersData = usersRes.data.data || usersRes.data;
+      setUsers(usersData?.users || usersData || []);
+      const permData = permissionsRes.data.data || permissionsRes.data;
       if (permData?.permissions) {
         setAllPermissions(permData.permissions);
       }
       if (permData?.roleDefaults) {
         setRoleDefaults(permData.roleDefaults);
+      }
+      // Also extract from combined users endpoint if permissions came bundled
+      if (usersData?.allPermissions) {
+        setAllPermissions(usersData.allPermissions);
+      }
+      if (usersData?.roleDefaults) {
+        setRoleDefaults(usersData.roleDefaults);
       }
     } catch (err: any) {
       console.error("Fetch error:", err);

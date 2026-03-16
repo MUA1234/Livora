@@ -199,8 +199,9 @@ export default function AuditLogPage() {
         if (searchQuery.trim()) params.search = searchQuery.trim();
 
         const res = await api.get("/api/audit-logs", { params });
-        setLogs(res.data.data);
-        setPagination(res.data.pagination);
+        const resData = res.data.data || res.data;
+        setLogs(resData?.logs || resData || []);
+        setPagination(resData?.pagination || res.data.pagination || { page: 1, pages: 1, total: 0, limit: 20 });
       } catch {
         setError("Failed to load audit logs");
         setToastConfig({ message: "Failed to load audit logs", type: "error" });

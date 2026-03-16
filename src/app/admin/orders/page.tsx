@@ -139,9 +139,11 @@ export default function OrderManagementPage() {
         if (searchQuery.trim()) params.search = searchQuery.trim();
 
         const response = await api.get("/api/orders", { params });
-        const { data, pagination } = response.data;
+        const resData = response.data.data || response.data;
+        const ordersArr = resData?.orders || resData || [];
+        const pagination = resData?.pagination || response.data.pagination;
 
-        setOrders(data || []);
+        setOrders(Array.isArray(ordersArr) ? ordersArr : []);
         setCurrentPage(pagination?.page || 1);
         setTotalPages(pagination?.pages || 1);
         setTotalCount(pagination?.total || 0);

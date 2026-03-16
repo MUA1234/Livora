@@ -96,15 +96,17 @@ export default function PromoCodesPage() {
 
         const response = await api.get("/api/promo-codes", { params });
         const res = response.data;
+        const innerData = res.data || res;
 
-        setPromoCodes(res.data || res || []);
-        if (res.pagination) {
-          setCurrentPage(res.pagination.page || 1);
-          setTotalPages(res.pagination.pages || 1);
-          setTotalCount(res.pagination.total || 0);
+        setPromoCodes(innerData?.codes || innerData || []);
+        const pag = innerData?.pagination || res.pagination;
+        if (pag) {
+          setCurrentPage(pag.page || 1);
+          setTotalPages(pag.pages || 1);
+          setTotalCount(pag.total || 0);
         } else {
-          const arr = res.data || res || [];
-          setTotalCount(arr.length);
+          const arr = innerData?.codes || innerData || [];
+          setTotalCount(Array.isArray(arr) ? arr.length : 0);
           setTotalPages(1);
           setCurrentPage(1);
         }
