@@ -39,7 +39,6 @@ npm run dev
 
 ### 3. Start the Frontend (Next.js)
 ```bash
-cd livora-frontend
 npm install
 npm run dev
 ```
