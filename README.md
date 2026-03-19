@@ -10,7 +10,12 @@
 - **User Login**: `http://localhost:3000/user-panel/login`
 - **User Registration**: `http://localhost:3000/user-panel/register`
 
+##  Local Demo : `http://localhost:3000`
 
+- **Admin Login**: `http://localhost:3000/admin/login`
+- **User Login**: `http://localhost:3000/user-panel/login`
+- **User Registration**: `http://localhost:3000/user-panel/register`
+  
 **Default Admin Credentials**
 - **Email**: `admin@livora.com`
 - **Password**: `Admin@123`
