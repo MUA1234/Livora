@@ -336,21 +336,6 @@ npx ts-node src/seed.ts
 ---
 
 
-## ⚙️ Environment Variables
-
-### Frontend — `.env.local`
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000
-```
-
-### Backend — `.env`
-```env
-PORT=5000
-MONGODB_URI=mongodb+srv://your-connection-string
-JWT_SECRET=livora_super_secret_key_2026
-```
-
----
 
 ## 🛠️ Tech Stack
 
