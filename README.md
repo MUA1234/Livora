@@ -6,9 +6,9 @@
 
 ## 🌐 Live Demo : https://livora-rho.vercel.app
 
-- **Admin Login**: `http://localhost:3000/admin/login`
-- **User Login**: `http://localhost:3000/user-panel/login`
-- **User Registration**: `http://localhost:3000/user-panel/register`
+- **Admin Login**: `https://livora-rho.vercel.app/admin/login`
+- **User Login**: `https://livora-rho.vercel.app/user-panel/login`
+- **User Registration**: `https://livora-rho.vercel.app/user-panel/register`
 
 ##  Local Demo : `http://localhost:3000`
 
