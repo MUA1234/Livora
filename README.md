@@ -4,7 +4,7 @@
 
 ---
 
-## 🌐 Live Demo
+## 🌐 Live Demo : https://livora-rho.vercel.app
 
 - **Admin Login**: `http://localhost:3000/admin/login`
 - **User Login**: `http://localhost:3000/user-panel/login`
