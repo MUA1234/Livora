@@ -55,9 +55,14 @@ npx ts-node src/seed.ts
 
 ### 🎨 Admin Panel — Designer Side
 
+<br>
+
+<img width="1917" height="688" alt="Screenshot 2026-03-19 125604" src="https://github.com/user-attachments/assets/451df656-6d0a-4348-bd65-4101af01d5b7" />
+<br>
 
 <img width="1919" height="864" alt="Screenshot 2026-03-18 183149" src="https://github.com/user-attachments/assets/502c9615-99ad-4102-992e-2fbe2d824082" />
 
+<br><br>
 
 <table width="100%">
   <thead>
@@ -202,11 +207,14 @@ npx ts-node src/seed.ts
 
 ### 🌐 User Panel — Customer Side
 
+<br>
+
 <img width="1918" height="861" alt="Screenshot 2026-03-19 123703" src="https://github.com/user-attachments/assets/985fda6f-f068-4c77-8628-c160b0c06a35" />
 
+<br>
 <img width="1865" height="897" alt="Screenshot (1854)" src="https://github.com/user-attachments/assets/02d590b3-3522-48f8-a338-65de511e2ce9" />
 
-
+<br><br>
 <table width="100%">
   <thead>
     <tr>
