@@ -55,11 +55,9 @@ npx ts-node src/seed.ts
 
 ### 🎨 Admin Panel — Designer Side
 
-<img width="1917" height="859" alt="Screenshot 2026-03-19 124450" src="https://github.com/user-attachments/assets/1e9c9618-96e2-4daa-b4d6-2c8a4d88679a" />
 
 <img width="1919" height="864" alt="Screenshot 2026-03-18 183149" src="https://github.com/user-attachments/assets/502c9615-99ad-4102-992e-2fbe2d824082" />
 
-<img width="1916" height="863" alt="Screenshot 2026-03-19 124740" src="https://github.com/user-attachments/assets/8440f25a-13ce-46a5-b729-5165a988fd6f" />
 
 <table width="100%">
   <thead>
